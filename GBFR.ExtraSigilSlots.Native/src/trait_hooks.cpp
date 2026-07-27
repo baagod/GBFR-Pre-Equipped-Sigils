@@ -65,7 +65,6 @@ uint32_t CountSelectedSlots(
 
 template <size_t Size>
 bool RequireCodePreflight(
-   std::string_view executable_hash,
    std::string_view stage,
    uintptr_t rva,
    const std::array<uint8_t, Size>& expected)
@@ -74,8 +73,7 @@ bool RequireCodePreflight(
       return true;
 
    std::ostringstream message;
-   message << "Native code preflight failed for executable SHA-256 "
-           << executable_hash << ": stage=" << stage << ", RVA=0x"
+   message << "Native code preflight failed: stage=" << stage << ", RVA=0x"
            << ToUpperHex(static_cast<uint32_t>(rva)) << ", expected " << Size
            << " bytes; no hook or byte patch was installed.";
    SetRuntimeMessage(message.str(), true);
@@ -533,16 +531,7 @@ void ShutdownHooks()
    g_tls_local_context1_binding = {};
 
    RestoreInputIatHooks();
-   if (g_direct_input_get_data_hook_secondary)
-      (void)g_direct_input_get_data_hook_secondary.disable();
-   if (g_direct_input_get_state_hook_secondary)
-      (void)g_direct_input_get_state_hook_secondary.disable();
-   if (g_direct_input_get_data_hook)
-      (void)g_direct_input_get_data_hook.disable();
-   if (g_direct_input_get_state_hook)
-      (void)g_direct_input_get_state_hook.disable();
-   if (g_direct_input_create_device_hook)
-      (void)g_direct_input_create_device_hook.disable();
+   RestoreDirectInputInstanceHooks();
 
    if (g_local_context1_bind_return_hook)
       (void)g_local_context1_bind_return_hook.disable();
@@ -576,15 +565,7 @@ void ShutdownHooks()
    g_local_context1_bind_call_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
-   g_direct_input_get_data_hook_secondary.reset();
-   g_direct_input_get_state_hook_secondary.reset();
-   g_direct_input_get_data_hook.reset();
-   g_direct_input_get_state_hook.reset();
-   g_direct_input_create_device_hook.reset();
-   ResetDirectInputDeviceHookTargets();
-   g_direct_input_mouse_device.store(0, std::memory_order_release);
-   g_direct_input_keyboard_device.store(0, std::memory_order_release);
-   g_direct_input_hook_ready.store(false, std::memory_order_release);
+   ResetDirectInputInstanceHooks();
    {
       std::unique_lock lock(g_authorization_mutex);
       g_authorized_statuses.clear();
@@ -595,78 +576,77 @@ void ShutdownHooks()
    }
 }
 
-bool InstallHooks(std::string_view executable_hash)
+bool InstallHooks()
 {
-   if (!RequireCodePreflight(
-          executable_hash,
+   const uint64_t preflight_started = BeginStartupPhase("required-byte-rva-preflight");
+   const bool preflight_ready = RequireCodePreflight(
           "trait-apply-loop-limit",
           kTraitApplyLoopLimitImmediateRva - 4,
-          kTraitApplyLoopPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitApplyLoopPreflight) &&
+       RequireCodePreflight(
           "trait-apply-getter-return",
           kTraitApplyGetterReturnRva,
-          kTraitApplyGetterReturnPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitApplyGetterReturnPreflight) &&
+       RequireCodePreflight(
           "trait-category-loop-limit",
           kTraitCategoryLoopLimitImmediateRva - 6,
-          kTraitCategoryLoopPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitCategoryLoopPreflight) &&
+       RequireCodePreflight(
           "trait-fetch-path",
           kTraitFetchPathRva,
-          kTraitFetchPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitFetchPreflight) &&
+       RequireCodePreflight(
           "trait-fetch-call-path",
           kTraitFetchCallPathRva,
-          kTraitFetchCallPathPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitFetchCallPathPreflight) &&
+       RequireCodePreflight(
           "trait-category-getter-return",
           kTraitCategoryGetterReturnRva,
-          kTraitCategoryGetterReturnPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kTraitCategoryGetterReturnPreflight) &&
+       RequireCodePreflight(
           "gem-data-getter",
           kGetGemDataByIndexRva,
-          kGetterPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kGetterPreflight) &&
+       RequireCodePreflight(
           "status-rebuild",
           kStatusRebuildRva,
-          kStatusRebuildPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kStatusRebuildPreflight) &&
+       RequireCodePreflight(
           "status-notifier",
           kStatusNotifierRva,
-          kStatusNotifierPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kStatusNotifierPreflight) &&
+       RequireCodePreflight(
           "status-owner-tick",
           kStatusOwnerTickRva,
-          kStatusOwnerTickPreflight) ||
-       !RequireCodePreflight(
-          executable_hash,
+          kStatusOwnerTickPreflight) &&
+       RequireCodePreflight(
           "status-owner-character-loop",
           kStatusOwnerCharacterLoopRva,
-          kStatusOwnerCharacterLoopPreflight))
+          kStatusOwnerCharacterLoopPreflight);
+   CompleteStartupPhase(
+      "required-byte-rva-preflight", preflight_started, preflight_ready);
+   if (!preflight_ready)
    {
       return false;
    }
 
+   const uint64_t gem_hook_started = BeginStartupPhase("gem-data-getter-hook");
    g_get_gem_hook = safetyhook::create_inline(
       reinterpret_cast<void*>(g_image_base + kGetGemDataByIndexRva),
       reinterpret_cast<void*>(&GetGemDataByIndexDetour));
+   CompleteStartupPhase(
+      "gem-data-getter-hook", gem_hook_started, static_cast<bool>(g_get_gem_hook));
    if (!g_get_gem_hook)
    {
       SetRuntimeMessage("Failed to install the GemData getter hook.", true);
       return false;
    }
 
+   const uint64_t trait_hook_started = BeginStartupPhase("trait-fetch-hook");
    g_trait_fetch_hook = safetyhook::create_mid(
       reinterpret_cast<void*>(g_image_base + kTraitFetchPathRva), &OnTraitFetch);
+   CompleteStartupPhase(
+      "trait-fetch-hook", trait_hook_started, static_cast<bool>(g_trait_fetch_hook));
    if (!g_trait_fetch_hook)
    {
       g_get_gem_hook.reset();
@@ -674,9 +654,12 @@ bool InstallHooks(std::string_view executable_hash)
       return false;
    }
 
+   const uint64_t owner_hook_started = BeginStartupPhase("status-owner-hook");
    g_status_owner_tick_hook = safetyhook::create_mid(
       reinterpret_cast<void*>(g_image_base + kStatusOwnerCharacterLoopRva),
       &OnStatusOwnerCharacterLoop);
+   CompleteStartupPhase(
+      "status-owner-hook", owner_hook_started, static_cast<bool>(g_status_owner_tick_hook));
    if (!g_status_owner_tick_hook)
    {
       ShutdownHooks();
@@ -685,8 +668,13 @@ bool InstallHooks(std::string_view executable_hash)
    }
 
    const uint8_t expanded_slot_count = static_cast<uint8_t>(GetExpandedInternalSlotCount());
-   if (!WriteByte(g_image_base + kTraitApplyLoopLimitImmediateRva, expanded_slot_count) ||
-       !WriteByte(g_image_base + kTraitCategoryLoopLimitImmediateRva, expanded_slot_count))
+   const uint64_t loop_patch_started = BeginStartupPhase("trait-loop-limit-patches");
+   const bool loop_patches_ready =
+      WriteByte(g_image_base + kTraitApplyLoopLimitImmediateRva, expanded_slot_count) &&
+      WriteByte(g_image_base + kTraitCategoryLoopLimitImmediateRva, expanded_slot_count);
+   CompleteStartupPhase(
+      "trait-loop-limit-patches", loop_patch_started, loop_patches_ready);
+   if (!loop_patches_ready)
    {
       ShutdownHooks();
       SetRuntimeMessage(
@@ -694,12 +682,15 @@ bool InstallHooks(std::string_view executable_hash)
       return false;
    }
 
-   (void)InstallInputIatHooks();
+   const uint64_t input_hooks_started = BeginStartupPhase("input-iat-hooks");
+   const bool input_hooks_ready = InstallInputIatHooks();
+   CompleteStartupPhase("input-iat-hooks", input_hooks_started, input_hooks_ready);
 
    g_hooks_ready.store(true, std::memory_order_release);
    SetRuntimeMessage(
       "Native hook installation completed with " +
-         std::to_string(GetVirtualSlotCount()) + " virtual slots.",
+         std::to_string(GetVirtualSlotCount()) +
+         " virtual slots; compatibility was verified synchronously by every required byte/RVA preflight. Full-executable SHA-256 is deferred and diagnostic-only.",
       false);
    return true;
 }

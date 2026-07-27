@@ -17,6 +17,7 @@ std::atomic_bool g_initialized{false};
 std::atomic_bool g_hooks_ready{false};
 std::atomic_bool g_shutting_down{false};
 std::atomic_bool g_shutdown_complete{false};
+std::atomic<GBFR20_LogCallback> g_log_callback{nullptr};
 std::mutex g_message_mutex;
 std::string g_runtime_message = "Waiting for initialization.";
 bool g_runtime_message_is_error = false;
@@ -49,6 +50,29 @@ void Log(const std::string& message)
 {
    const std::string line = "[GBFR ExtraSigilSlots Native] " + message + "\n";
    OutputDebugStringA(line.c_str());
+   if (const GBFR20_LogCallback callback = g_log_callback.load(std::memory_order_acquire);
+       callback != nullptr)
+   {
+      callback(message.c_str());
+   }
+}
+
+uint64_t BeginStartupPhase(std::string_view phase)
+{
+   Log("Startup phase=" + std::string(phase) + " state=begin.");
+   return GetTickCount64();
+}
+
+void CompleteStartupPhase(
+   std::string_view phase,
+   uint64_t started_at_ms,
+   bool succeeded)
+{
+   const uint64_t elapsed_ms = GetTickCount64() - started_at_ms;
+   Log(
+      "Startup phase=" + std::string(phase) + " state=" +
+      (succeeded ? "complete" : "failed") + " elapsed_ms=" +
+      std::to_string(elapsed_ms) + ".");
 }
 
 void SetRuntimeMessage(std::string message, bool is_error)

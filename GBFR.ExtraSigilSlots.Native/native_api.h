@@ -23,6 +23,8 @@ constexpr int32_t GBFR20_PRESET_SLOT_DISABLED = -3;
 constexpr int32_t GBFR20_PRESET_SLOT_CHARACTER_RESTRICTED = -4;
 constexpr int32_t GBFR20_PRESET_SLOT_DUPLICATE = -5;
 
+using GBFR20_LogCallback = void(GBFR20_CALL*)(const char* message);
+
 #pragma pack(push, 1)
 struct GBFR20_GemData
 {
@@ -127,6 +129,7 @@ static_assert(sizeof(GBFR20_PresetSlotResult) == 20);
 static_assert(sizeof(GBFR20_RuntimeState) == 276);
 
 GBFR20_API uint32_t GBFR20_CALL GBFR20_GetAbiVersion();
+GBFR20_API void GBFR20_CALL GBFR20_SetLogCallback(GBFR20_LogCallback callback);
 GBFR20_API int32_t GBFR20_CALL GBFR20_Initialize();
 GBFR20_API void GBFR20_CALL GBFR20_Tick();
 GBFR20_API void GBFR20_CALL GBFR20_Shutdown();

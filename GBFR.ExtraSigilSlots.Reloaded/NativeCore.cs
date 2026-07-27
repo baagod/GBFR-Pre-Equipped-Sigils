@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -14,9 +16,11 @@ internal static unsafe partial class NativeCore
 
     private const string LibraryName = "GBFR.ExtraSigilSlots.Native.dll";
     private static readonly object ResolverLock = new();
+    private static readonly object NativeLogLock = new();
     private static string? _libraryPath;
     private static IntPtr _libraryHandle;
     private static int _resolverConfigured;
+    private static Action<string>? _nativeLogSink;
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct GemData
@@ -177,21 +181,61 @@ internal static unsafe partial class NativeCore
         }
     }
 
-    internal static bool Initialize()
+    internal static bool Initialize(Action<string> log)
     {
-        uint abiVersion = NativeGetAbiVersion();
-        if (abiVersion != AbiVersion)
+        ArgumentNullException.ThrowIfNull(log);
+        lock (NativeLogLock)
+            _nativeLogSink = log;
+
+        long nativeLibraryStarted = Stopwatch.GetTimestamp();
+        bool nativeLibraryCompleted = false;
+        try
         {
-            throw new InvalidOperationException(
-                $"Native ABI mismatch: managed {AbiVersion}, native {abiVersion}."
+            log("Startup phase=native-library-load state=begin.");
+            NativeSetLogCallback(
+                (IntPtr)(delegate* unmanaged[Cdecl]<sbyte*, void>)&ForwardNativeLog
             );
+            uint abiVersion = NativeGetAbiVersion();
+            if (abiVersion != AbiVersion)
+            {
+                throw new InvalidOperationException(
+                    $"Native ABI mismatch: managed {AbiVersion}, native {abiVersion}."
+                );
+            }
+            log(
+                "Startup phase=native-library-load state=complete " +
+                $"elapsed_ms={(long)Stopwatch.GetElapsedTime(nativeLibraryStarted).TotalMilliseconds}."
+            );
+            nativeLibraryCompleted = true;
+            return NativeInitialize() != 0;
         }
-        return NativeInitialize() != 0;
+        catch
+        {
+            if (!nativeLibraryCompleted)
+            {
+                log(
+                    "Startup phase=native-library-load state=failed " +
+                    $"elapsed_ms={(long)Stopwatch.GetElapsedTime(nativeLibraryStarted).TotalMilliseconds}."
+                );
+            }
+            DetachNativeLogSink();
+            throw;
+        }
     }
 
     internal static void Tick() => NativeTick();
 
-    internal static void Shutdown() => NativeShutdown();
+    internal static void Shutdown()
+    {
+        try
+        {
+            NativeShutdown();
+        }
+        finally
+        {
+            DetachNativeLogSink();
+        }
+    }
 
     internal static int InvokeOriginalPresent(
         ulong originalFunctionAddress,
@@ -367,6 +411,40 @@ internal static unsafe partial class NativeCore
 
     internal static bool CanEditCharacter(uint characterHash) =>
         NativeCanEditCharacter(characterHash) != 0;
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static void ForwardNativeLog(sbyte* message)
+    {
+        try
+        {
+            string? text = Marshal.PtrToStringUTF8((IntPtr)message);
+            if (string.IsNullOrEmpty(text))
+                return;
+            Action<string>? sink;
+            lock (NativeLogLock)
+                sink = _nativeLogSink;
+            sink?.Invoke("Native: " + text);
+        }
+        catch
+        {
+            // A diagnostic callback must never unwind into native hook code.
+        }
+    }
+
+    private static void DetachNativeLogSink()
+    {
+        try
+        {
+            if (_libraryHandle != IntPtr.Zero)
+                NativeSetLogCallback(IntPtr.Zero);
+        }
+        catch
+        {
+            // The native module may already be unavailable during process teardown.
+        }
+        lock (NativeLogLock)
+            _nativeLogSink = null;
+    }
 
     private static IntPtr ResolveLibrary(
         string libraryName,

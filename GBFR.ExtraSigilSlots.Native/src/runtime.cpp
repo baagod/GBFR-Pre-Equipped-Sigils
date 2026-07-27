@@ -6,6 +6,12 @@ namespace gbfr::native
 {
 void Initialize()
 {
+   const uint64_t initialization_started = BeginStartupPhase("native-initialize");
+   const auto finish_initialization = [initialization_started](bool succeeded) {
+      g_initialized.store(true, std::memory_order_release);
+      CompleteStartupPhase("native-initialize", initialization_started, succeeded);
+   };
+
    g_image_base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
    std::vector<wchar_t> module_path(32768, L'\0');
    const DWORD module_length = GetModuleFileNameW(
@@ -13,7 +19,7 @@ void Initialize()
    if (module_length == 0 || module_length >= module_path.size())
    {
       SetRuntimeMessage("Could not resolve the native core directory.", true);
-      g_initialized.store(true, std::memory_order_release);
+      finish_initialization(false);
       return;
    }
 
@@ -21,62 +27,59 @@ void Initialize()
    g_config_path = g_module_directory / L"GBFR-ExtraSigilSlotsNumConfig.ini";
    g_compatibility_path =
       g_module_directory / L"GBFR-ExtraSigilSlots.compatibility.tsv";
+
+   const uint64_t settings_started = BeginStartupPhase("settings-and-selections");
    LoadSettingsAndSelections();
+   CompleteStartupPhase("settings-and-selections", settings_started, true);
 
    std::string language;
    {
       std::scoped_lock lock(g_settings_mutex);
       language = g_settings.language == "en" ? "en" : "zh-CN";
    }
-   (void)ReloadNameTable(language);
-   if (!LoadCompatibilityTable(g_compatibility_path))
+   const uint64_t names_started = BeginStartupPhase("localized-name-table");
+   const bool names_loaded = ReloadNameTable(language);
+   CompleteStartupPhase("localized-name-table", names_started, names_loaded);
+
+   const uint64_t compatibility_started = BeginStartupPhase("compatibility-table");
+   const bool compatibility_loaded = LoadCompatibilityTable(g_compatibility_path);
+   CompleteStartupPhase(
+      "compatibility-table", compatibility_started, compatibility_loaded);
+   if (!compatibility_loaded)
    {
       SetRuntimeMessage(
          "The ER 2.0.2 character-compatibility table is missing or incomplete; hooks were not installed.",
          true);
-      g_initialized.store(true, std::memory_order_release);
+      finish_initialization(false);
       return;
    }
 
+   const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');
    const DWORD executable_length = GetModuleFileNameW(
       nullptr, executable_path.data(), static_cast<DWORD>(executable_path.size()));
    if (executable_length == 0 || executable_length >= executable_path.size())
    {
+      CompleteStartupPhase("executable-validation", executable_started, false);
       SetRuntimeMessage("Could not resolve the game executable path.", true);
-      g_initialized.store(true, std::memory_order_release);
+      finish_initialization(false);
       return;
    }
 
    const std::filesystem::path executable(executable_path.data());
    if (_wcsicmp(executable.filename().c_str(), L"granblue_fantasy_relink.exe") != 0)
    {
+      CompleteStartupPhase("executable-validation", executable_started, false);
       SetRuntimeMessage("This native core only supports granblue_fantasy_relink.exe.", true);
-      g_initialized.store(true, std::memory_order_release);
+      finish_initialization(false);
       return;
    }
+   CompleteStartupPhase("executable-validation", executable_started, true);
 
-   const std::string executable_hash = ComputeFileSha256(executable);
-   const std::string executable_hash_label = executable_hash.empty()
-      ? std::string("<read failed>")
-      : executable_hash;
-   const bool known_executable_hash = executable_hash == kExpectedExeSha256;
-   if (!known_executable_hash)
-   {
-      Log(
-         "Executable SHA-256 " + executable_hash_label +
-         " is not in the known list; full byte/RVA preflight will decide whether hooks may be installed.");
-   }
-
-   const bool hooks_installed = InstallHooks(executable_hash_label);
-   if (hooks_installed && !known_executable_hash)
-   {
-      SetRuntimeMessage(
-         "Executable SHA-256 " + executable_hash_label +
-            " is not in the known list; every required byte/RVA preflight passed, so hooks were enabled for this run.",
-         false);
-   }
-   g_initialized.store(true, std::memory_order_release);
+   const uint64_t hooks_started = BeginStartupPhase("native-hook-install");
+   const bool hooks_installed = InstallHooks();
+   CompleteStartupPhase("native-hook-install", hooks_started, hooks_installed);
+   finish_initialization(hooks_installed);
 }
 
 void EnsureInitialized()

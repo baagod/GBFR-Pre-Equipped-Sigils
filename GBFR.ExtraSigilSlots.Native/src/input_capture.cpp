@@ -42,14 +42,99 @@ constexpr GUID kDirectInputSystemKeyboard = {
    0xD5A0,
    0x11CF,
    {0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00}};
+constexpr GUID kDirectInput8AInterface = {
+   0xBF798030,
+   0x483A,
+   0x4DA2,
+   {0xAA, 0x99, 0x5D, 0x64, 0xED, 0x36, 0x97, 0x00}};
+constexpr GUID kDirectInput8WInterface = {
+   0xBF798031,
+   0x483A,
+   0x4DA2,
+   {0xAA, 0x99, 0x5D, 0x64, 0xED, 0x36, 0x97, 0x00}};
+
+constexpr size_t kCreateDeviceVtableIndex = 3;
+constexpr size_t kGetDeviceStateVtableIndex = 9;
+constexpr size_t kGetDeviceDataVtableIndex = 10;
+
 uintptr_t g_direct_input_get_state_target = 0;
 uintptr_t g_direct_input_get_data_target = 0;
 uintptr_t g_direct_input_get_state_target_secondary = 0;
 uintptr_t g_direct_input_get_data_target_secondary = 0;
 
+class ScopedStartupPhase
+{
+public:
+   explicit ScopedStartupPhase(std::string_view phase) noexcept
+      : phase_(phase)
+   {
+      try
+      {
+         started_at_ms_ = BeginStartupPhase(phase_);
+         active_ = true;
+      }
+      catch (...)
+      {
+         // A phase marker must never unwind through a DirectInput callback.
+      }
+   }
+
+   ~ScopedStartupPhase() noexcept
+   {
+      if (!active_)
+         return;
+      try
+      {
+         CompleteStartupPhase(phase_, started_at_ms_, succeeded_);
+      }
+      catch (...)
+      {
+         // Diagnostics must never unwind through a DirectInput callback.
+      }
+   }
+
+   void MarkSucceeded() noexcept
+   {
+      succeeded_ = true;
+   }
+
+private:
+   std::string_view phase_;
+   uint64_t started_at_ms_ = 0;
+   bool active_ = false;
+   bool succeeded_ = false;
+};
+
+std::atomic_bool g_logged_direct_input_passthrough{false};
+
 bool IsExecutableAddress(uintptr_t address) noexcept;
 void RegisterDirectInputDevice(const GUID* device_guid, void* device);
 void TryInstallDirectInputFactoryHook(void* factory);
+HRESULT __fastcall DirectInputCreateDeviceDetour(
+   void* factory,
+   const GUID* device_guid,
+   void** output_device,
+   void* outer);
+HRESULT __fastcall DirectInputGetDeviceStateDetour(
+   void* device,
+   DWORD data_size,
+   void* data);
+HRESULT __fastcall DirectInputGetDeviceDataDetour(
+   void* device,
+   DWORD object_data_size,
+   void* object_data,
+   DWORD* object_count,
+   DWORD flags);
+HRESULT __fastcall DirectInputGetDeviceStateDetourSecondary(
+   void* device,
+   DWORD data_size,
+   void* data);
+HRESULT __fastcall DirectInputGetDeviceDataDetourSecondary(
+   void* device,
+   DWORD object_data_size,
+   void* object_data,
+   DWORD* object_count,
+   DWORD flags);
 
 bool PatchMainModuleImport(
    const char* module_name,
@@ -186,6 +271,56 @@ BOOL WINAPI ClipCursorDetour(const RECT* rectangle)
    return g_original_clip_cursor != nullptr ? g_original_clip_cursor(rectangle) : FALSE;
 }
 
+bool IsExecutableAddress(uintptr_t address) noexcept
+{
+   MEMORY_BASIC_INFORMATION information{};
+   if (address == 0 || VirtualQuery(
+          reinterpret_cast<const void*>(address), &information, sizeof(information)) == 0)
+      return false;
+   const DWORD protection = information.Protect & 0xFF;
+   return information.State == MEM_COMMIT &&
+      (protection == PAGE_EXECUTE || protection == PAGE_EXECUTE_READ ||
+       protection == PAGE_EXECUTE_READWRITE || protection == PAGE_EXECUTE_WRITECOPY);
+}
+
+HRESULT InvokeDirectInput8CreateSafely(
+   HINSTANCE instance,
+   DWORD version,
+   REFIID interface_id,
+   LPVOID* output,
+   void* outer) noexcept
+{
+   if (g_original_direct_input8_create == nullptr)
+      return DIERR_GENERIC;
+   __try
+   {
+      return g_original_direct_input8_create(instance, version, interface_id, output, outer);
+   }
+   __except (EXCEPTION_EXECUTE_HANDLER)
+   {
+      return DIERR_GENERIC;
+   }
+}
+
+HRESULT InvokeDirectInputCreateDeviceSafely(
+   void* factory,
+   const GUID* device_guid,
+   void** output_device,
+   void* outer) noexcept
+{
+   if (!g_direct_input_create_device_hook)
+      return DIERR_GENERIC;
+   __try
+   {
+      return g_direct_input_create_device_hook.call<HRESULT>(
+         factory, device_guid, output_device, outer);
+   }
+   __except (EXCEPTION_EXECUTE_HANDLER)
+   {
+      return DIERR_GENERIC;
+   }
+}
+
 HRESULT WINAPI DirectInput8CreateDetour(
    HINSTANCE instance,
    DWORD version,
@@ -194,11 +329,29 @@ HRESULT WINAPI DirectInput8CreateDetour(
    void* outer)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   const HRESULT result = g_original_direct_input8_create != nullptr
-      ? g_original_direct_input8_create(instance, version, interface_id, output, outer)
-      : DIERR_GENERIC;
-   if (SUCCEEDED(result) && output != nullptr && *output != nullptr)
-      TryInstallDirectInputFactoryHook(*output);
+   HRESULT result = DIERR_GENERIC;
+   try
+   {
+      result = InvokeDirectInput8CreateSafely(
+         instance, version, interface_id, output, outer);
+   }
+   catch (...)
+   {
+      return DIERR_GENERIC;
+   }
+   const bool is_direct_input_8 = IsEqualGUID(interface_id, kDirectInput8AInterface) ||
+      IsEqualGUID(interface_id, kDirectInput8WInterface);
+   if (SUCCEEDED(result) && is_direct_input_8 && output != nullptr && *output != nullptr)
+   {
+      try
+      {
+         TryInstallDirectInputFactoryHook(*output);
+      }
+      catch (...)
+      {
+         // Preserve the original DirectInput result if optional wrapping fails.
+      }
+   }
    return result;
 }
 
@@ -209,10 +362,27 @@ HRESULT __fastcall DirectInputCreateDeviceDetour(
    void* outer)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   const HRESULT result = g_direct_input_create_device_hook.call<HRESULT>(
-      factory, device_guid, output_device, outer);
+   HRESULT result = DIERR_GENERIC;
+   try
+   {
+      result = InvokeDirectInputCreateDeviceSafely(
+         factory, device_guid, output_device, outer);
+   }
+   catch (...)
+   {
+      return DIERR_GENERIC;
+   }
    if (SUCCEEDED(result) && output_device != nullptr && *output_device != nullptr)
-      RegisterDirectInputDevice(device_guid, *output_device);
+   {
+      try
+      {
+         RegisterDirectInputDevice(device_guid, *output_device);
+      }
+      catch (...)
+      {
+         // Device creation succeeded; optional keyboard/mouse wrapping did not.
+      }
+   }
    return result;
 }
 
@@ -265,10 +435,6 @@ HRESULT __fastcall DirectInputGetDeviceDataDetour(
       (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire) ||
        device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire)) &&
       g_input_capture_effective.load(std::memory_order_acquire);
-
-   // A game may inspect mouse buttons with DIGDD_PEEK and never perform a
-   // consuming read when the reported count is zero. Consume the queued event
-   // here so it cannot reach the game now or fire after the overlay closes.
    const DWORD forwarded_flags = discard_buffered_input && object_data != nullptr &&
          object_count != nullptr
       ? flags & ~DIGDD_PEEK
@@ -310,30 +476,19 @@ HRESULT __fastcall DirectInputGetDeviceDataDetourSecondary(
    return result;
 }
 
-bool IsExecutableAddress(uintptr_t address) noexcept
-{
-   MEMORY_BASIC_INFORMATION information{};
-   if (address == 0 || VirtualQuery(
-          reinterpret_cast<const void*>(address), &information, sizeof(information)) == 0)
-      return false;
-   const DWORD protection = information.Protect & 0xFF;
-   return information.State == MEM_COMMIT &&
-      (protection == PAGE_EXECUTE || protection == PAGE_EXECUTE_READ ||
-       protection == PAGE_EXECUTE_READWRITE || protection == PAGE_EXECUTE_WRITECOPY);
-}
-
-void TryInstallDirectInputDeviceHooks(void* device)
+void TryInstallDirectInputDeviceHooks(void* device, std::string_view phase_name)
 {
    if (device == nullptr || g_shutting_down.load(std::memory_order_acquire))
       return;
 
+   ScopedStartupPhase phase(phase_name);
    std::scoped_lock lock(g_input_hook_mutex);
    uintptr_t vtable = 0;
    uintptr_t get_state = 0;
    uintptr_t get_data = 0;
    if (!SafeReadPointer(reinterpret_cast<uintptr_t>(device), vtable) || vtable == 0 ||
-       !SafeReadPointer(vtable + sizeof(uintptr_t) * 9, get_state) ||
-       !SafeReadPointer(vtable + sizeof(uintptr_t) * 10, get_data) ||
+       !SafeReadPointer(vtable + sizeof(uintptr_t) * kGetDeviceStateVtableIndex, get_state) ||
+       !SafeReadPointer(vtable + sizeof(uintptr_t) * kGetDeviceDataVtableIndex, get_data) ||
        !IsExecutableAddress(get_state) || !IsExecutableAddress(get_data))
       return;
 
@@ -395,15 +550,15 @@ void TryInstallDirectInputDeviceHooks(void* device)
       }
    }
 
-   if (state_ready && data_ready)
-   {
-      g_direct_input_hook_ready.store(true, std::memory_order_release);
-      Log("DirectInput keyboard/mouse device gates registered; non-keyboard/mouse devices are passed through.");
-   }
-   else
+   if (!state_ready || !data_ready)
    {
       Log("DirectInput keyboard/mouse device used an unsupported third method target; that device was left untouched.");
+      return;
    }
+
+   phase.MarkSucceeded();
+   g_direct_input_hook_ready.store(true, std::memory_order_release);
+   Log("DirectInput keyboard/mouse method gates registered without replacing a COM object vtable; controller devices remain untouched.");
 }
 
 void RegisterDirectInputDevice(const GUID* device_guid, void* device)
@@ -412,15 +567,23 @@ void RegisterDirectInputDevice(const GUID* device_guid, void* device)
        g_shutting_down.load(std::memory_order_acquire))
       return;
 
-   const uintptr_t device_address = reinterpret_cast<uintptr_t>(device);
    if (IsEqualGUID(*device_guid, kDirectInputSystemKeyboard))
-      g_direct_input_keyboard_device.store(device_address, std::memory_order_release);
-   else if (IsEqualGUID(*device_guid, kDirectInputSystemMouse))
-      g_direct_input_mouse_device.store(device_address, std::memory_order_release);
-   else
+   {
+      g_direct_input_keyboard_device.store(
+         reinterpret_cast<uintptr_t>(device), std::memory_order_release);
+      TryInstallDirectInputDeviceHooks(device, "directinput-keyboard-method-hooks");
       return;
+   }
+   if (IsEqualGUID(*device_guid, kDirectInputSystemMouse))
+   {
+      g_direct_input_mouse_device.store(
+         reinterpret_cast<uintptr_t>(device), std::memory_order_release);
+      TryInstallDirectInputDeviceHooks(device, "directinput-mouse-method-hooks");
+      return;
+   }
 
-   TryInstallDirectInputDeviceHooks(device);
+   if (!g_logged_direct_input_passthrough.exchange(true, std::memory_order_acq_rel))
+      Log("A DirectInput non-keyboard/mouse device was returned untouched for controller pass-through.");
 }
 
 void TryInstallDirectInputFactoryHook(void* factory)
@@ -428,21 +591,38 @@ void TryInstallDirectInputFactoryHook(void* factory)
    if (factory == nullptr || g_shutting_down.load(std::memory_order_acquire))
       return;
 
-   std::scoped_lock lock(g_input_hook_mutex);
-   if (g_direct_input_create_device_hook)
-      return;
+   ScopedStartupPhase phase("directinput-create-device-inline-hook");
 
-   uintptr_t vtable = 0;
-   uintptr_t create_device = 0;
-   if (!SafeReadPointer(reinterpret_cast<uintptr_t>(factory), vtable) || vtable == 0 ||
-       !SafeReadPointer(vtable + sizeof(uintptr_t) * 3, create_device) ||
-       !IsExecutableAddress(create_device))
-      return;
+   bool installed = false;
+   {
+      std::scoped_lock lock(g_input_hook_mutex);
+      if (g_direct_input_create_device_hook)
+      {
+         phase.MarkSucceeded();
+         return;
+      }
 
-   g_direct_input_create_device_hook = safetyhook::create_inline(
-      reinterpret_cast<void*>(create_device), reinterpret_cast<void*>(&DirectInputCreateDeviceDetour));
-   if (g_direct_input_create_device_hook)
-      Log("DirectInput8 CreateDevice gate installed; keyboard and mouse will be classified by system GUID.");
+      uintptr_t vtable_address = 0;
+      if (!SafeReadPointer(reinterpret_cast<uintptr_t>(factory), vtable_address) ||
+          vtable_address == 0)
+         return;
+      uintptr_t create_device = 0;
+      if (!SafeReadPointer(
+             vtable_address + sizeof(void*) * kCreateDeviceVtableIndex, create_device) ||
+          !IsExecutableAddress(create_device))
+         return;
+
+      g_direct_input_create_device_hook = safetyhook::create_inline(
+         reinterpret_cast<void*>(create_device),
+         reinterpret_cast<void*>(&DirectInputCreateDeviceDetour));
+      installed = static_cast<bool>(g_direct_input_create_device_hook);
+   }
+
+   if (installed)
+   {
+      phase.MarkSucceeded();
+      Log("DirectInput8 CreateDevice chain gate installed without replacing the factory vtable; only system keyboard/mouse method targets will be registered.");
+   }
 }
 
 bool IsPhysicalInputNeutral()
@@ -477,13 +657,36 @@ void RestoreInputIatHooks()
    g_input_iat_hooks_ready.store(false, std::memory_order_release);
 }
 
-void ResetDirectInputDeviceHookTargets() noexcept
+void RestoreDirectInputInstanceHooks() noexcept
 {
    std::scoped_lock lock(g_input_hook_mutex);
+   if (g_direct_input_create_device_hook)
+      (void)g_direct_input_create_device_hook.disable();
+   if (g_direct_input_get_state_hook)
+      (void)g_direct_input_get_state_hook.disable();
+   if (g_direct_input_get_data_hook)
+      (void)g_direct_input_get_data_hook.disable();
+   if (g_direct_input_get_state_hook_secondary)
+      (void)g_direct_input_get_state_hook_secondary.disable();
+   if (g_direct_input_get_data_hook_secondary)
+      (void)g_direct_input_get_data_hook_secondary.disable();
+}
+
+void ResetDirectInputInstanceHooks() noexcept
+{
+   std::scoped_lock lock(g_input_hook_mutex);
+   g_direct_input_create_device_hook.reset();
+   g_direct_input_get_state_hook.reset();
+   g_direct_input_get_data_hook.reset();
+   g_direct_input_get_state_hook_secondary.reset();
+   g_direct_input_get_data_hook_secondary.reset();
    g_direct_input_get_state_target = 0;
    g_direct_input_get_data_target = 0;
    g_direct_input_get_state_target_secondary = 0;
    g_direct_input_get_data_target_secondary = 0;
+   g_direct_input_mouse_device.store(0, std::memory_order_release);
+   g_direct_input_keyboard_device.store(0, std::memory_order_release);
+   g_direct_input_hook_ready.store(false, std::memory_order_release);
 }
 
 bool InstallInputIatHooks()
@@ -492,41 +695,47 @@ bool InstallInputIatHooks()
    if (g_input_iat_hooks_ready.load(std::memory_order_acquire))
       return true;
 
+   const uint64_t user32_started = BeginStartupPhase("user32-input-iat-hooks");
    void* original = nullptr;
-   bool succeeded = PatchMainModuleImport(
+   bool user32_succeeded = PatchMainModuleImport(
       "USER32.dll", "GetAsyncKeyState", reinterpret_cast<void*>(&GetAsyncKeyStateDetour), original);
    g_original_get_async_key_state = reinterpret_cast<GetAsyncKeyStateFn>(original);
 
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetKeyState", reinterpret_cast<void*>(&GetKeyStateDetour), original) && succeeded;
+   user32_succeeded = PatchMainModuleImport(
+      "USER32.dll", "GetKeyState", reinterpret_cast<void*>(&GetKeyStateDetour), original) && user32_succeeded;
    g_original_get_key_state = reinterpret_cast<GetKeyStateFn>(original);
 
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetKeyboardState", reinterpret_cast<void*>(&GetKeyboardStateDetour), original) && succeeded;
+   user32_succeeded = PatchMainModuleImport(
+      "USER32.dll", "GetKeyboardState", reinterpret_cast<void*>(&GetKeyboardStateDetour), original) && user32_succeeded;
    g_original_get_keyboard_state = reinterpret_cast<GetKeyboardStateFn>(original);
 
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetCursorPos", reinterpret_cast<void*>(&GetCursorPosDetour), original) && succeeded;
+   user32_succeeded = PatchMainModuleImport(
+      "USER32.dll", "GetCursorPos", reinterpret_cast<void*>(&GetCursorPosDetour), original) && user32_succeeded;
    g_original_get_cursor_pos = reinterpret_cast<GetCursorPosFn>(original);
 
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "USER32.dll", "SetCursorPos", reinterpret_cast<void*>(&SetCursorPosDetour), original) && succeeded;
+   user32_succeeded = PatchMainModuleImport(
+      "USER32.dll", "SetCursorPos", reinterpret_cast<void*>(&SetCursorPosDetour), original) && user32_succeeded;
    g_original_set_cursor_pos = reinterpret_cast<SetCursorPosFn>(original);
 
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "USER32.dll", "ClipCursor", reinterpret_cast<void*>(&ClipCursorDetour), original) && succeeded;
+   user32_succeeded = PatchMainModuleImport(
+      "USER32.dll", "ClipCursor", reinterpret_cast<void*>(&ClipCursorDetour), original) && user32_succeeded;
    g_original_clip_cursor = reinterpret_cast<ClipCursorFn>(original);
+   CompleteStartupPhase("user32-input-iat-hooks", user32_started, user32_succeeded);
 
+   const uint64_t direct_input_started = BeginStartupPhase("directinput-iat-hook");
    original = nullptr;
-   succeeded = PatchMainModuleImport(
-      "DINPUT8.dll", "DirectInput8Create", reinterpret_cast<void*>(&DirectInput8CreateDetour), original) && succeeded;
+   const bool direct_input_succeeded = PatchMainModuleImport(
+      "DINPUT8.dll", "DirectInput8Create", reinterpret_cast<void*>(&DirectInput8CreateDetour), original);
    g_original_direct_input8_create = reinterpret_cast<DirectInput8CreateFn>(original);
+   CompleteStartupPhase(
+      "directinput-iat-hook", direct_input_started, direct_input_succeeded);
 
+   const bool succeeded = user32_succeeded && direct_input_succeeded;
    g_input_iat_hooks_ready.store(succeeded, std::memory_order_release);
    Log(succeeded
       ? "Game-local USER32 and DirectInput8 keyboard/mouse gates installed; controller input is passed through."

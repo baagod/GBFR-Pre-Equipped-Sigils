@@ -18,8 +18,9 @@ directories are ignored by Git.
 
 The harnesses cover:
 
-- strict `VirtualSlotCount` normalization and hidden-slot cleanup;
-- packed ABI v9 sizes and transactional preset-reference updates;
+- strict `VirtualSlotCount` normalization, hidden-slot cleanup, native startup-phase callbacks, and the absence of full-EXE hashing from the synchronous native startup path;
+- packed ABI v10 sizes and transactional preset-reference updates;
 - keyboard/mouse versus HID/controller Raw Input classification.
 - event-driven frontend wake-up, key-repeat suppression, and closed-frame sleeping.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.
+- deferred full-EXE SHA-256 correctness/non-blocking behavior, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.

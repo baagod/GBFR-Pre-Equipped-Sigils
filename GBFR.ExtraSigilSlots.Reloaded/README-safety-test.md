@@ -1,4 +1,4 @@
-# GBFR 扩展因子槽 0.7.4
+# GBFR 扩展因子槽 0.7.5
 
 这是 Reloaded-II 独立版，不依赖或修改 Luma、ReShade 与游戏存档。插件支持 1–24 个可配置扩展槽、命名预设、因子占用筛选、中文输入和键鼠独占／手柄直通。
 
@@ -30,6 +30,8 @@ DX11 Present-only backend enabled with a native original-Present boundary
 
 ## 游戏 EXE 兼容性门禁
 
-SHA-256 用于标识已经测试过的游戏 EXE，但不再单独决定是否安装游戏 Hook。未收录的 SHA-256 必须通过全部必需的 RVA／字节预检，所有预检完成前不会写入补丁或安装游戏 Hook；任意一项不匹配都会拒绝整次安装，并在日志中报告实际 SHA-256、失败阶段与 RVA。
+启动关键路径不再同步扫描整个游戏 EXE。兼容性放行完全由全部必需的 RVA／字节预检决定：所有预检完成前不会写入补丁或安装游戏 Hook；任意一项不匹配都会拒绝整次安装，并在日志中报告失败阶段与 RVA。Hook 同步安装返回后，托管层才会在后台执行整文件 SHA-256 诊断，并以 `diagnostic_only=true` 记录实际哈希与已知哈希是否匹配；该结果不会放行、拒绝或回滚 Hook。这样既保留原有安全门，也避免冷文件缓存、杀毒软件或文件过滤驱动把 Reloaded-II 的同步启动长时间阻塞。
 
 这允许代码布局完全相同、但整体文件哈希不同的 ER 2.0.2 EXE 使用扩展因子槽，同时仍会拒绝真正发生代码布局变化的版本。
+
+日志还会明确输出 `由 Launcher 注入`、`由 .asi Bootstrapper 加载` 或 `source=unknown`。官方 Deploy ASI 的识别同时检查 `Reloaded.Mod.Loader.Bootstrapper.asi` 模块名与 `InitializeASI` 导出；不会把任意同名文件或普通 ASI 猜成 Reloaded-II Bootstrapper。

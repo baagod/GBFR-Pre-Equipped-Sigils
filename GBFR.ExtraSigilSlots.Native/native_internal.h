@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
@@ -24,9 +25,6 @@
 
 namespace gbfr::native
 {
-inline constexpr char kExpectedExeSha256[] =
-   "63340832BCF731FBC97796F686B05C988418E83D451D4A49B2244A85D00E297F";
-
 inline constexpr uintptr_t kTraitApplyLoopLimitImmediateRva = 0x00A25484;
 inline constexpr uintptr_t kTraitApplyGetterReturnRva = 0x00A254A9;
 inline constexpr uintptr_t kTraitCategoryLoopLimitImmediateRva = 0x00A26096;
@@ -245,6 +243,7 @@ extern std::atomic_bool g_initialized;
 extern std::atomic_bool g_hooks_ready;
 extern std::atomic_bool g_shutting_down;
 extern std::atomic_bool g_shutdown_complete;
+extern std::atomic<GBFR20_LogCallback> g_log_callback;
 extern std::mutex g_message_mutex;
 extern std::string g_runtime_message;
 extern bool g_runtime_message_is_error;
@@ -254,11 +253,6 @@ extern SafetyHookMid g_trait_fetch_hook;
 extern SafetyHookMid g_status_owner_tick_hook;
 extern SafetyHookMid g_local_context1_bind_call_hook;
 extern SafetyHookMid g_local_context1_bind_return_hook;
-extern SafetyHookInline g_direct_input_create_device_hook;
-extern SafetyHookInline g_direct_input_get_state_hook;
-extern SafetyHookInline g_direct_input_get_data_hook;
-extern SafetyHookInline g_direct_input_get_state_hook_secondary;
-extern SafetyHookInline g_direct_input_get_data_hook_secondary;
 
 extern std::shared_mutex g_selection_mutex;
 extern std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> g_character_selections;
@@ -340,8 +334,6 @@ extern std::atomic_bool g_input_capture_effective;
 extern std::atomic_uint32_t g_input_neutral_frames;
 extern std::atomic_bool g_input_iat_hooks_ready;
 extern std::atomic_bool g_direct_input_hook_ready;
-extern std::atomic_uintptr_t g_direct_input_mouse_device;
-extern std::atomic_uintptr_t g_direct_input_keyboard_device;
 extern std::mutex g_input_hook_mutex;
 extern std::vector<IatPatch> g_iat_patches;
 extern POINT g_frozen_cursor_position;
@@ -378,6 +370,8 @@ extern std::vector<InventoryItem> g_inventory_snapshot;
 int GetVirtualSlotCount() noexcept;
 int GetExpandedInternalSlotCount() noexcept;
 void Log(const std::string& message);
+uint64_t BeginStartupPhase(std::string_view phase);
+void CompleteStartupPhase(std::string_view phase, uint64_t started_at_ms, bool succeeded);
 void SetRuntimeMessage(std::string message, bool is_error);
 std::string GetRuntimeMessage(bool& is_error);
 std::string WideToUtf8(std::wstring_view text);
@@ -415,11 +409,11 @@ bool ReadByte(uintptr_t address, uint8_t& value) noexcept;
 bool WriteByte(uintptr_t address, uint8_t value);
 
 void RestoreInputIatHooks();
-void ResetDirectInputDeviceHookTargets() noexcept;
+void RestoreDirectInputInstanceHooks() noexcept;
+void ResetDirectInputInstanceHooks() noexcept;
 bool InstallInputIatHooks();
 void UpdateInputCaptureBarrier();
 
-std::string ComputeFileSha256(const std::filesystem::path& path);
 void LoadSettingsAndSelections();
 void SaveUiSettings();
 void SaveCharacterSelection(uint32_t character_hash);
@@ -440,7 +434,7 @@ bool RefreshInventorySnapshot();
 
 void ScheduleSelectedStatusRebind();
 void ShutdownHooks();
-bool InstallHooks(std::string_view executable_hash);
+bool InstallHooks();
 void Initialize();
 void EnsureInitialized();
 void ConsumeApplyResult();

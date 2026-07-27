@@ -7,6 +7,11 @@ uint32_t GBFR20_CALL GBFR20_GetAbiVersion()
    return GBFR20_ABI_VERSION;
 }
 
+void GBFR20_CALL GBFR20_SetLogCallback(GBFR20_LogCallback callback)
+{
+   g_log_callback.store(callback, std::memory_order_release);
+}
+
 int32_t GBFR20_CALL GBFR20_Initialize()
 {
    if (g_shutting_down.load(std::memory_order_acquire))

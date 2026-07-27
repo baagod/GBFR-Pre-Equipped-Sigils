@@ -49,9 +49,21 @@ foreach ((string label, string? raw, int expected) in cases)
 
         int runtimeSlotCount;
         int runtimeSlotCapacity;
+        List<string> nativeLogs = [];
         IntPtr library = NativeLibrary.Load(nativePath);
+        SetNativeLogCallback? setLogCallback = null;
+        NativeLogCallback? nativeLogCallback = null;
         try
         {
+            setLogCallback = Marshal.GetDelegateForFunctionPointer<SetNativeLogCallback>(
+                NativeLibrary.GetExport(library, "GBFR20_SetLogCallback"));
+            nativeLogCallback = message =>
+            {
+                string? text = Marshal.PtrToStringUTF8(message);
+                if (!string.IsNullOrEmpty(text))
+                    nativeLogs.Add(text);
+            };
+            setLogCallback(Marshal.GetFunctionPointerForDelegate(nativeLogCallback));
             InitializeNative initialize = Marshal.GetDelegateForFunctionPointer<InitializeNative>(
                 NativeLibrary.GetExport(library, "GBFR20_Initialize"));
             _ = initialize();
@@ -72,7 +84,28 @@ foreach ((string label, string? raw, int expected) in cases)
         }
         finally
         {
+            setLogCallback?.Invoke(IntPtr.Zero);
+            GC.KeepAlive(nativeLogCallback);
             NativeLibrary.Free(library);
+        }
+
+        if (label == "missing")
+        {
+            string[] requiredMarkers =
+            [
+                "Startup phase=native-initialize state=begin.",
+                "Startup phase=settings-and-selections state=complete",
+                "Startup phase=compatibility-table state=failed",
+            ];
+            foreach (string marker in requiredMarkers)
+            {
+                if (!nativeLogs.Any(line => line.Contains(marker, StringComparison.Ordinal)))
+                    throw new InvalidOperationException($"Missing native startup marker: {marker}");
+            }
+            if (nativeLogs.Any(line => line.Contains("SHA-256", StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("Startup unexpectedly performed SHA-256 diagnostics.");
+            Console.WriteLine("STARTUP_PHASE_CALLBACK=True");
+            Console.WriteLine("NATIVE_STARTUP_FULL_EXE_HASH_SCAN=False");
         }
 
         int actual = ReadIniInt(iniPath, "VirtualSlotCount");
@@ -159,6 +192,12 @@ static string ReadIniValue(string path, string key)
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 internal delegate int InitializeNative();
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate void SetNativeLogCallback(IntPtr callback);
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate void NativeLogCallback(IntPtr message);
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 internal delegate int GetNativeState(IntPtr state, uint stateSize);

@@ -1,107 +1,14 @@
 #include "../native_internal.h"
 
-#include <bcrypt.h>
-
 #include <cwchar>
 #include <iomanip>
 #include <sstream>
-
-#pragma comment(lib, "bcrypt.lib")
 
 namespace gbfr::native
 {
 UiSettings g_settings;
 std::mutex g_settings_mutex;
 std::atomic_int32_t g_virtual_slot_count{kDefaultVirtualSlotCount};
-
-std::string ComputeFileSha256(const std::filesystem::path& path)
-{
-   BCRYPT_ALG_HANDLE algorithm = nullptr;
-   BCRYPT_HASH_HANDLE hash = nullptr;
-   HANDLE file = INVALID_HANDLE_VALUE;
-   std::vector<uint8_t> hash_object;
-   std::vector<uint8_t> digest;
-   std::string result;
-   DWORD object_size = 0;
-   DWORD digest_size = 0;
-   DWORD returned = 0;
-
-   if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0)
-      goto cleanup;
-
-   if (BCryptGetProperty(
-          algorithm,
-          BCRYPT_OBJECT_LENGTH,
-          reinterpret_cast<PUCHAR>(&object_size),
-          sizeof(object_size),
-          &returned,
-          0) < 0 ||
-       BCryptGetProperty(
-          algorithm,
-          BCRYPT_HASH_LENGTH,
-          reinterpret_cast<PUCHAR>(&digest_size),
-          sizeof(digest_size),
-          &returned,
-          0) < 0)
-      goto cleanup;
-
-   hash_object.resize(object_size);
-   digest.resize(digest_size);
-   if (BCryptCreateHash(
-          algorithm,
-          &hash,
-          hash_object.data(),
-          static_cast<ULONG>(hash_object.size()),
-          nullptr,
-          0,
-          0) < 0)
-      goto cleanup;
-
-   file = CreateFileW(
-      path.c_str(),
-      GENERIC_READ,
-      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-      nullptr,
-      OPEN_EXISTING,
-      FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
-      nullptr);
-   if (file == INVALID_HANDLE_VALUE)
-      goto cleanup;
-
-   {
-      std::vector<uint8_t> buffer(64 * 1024);
-      for (;;)
-      {
-         DWORD bytes_read = 0;
-         if (!ReadFile(file, buffer.data(), static_cast<DWORD>(buffer.size()), &bytes_read, nullptr))
-            goto cleanup;
-         if (bytes_read == 0)
-            break;
-         if (BCryptHashData(hash, buffer.data(), bytes_read, 0) < 0)
-            goto cleanup;
-      }
-   }
-
-   if (BCryptFinishHash(hash, digest.data(), static_cast<ULONG>(digest.size()), 0) < 0)
-      goto cleanup;
-
-   {
-      std::ostringstream stream;
-      stream << std::uppercase << std::hex << std::setfill('0');
-      for (const uint8_t byte : digest)
-         stream << std::setw(2) << static_cast<unsigned int>(byte);
-      result = stream.str();
-   }
-
-cleanup:
-   if (file != INVALID_HANDLE_VALUE)
-      CloseHandle(file);
-   if (hash != nullptr)
-      BCryptDestroyHash(hash);
-   if (algorithm != nullptr)
-      BCryptCloseAlgorithmProvider(algorithm, 0);
-   return result;
-}
 
 namespace
 {

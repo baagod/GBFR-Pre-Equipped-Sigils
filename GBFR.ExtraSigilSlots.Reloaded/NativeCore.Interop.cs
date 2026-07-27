@@ -8,6 +8,9 @@ internal static unsafe partial class NativeCore
     private static extern uint GBFR20_GetAbiVersion();
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    private static extern void GBFR20_SetLogCallback(IntPtr callback);
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     private static extern int GBFR20_Initialize();
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
@@ -99,6 +102,7 @@ internal static unsafe partial class NativeCore
     private static extern int GBFR20_CanEditCharacter(uint characterHash);
 
     private static uint NativeGetAbiVersion() => GBFR20_GetAbiVersion();
+    private static void NativeSetLogCallback(IntPtr callback) => GBFR20_SetLogCallback(callback);
     private static int NativeInitialize() => GBFR20_Initialize();
     private static void NativeTick() => GBFR20_Tick();
     private static void NativeShutdown() => GBFR20_Shutdown();

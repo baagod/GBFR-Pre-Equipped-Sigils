@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Imgui.Hook;
 using Reloaded.Imgui.Hook.Direct3D11;
@@ -22,6 +23,8 @@ public sealed partial class Mod : IMod
     private bool _imguiCreated;
     private bool _nativeCoreActive;
     private bool _disposed;
+    private CancellationTokenSource? _executableHashCancellation;
+    private Task? _executableHashTask;
     private int _renderThreadLogged;
     private int _inputCaptureLogged;
     private int _renderStopping;
@@ -93,6 +96,7 @@ public sealed partial class Mod : IMod
 
     private async Task StartCoreAsync(IModLoaderV1 loaderApi, string modId)
     {
+        long managedStartupStarted = Stopwatch.GetTimestamp();
         try
         {
             IModLoader loader = (IModLoader)loaderApi;
@@ -112,9 +116,21 @@ public sealed partial class Mod : IMod
                     AutoFlush = true,
                 };
             }
+            Log("Startup phase=managed-initialize state=begin.");
 
+            long injectionSourceStarted = BeginStartupPhase("reloaded-injection-source");
+            ReloadedInjectionSource injectionSource = ReloadedInjectionSourceDetector.Detect();
+            CompleteStartupPhase(
+                "reloaded-injection-source",
+                injectionSourceStarted,
+                injectionSource.Kind != ReloadedInjectionKind.Unknown);
+            Log(ReloadedInjectionSourceDetector.FormatLogMessage(injectionSource));
+
+            long migrationStarted = BeginStartupPhase("legacy-data-migration");
             LegacyDataMigrator.Migrate(modDirectory, Log);
+            CompleteStartupPhase("legacy-data-migration", migrationStarted);
 
+            long hooksControllerStarted = BeginStartupPhase("reloaded-hooks-controller");
             if (loader.GetController<IReloadedHooks>() is not { } hooksController ||
                 !hooksController.TryGetTarget(out IReloadedHooks? hooks) ||
                 hooks is null)
@@ -123,9 +139,12 @@ public sealed partial class Mod : IMod
                     "Reloaded.Hooks controller is unavailable. Enable reloaded.sharedlib.hooks."
                 );
             }
+            CompleteStartupPhase("reloaded-hooks-controller", hooksControllerStarted);
 
+            long nativeStarted = BeginStartupPhase("native-core");
             NativeCore.Configure(modDirectory);
-            bool hooksReady = NativeCore.Initialize();
+            bool hooksReady = NativeCore.Initialize(Log);
+            CompleteStartupPhase("native-core", nativeStarted, hooksReady);
             bool shutdownImmediately;
             lock (_lifecycleLock)
             {
@@ -148,14 +167,18 @@ public sealed partial class Mod : IMod
                         nativeInitializationMessage
                     : $"Native core loaded without hooks: {nativeInitializationMessage}"
             );
+            QueueExecutableHashDiagnostic();
 
             FrontendOverlayGate.ForceClosed();
             int initialToggleKey = (int)OverlayHotkey.F8;
             if (NativeCore.TryGetState(out NativeCore.RuntimeState initialState))
                 initialToggleKey = initialState.ToggleKey;
             FrontendOverlayGate.SetToggleKey(initialToggleKey);
+            long hotkeyStarted = BeginStartupPhase("hotkey-configuration");
             InitializeHotkeyConfiguration(loader, modId, initialToggleKey);
+            CompleteStartupPhase("hotkey-configuration", hotkeyStarted);
 
+            long imguiSdkStarted = BeginStartupPhase("imgui-sdk");
             SDK.Init(hooks, message =>
             {
                 if (!message.Contains(
@@ -165,6 +188,9 @@ public sealed partial class Mod : IMod
                     Log($"Reloaded.Imgui.Hook: {message}");
                 }
             });
+            CompleteStartupPhase("imgui-sdk", imguiSdkStarted);
+
+            long imguiHookStarted = BeginStartupPhase("imgui-hook-create");
             await ImguiHook.Create(
                     Render,
                     new ImguiHookOptions
@@ -185,7 +211,9 @@ public sealed partial class Mod : IMod
                     }
                 )
                 .ConfigureAwait(false);
+            CompleteStartupPhase("imgui-hook-create", imguiHookStarted);
 
+            long overlayUiStarted = BeginStartupPhase("overlay-ui");
             SigilOverlayUi ui = new(modDirectory, SetInputCapture, Log);
             bool initialized = false;
             lock (_imguiOperationLock)
@@ -211,10 +239,16 @@ public sealed partial class Mod : IMod
             }
 
             if (!initialized)
+            {
+                CompleteStartupPhase("overlay-ui", overlayUiStarted, false);
+                CompleteStartupPhase("managed-initialize", managedStartupStarted, false);
                 return;
+            }
 
+            CompleteStartupPhase("overlay-ui", overlayUiStarted);
             Log("Direct3D11 Reloaded ImGui frontend initialized; ReShade and Luma are not used by this mod.");
             Log($"Press {GetConfiguredHotkeyName()} to open the extra-sigil selector.");
+            CompleteStartupPhase("managed-initialize", managedStartupStarted);
         }
         catch (Exception exception)
         {
@@ -240,6 +274,7 @@ public sealed partial class Mod : IMod
                 }
             }
             DetachHotkeyConfiguration()?.DisposeEvents();
+            CompleteStartupPhase("managed-initialize", managedStartupStarted, false);
             Log($"Initialization failed: {exception}");
         }
     }
@@ -279,24 +314,86 @@ public sealed partial class Mod : IMod
     private void Log(string message)
     {
         string line = $"[{ModId}] {message}";
+        ILogger? logger;
         lock (_logLock)
         {
+            logger = _logger;
             try
             {
-                _logger?.WriteLine(line);
                 _fileLog?.WriteLine(line);
             }
             catch
             {
-                // Logging must never tear down the render callback.
+                // File logging must never tear down the render callback.
             }
         }
+        try
+        {
+            logger?.WriteLine(line);
+        }
+        catch
+        {
+            // External logger failures must not affect the mod lifecycle.
+        }
+    }
+
+    private long BeginStartupPhase(string phase)
+    {
+        Log($"Startup phase={phase} state=begin.");
+        return Stopwatch.GetTimestamp();
+    }
+
+    private void CompleteStartupPhase(string phase, long startedAt, bool succeeded = true)
+    {
+        long elapsedMilliseconds =
+            (long)Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+        Log(
+            $"Startup phase={phase} state={(succeeded ? "complete" : "failed")} " +
+            $"elapsed_ms={elapsedMilliseconds}."
+        );
+    }
+
+    private void QueueExecutableHashDiagnostic()
+    {
+        CancellationTokenSource cancellation = new();
+        Task diagnosticTask;
+        lock (_lifecycleLock)
+        {
+            if (_disposed || _executableHashTask is not null)
+            {
+                cancellation.Dispose();
+                return;
+            }
+            _executableHashCancellation = cancellation;
+            diagnosticTask = ExecutableHashDiagnostic.Start(
+                Environment.ProcessPath,
+                Log,
+                cancellation.Token);
+            _executableHashTask = diagnosticTask;
+        }
+
+        _ = diagnosticTask.ContinueWith(
+            _ =>
+            {
+                lock (_lifecycleLock)
+                {
+                    if (ReferenceEquals(_executableHashTask, diagnosticTask))
+                        _executableHashTask = null;
+                    if (ReferenceEquals(_executableHashCancellation, cancellation))
+                        _executableHashCancellation = null;
+                }
+                cancellation.Dispose();
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
     }
 
     private void Dispose()
     {
         SigilOverlayUi? ui;
         HotkeyConfig? hotkeyConfiguration;
+        CancellationTokenSource? executableHashCancellation;
         bool destroyImgui;
         bool shutdownCore;
         lock (_imguiOperationLock)
@@ -313,6 +410,9 @@ public sealed partial class Mod : IMod
                 shutdownCore = _nativeCoreActive;
                 hotkeyConfiguration = _hotkeyConfiguration;
                 _hotkeyConfiguration = null;
+                executableHashCancellation = _executableHashCancellation;
+                _executableHashCancellation = null;
+                _executableHashTask = null;
                 _imguiCreated = false;
                 _nativeCoreActive = false;
                 _started = false;
@@ -324,6 +424,14 @@ public sealed partial class Mod : IMod
                 ImguiHook.Disable();
         }
         hotkeyConfiguration?.DisposeEvents();
+        try
+        {
+            executableHashCancellation?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // A synchronously completed diagnostic may already own disposal.
+        }
 
         bool renderDrained = SpinWait.SpinUntil(
             () => Volatile.Read(ref _activeRenderCallbacks) == 0,
