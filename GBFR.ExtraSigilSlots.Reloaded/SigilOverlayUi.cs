@@ -15,6 +15,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
 
     private readonly Action<bool> _setInputCapture;
     private readonly Action<string> _log;
+    private readonly bool _brokerOwnsMouseCapture;
     private readonly MouseInteractionGate _mouseInteractionGate = new();
     private readonly List<NativeCore.InventoryView> _inventory = [];
     private readonly Dictionary<uint, NativeCore.InventoryView> _inventoryBySlot = [];
@@ -36,7 +37,6 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
     private bool _windowOpen;
     private int _pickerSlot = -1;
     private bool _pickerOpen = true;
-    private int _lastLoggedInventoryCount = -1;
     private bool _hasSavedClipRect;
     private NativeRect _savedClipRect;
     private IntPtr _savedCaptureWindow;
@@ -45,11 +45,13 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
     internal SigilOverlayUi(
         string modDirectory,
         Action<bool> setInputCapture,
-        Action<string> log)
+        Action<string> log,
+        bool brokerOwnsMouseCapture = false)
     {
         _presetStore = new SigilPresetStore(modDirectory, log);
         _setInputCapture = setInputCapture;
         _log = log;
+        _brokerOwnsMouseCapture = brokerOwnsMouseCapture;
     }
 
     internal void RenderFrame()
@@ -64,7 +66,8 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
             openedThisFrame = _windowOpen;
         }
 
-        ImGui.GetIO().MouseDrawCursor = _windowOpen;
+        if (!_brokerOwnsMouseCapture)
+            ImGui.GetIO().MouseDrawCursor = _windowOpen;
         if (!_windowOpen)
             return;
 
@@ -322,11 +325,6 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
             _inventory.Add(item);
             _inventoryBySlot[item.Gem.SlotId] = item;
         }
-        if (_inventory.Count != _lastLoggedInventoryCount)
-        {
-            _lastLoggedInventoryCount = _inventory.Count;
-            _log($"Inventory snapshot refreshed: {_inventory.Count} valid physical records scanned.");
-        }
     }
 
     private void LoadSelection(uint characterHash)
@@ -460,13 +458,17 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         if (open)
         {
             _mouseInteractionGate.Open();
-            ResetImGuiMouseState();
-            BeginReleasedMouse();
+            if (!_brokerOwnsMouseCapture)
+            {
+                ResetImGuiMouseState();
+                BeginReleasedMouse();
+            }
         }
         else
         {
             _mouseInteractionGate.Close();
-            RestoreMouseCapture();
+            if (!_brokerOwnsMouseCapture)
+                RestoreMouseCapture();
         }
         if (!open)
         {

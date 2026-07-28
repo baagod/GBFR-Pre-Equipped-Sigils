@@ -22,11 +22,16 @@ internal sealed unsafe class CjkConfiguredDx11Hook : IImguiHook
         string modDirectory,
         Action presentTick,
         Func<bool> shouldRenderFrontend,
-        Action<string> log)
+        Action<string> log,
+        Action onPermanentFailure)
     {
         _modDirectory = modDirectory;
         _log = log;
-        _inner = new SafeImguiHookDx11(presentTick, shouldRenderFrontend, log);
+        _inner = new SafeImguiHookDx11(
+            presentTick,
+            shouldRenderFrontend,
+            log,
+            onPermanentFailure);
     }
 
     public bool IsApiSupported() => _inner.IsApiSupported();

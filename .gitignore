@@ -1,11 +1,13 @@
 **/bin/
 **/obj/
 dist/
+.tmp-*/
 .vs/
 *.user
 *.suo
 *.VC.db
 *.pdb
 *.ilk
+*.zip
 GBFR-ExtraSigilSlots.presets.json
 GBFR-ExtraSigilSlots20.presets.json

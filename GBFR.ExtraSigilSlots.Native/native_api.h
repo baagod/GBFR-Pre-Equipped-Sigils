@@ -10,10 +10,13 @@
 
 #define GBFR20_CALL __cdecl
 
-constexpr uint32_t GBFR20_ABI_VERSION = 10;
+constexpr uint32_t GBFR20_ABI_VERSION = 11;
 constexpr uint32_t GBFR20_VIRTUAL_SLOT_CAPACITY = 24;
 constexpr uint32_t GBFR20_OWNER_CHARACTER_CAPACITY = 4;
 constexpr uint32_t GBFR20_PRESET_CHARACTER_CAPACITY = 32;
+constexpr uint32_t GBFR20_INPUT_CAPTURE_KEYBOARD = 1u << 0;
+constexpr uint32_t GBFR20_INPUT_CAPTURE_MOUSE = 1u << 1;
+constexpr uint32_t GBFR20_INPUT_CAPTURE_TEXT = 1u << 2;
 
 constexpr int32_t GBFR20_PRESET_SLOT_EMPTY = 0;
 constexpr int32_t GBFR20_PRESET_SLOT_APPLIED = 1;
@@ -177,7 +180,9 @@ GBFR20_API int32_t GBFR20_CALL GBFR20_SetAutoApply(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetShowEquipped(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetToggleKey(int32_t virtual_key);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetLanguage(int32_t language);
+GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputHooksEnabled(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCapture(int32_t requested);
+GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCaptureDevices(uint32_t requested_devices);
 GBFR20_API int32_t GBFR20_CALL GBFR20_GetInputCaptureActive();
 GBFR20_API int32_t GBFR20_CALL GBFR20_IsInventoryDirty();
 GBFR20_API int32_t GBFR20_CALL GBFR20_CanEditCharacter(uint32_t character_hash);

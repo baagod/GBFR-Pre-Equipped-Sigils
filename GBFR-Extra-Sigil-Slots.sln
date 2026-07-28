@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GBFR.ExtraSigilSlots.Reload
 		{EA487275-D25A-4993-B259-68B9A28E727A} = {EA487275-D25A-4993-B259-68B9A28E727A}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GBFR.OverlayHub.Contracts", "GBFR.OverlayHub.Contracts\GBFR.OverlayHub.Contracts.csproj", "{0F5EEC55-3512-4DD5-93F1-9D1C9172F78B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,6 +25,10 @@ Global
 		{5A01C06F-86B5-4C59-A1E3-DC6F56C7798D}.Debug|x64.Build.0 = Debug|Any CPU
 		{5A01C06F-86B5-4C59-A1E3-DC6F56C7798D}.Release|x64.ActiveCfg = Release|Any CPU
 		{5A01C06F-86B5-4C59-A1E3-DC6F56C7798D}.Release|x64.Build.0 = Release|Any CPU
+		{0F5EEC55-3512-4DD5-93F1-9D1C9172F78B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F5EEC55-3512-4DD5-93F1-9D1C9172F78B}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F5EEC55-3512-4DD5-93F1-9D1C9172F78B}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F5EEC55-3512-4DD5-93F1-9D1C9172F78B}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

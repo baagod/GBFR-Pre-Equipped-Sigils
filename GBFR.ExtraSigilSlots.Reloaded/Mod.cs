@@ -1,14 +1,13 @@
 using System.Diagnostics;
 using Reloaded.Hooks.ReloadedII.Interfaces;
-using Reloaded.Imgui.Hook;
-using Reloaded.Imgui.Hook.Direct3D11;
-using Reloaded.Imgui.Hook.Implementations;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
+using GBFR.OverlayHub.Contracts;
+using GBFR.OverlayHub.Runtime;
 
 namespace GBFR.ExtraSigilSlots.Reloaded;
 
-public sealed partial class Mod : IMod
+public sealed partial class Mod : IMod, IExports
 {
     private const string ModId = "GBFR.ExtraSigilSlots.Reloaded";
 
@@ -20,26 +19,32 @@ public sealed partial class Mod : IMod
     private SigilOverlayUi? _ui;
     private bool _starting;
     private bool _started;
-    private bool _imguiCreated;
     private bool _nativeCoreActive;
     private bool _disposed;
     private CancellationTokenSource? _executableHashCancellation;
     private Task? _executableHashTask;
-    private int _renderThreadLogged;
-    private int _inputCaptureLogged;
+    private IModLoader? _modLoader;
+    private IGbfrOverlayHub? _overlayHub;
+    private IGbfrOverlayRegistration? _overlayRegistration;
+    private OverlayHubClient? _overlayHubClient;
+    private bool _ownsOverlayBroker;
+    private bool _overlayHubControllerRegistered;
+    private OverlayBrokerHost? _overlayBrokerHost;
+    private bool _frontendFailClosed;
+    private int _hostedInputCapture;
     private int _renderStopping;
     private int _activeRenderCallbacks;
-    private static int s_captureInput;
-    private static int s_hasOriginalWndProc;
-    private static int s_capturedRawInputMessages;
-    private static int s_capturedMouseKeyboardMessages;
     private static int s_pendingAnsiLeadByte;
     private static int s_pendingAnsiCodePage;
     private static int s_imeCompositionActive;
     private static int s_imeResultInjected;
-    private static WndProcHook.WndProc s_originalWndProc;
 
     public Action Disposing => Dispose;
+
+    public Type[] GetTypes() =>
+    [
+        typeof(IGbfrOverlayHub),
+    ];
 
     public void Start(IModLoaderV1 loader) => QueueStart(loader, ModId);
 
@@ -52,13 +57,13 @@ public sealed partial class Mod : IMod
         {
             lock (_lifecycleLock)
             {
-                if (!_started || !_imguiCreated || _disposed)
+                if (!_started || _disposed)
                     return;
             }
             ForceReleaseInputCapture();
             Volatile.Write(ref _renderStopping, 1);
             _ui?.Close();
-            ImguiHook.Disable();
+            _overlayRegistration?.SetEnabled(false);
         }
     }
 
@@ -68,11 +73,11 @@ public sealed partial class Mod : IMod
         {
             lock (_lifecycleLock)
             {
-                if (!_started || !_imguiCreated || _disposed)
+                if (!_started || _disposed)
                     return;
             }
             Volatile.Write(ref _renderStopping, 0);
-            ImguiHook.Enable();
+            _overlayRegistration?.SetEnabled(true);
         }
     }
 
@@ -91,12 +96,36 @@ public sealed partial class Mod : IMod
             _starting = true;
         }
 
-        _ = StartCoreAsync(loaderApi, modId);
+        IModLoader loader = (IModLoader)loaderApi;
+        _modLoader = loader;
+        lock (_logLock)
+            _logger = (ILogger)loader.GetLogger();
+        try
+        {
+            var election = OverlayBrokerElectionService.Elect(loader, this, modId, Log);
+            _ownsOverlayBroker = election.IsHost;
+            _overlayHubControllerRegistered = election.IsHost;
+            _ = StartCoreAsync(loaderApi, modId, election);
+        }
+        catch (Exception exception)
+        {
+            lock (_lifecycleLock)
+                _starting = false;
+            Log($"Overlay Broker election failed closed: {exception}");
+        }
     }
 
-    private async Task StartCoreAsync(IModLoaderV1 loaderApi, string modId)
+    private async Task StartCoreAsync(
+        IModLoaderV1 loaderApi,
+        string modId,
+        OverlayBrokerElection election)
     {
+        IGbfrOverlayHub overlayHub = election.Hub;
         long managedStartupStarted = Stopwatch.GetTimestamp();
+        IGbfrOverlayRegistration? pendingRegistration = null;
+        OverlayHubClient? pendingClient = null;
+        OverlayBrokerHost? pendingBrokerHost = null;
+        bool frontendFailClosed = false;
         try
         {
             IModLoader loader = (IModLoader)loaderApi;
@@ -141,9 +170,32 @@ public sealed partial class Mod : IMod
             }
             CompleteStartupPhase("reloaded-hooks-controller", hooksControllerStarted);
 
+            try
+            {
+                pendingClient = new OverlayHubClient(this);
+                pendingRegistration = overlayHub.Register(pendingClient);
+                if (!pendingRegistration.SetEnabled(false))
+                    throw new InvalidOperationException("Overlay Broker rejected peer initialization.");
+                Log(
+                    $"Extra Sigil registered as a normal Overlay Broker peer; " +
+                    $"bootstrap='{overlayHub.HostModId}', local_bootstrap={election.IsHost}.");
+            }
+            catch (Exception exception)
+            {
+                pendingRegistration?.Dispose();
+                pendingRegistration = null;
+                pendingClient = null;
+                frontendFailClosed = true;
+                Log(
+                    "Overlay Broker could not accept the Extra Sigil peer; its frontend failed " +
+                    $"closed while gameplay hooks continue: {exception.GetType().Name}: {exception.Message}");
+            }
+
             long nativeStarted = BeginStartupPhase("native-core");
             NativeCore.Configure(modDirectory);
-            bool hooksReady = NativeCore.Initialize(Log);
+            bool hooksReady = NativeCore.Initialize(
+                Log,
+                enableInputHooks: election.IsHost);
             CompleteStartupPhase("native-core", nativeStarted, hooksReady);
             bool shutdownImmediately;
             lock (_lifecycleLock)
@@ -156,6 +208,7 @@ public sealed partial class Mod : IMod
             }
             if (shutdownImmediately)
             {
+                pendingRegistration?.Dispose();
                 NativeCore.Shutdown();
                 return;
             }
@@ -178,43 +231,57 @@ public sealed partial class Mod : IMod
             InitializeHotkeyConfiguration(loader, modId, initialToggleKey);
             CompleteStartupPhase("hotkey-configuration", hotkeyStarted);
 
-            long imguiSdkStarted = BeginStartupPhase("imgui-sdk");
-            SDK.Init(hooks, message =>
+            if (election.IsHost)
             {
-                if (!message.Contains(
-                        "Discarding via Recursion Lock",
-                        StringComparison.Ordinal))
+                try
                 {
-                    Log($"Reloaded.Imgui.Hook: {message}");
-                }
-            });
-            CompleteStartupPhase("imgui-sdk", imguiSdkStarted);
-
-            long imguiHookStarted = BeginStartupPhase("imgui-hook-create");
-            await ImguiHook.Create(
-                    Render,
-                    new ImguiHookOptions
-                    {
-                        // The selector lives inside the game window. Extra platform
-                        // windows add another DXGI/compositor path and can leave
-                        // transient black trails while the mouse is moving.
-                        EnableViewports = false,
-                        CustomWndProcHandlerPointer = GetWndProcHandlerPointer(),
-                        Implementations = new List<IImguiHook>
+                    long brokerStarted = BeginStartupPhase("overlay-broker-host");
+                    pendingBrokerHost = new OverlayBrokerHost(
+                        election.HostControl!,
+                        Log,
+                        carrierUpkeep: NativeCore.Tick,
+                        setNativeInputCapture: devices =>
                         {
-                            new CjkConfiguredDx11Hook(
-                                modDirectory,
-                                NativeCore.Tick,
-                                static () => FrontendOverlayGate.ShouldRenderFrame,
-                                Log),
+                            if (!NativeCore.SetInputCaptureDevices((uint)devices))
+                                throw new InvalidOperationException("Native input writer rejected Broker capture state.");
                         },
-                    }
-                )
-                .ConfigureAwait(false);
-            CompleteStartupPhase("imgui-hook-create", imguiHookStarted);
+                        forceNativeInputRelease: NativeCore.ForceReleaseInput);
+                    await pendingBrokerHost.InitializeAsync(
+                            hooks,
+                            (tick, shouldRender, permanentFailure) =>
+                                new CjkConfiguredDx11Hook(
+                                    modDirectory,
+                                    tick,
+                                    shouldRender,
+                                    Log,
+                                    permanentFailure))
+                        .ConfigureAwait(false);
+                    CompleteStartupPhase("overlay-broker-host", brokerStarted);
+                }
+                catch (Exception exception)
+                {
+                    frontendFailClosed = true;
+                    Log(
+                        "Neutral Overlay Broker graphics initialization failed closed; gameplay " +
+                        $"hooks remain active: {exception.GetType().Name}: {exception.Message}");
+                }
+            }
 
             long overlayUiStarted = BeginStartupPhase("overlay-ui");
-            SigilOverlayUi ui = new(modDirectory, SetInputCapture, Log);
+            SigilOverlayUi ui = new(
+                modDirectory,
+                SetInputCapture,
+                Log,
+                brokerOwnsMouseCapture: true);
+            if (!frontendFailClosed && pendingRegistration?.SetEnabled(true) != true)
+            {
+                pendingRegistration?.Dispose();
+                pendingRegistration = null;
+                pendingClient = null;
+                frontendFailClosed = true;
+                Log(
+                    "Overlay Broker could not activate the Extra Sigil peer; it was disabled fail-closed.");
+            }
             bool initialized = false;
             lock (_imguiOperationLock)
             {
@@ -224,7 +291,12 @@ public sealed partial class Mod : IMod
                     if (!_disposed)
                     {
                         _ui = ui;
-                        _imguiCreated = true;
+                        _overlayHub = overlayHub;
+                        _overlayRegistration = pendingRegistration;
+                        _overlayHubClient = pendingClient;
+                        _ownsOverlayBroker = election.IsHost;
+                        _overlayBrokerHost = pendingBrokerHost;
+                        _frontendFailClosed = frontendFailClosed;
                         _started = true;
                         Volatile.Write(ref _renderStopping, 0);
                         initialized = true;
@@ -233,7 +305,8 @@ public sealed partial class Mod : IMod
 
                 if (!initialized)
                 {
-                    ImguiHook.Destroy();
+                    pendingRegistration?.Dispose();
+                    pendingBrokerHost?.Dispose();
                     ui.Dispose();
                 }
             }
@@ -246,12 +319,20 @@ public sealed partial class Mod : IMod
             }
 
             CompleteStartupPhase("overlay-ui", overlayUiStarted);
-            Log("Direct3D11 Reloaded ImGui frontend initialized; ReShade and Luma are not used by this mod.");
-            Log($"Press {GetConfiguredHotkeyName()} to open the extra-sigil selector.");
+            Log(
+                frontendFailClosed
+                    ? "Extra-sigil gameplay core initialized, but its Broker peer frontend is unavailable."
+                    : election.IsHost
+                        ? "Extra Sigil bootstrapped the neutral Overlay Broker and registered itself as an ordinary peer."
+                        : "Extra Sigil joined the existing Overlay Broker as an ordinary peer; no second Present, WndProc or DirectInput writer was installed.");
+            if (!frontendFailClosed)
+                Log($"Press {GetConfiguredHotkeyName()} to open the extra-sigil selector.");
             CompleteStartupPhase("managed-initialize", managedStartupStarted);
         }
         catch (Exception exception)
         {
+            pendingRegistration?.Dispose();
+            pendingBrokerHost?.Dispose();
             bool shutdownCore;
             lock (_imguiOperationLock)
             {
@@ -286,18 +367,7 @@ public sealed partial class Mod : IMod
         {
             if (Volatile.Read(ref _renderStopping) != 0)
                 return;
-            if (Interlocked.CompareExchange(ref _renderThreadLogged, 1, 0) == 0)
-                Log($"First Direct3D11 Present callback: OS TID {GetCurrentThreadId()}.");
             _ui?.RenderFrame();
-            if (Volatile.Read(ref s_capturedRawInputMessages) +
-                    Volatile.Read(ref s_capturedMouseKeyboardMessages) > 0 &&
-                Interlocked.CompareExchange(ref _inputCaptureLogged, 1, 0) == 0)
-            {
-                Log(
-                    $"GUI input capture confirmed: raw={Volatile.Read(ref s_capturedRawInputMessages)}, " +
-                    $"mouse/keyboard={Volatile.Read(ref s_capturedMouseKeyboardMessages)}."
-                );
-            }
         }
         catch (Exception exception)
         {
@@ -394,7 +464,10 @@ public sealed partial class Mod : IMod
         SigilOverlayUi? ui;
         HotkeyConfig? hotkeyConfiguration;
         CancellationTokenSource? executableHashCancellation;
-        bool destroyImgui;
+        IGbfrOverlayRegistration? overlayRegistration;
+        OverlayBrokerHost? brokerHost;
+        IModLoader? modLoader;
+        bool removeBrokerController;
         bool shutdownCore;
         lock (_imguiOperationLock)
         {
@@ -406,23 +479,27 @@ public sealed partial class Mod : IMod
                 _disposed = true;
                 ui = _ui;
                 _ui = null;
-                destroyImgui = _imguiCreated;
                 shutdownCore = _nativeCoreActive;
                 hotkeyConfiguration = _hotkeyConfiguration;
                 _hotkeyConfiguration = null;
                 executableHashCancellation = _executableHashCancellation;
+                overlayRegistration = _overlayRegistration;
+                brokerHost = _overlayBrokerHost;
+                _overlayBrokerHost = null;
+                modLoader = _modLoader;
+                removeBrokerController = _overlayHubControllerRegistered;
+                _overlayHubControllerRegistered = false;
                 _executableHashCancellation = null;
                 _executableHashTask = null;
-                _imguiCreated = false;
                 _nativeCoreActive = false;
                 _started = false;
             }
 
             ForceReleaseInputCapture();
             Volatile.Write(ref _renderStopping, 1);
-            if (destroyImgui)
-                ImguiHook.Disable();
         }
+        overlayRegistration?.SetEnabled(false);
+        overlayRegistration?.Dispose();
         hotkeyConfiguration?.DisposeEvents();
         try
         {
@@ -441,12 +518,13 @@ public sealed partial class Mod : IMod
         {
             lock (_imguiOperationLock)
             {
-                if (destroyImgui)
-                    ImguiHook.Destroy();
                 ui?.Dispose();
             }
+            brokerHost?.Dispose();
             if (shutdownCore)
                 NativeCore.Shutdown();
+            if (removeBrokerController && modLoader is not null)
+                modLoader.RemoveController<IGbfrOverlayHub>();
         }
         else
         {

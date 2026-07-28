@@ -2,7 +2,7 @@
   "ModId": "GBFR.ExtraSigilSlots.Reloaded",
   "ModName": "GBFR Extra Sigil Slots - Reloaded ImGui (ER 2.0.2)",
   "ModAuthor": "Hiyajomaho-num9",
-  "ModVersion": "0.7.5",
+  "ModVersion": "0.7.6",
   "ModDescription": "Reloaded-II-only configurable extra-sigil selector for ER 2.0.2 with 1-24 virtual slots, named multi-character presets, usage filters and safe ownership transfer, a compact bilingual UI, Chinese IME support, localized character names, and a Reloaded-II configurable hotkey (F8 by default). No ReShade or Luma dependency.",
   "ModDll": "GBFR.ExtraSigilSlots.Reloaded.dll",
   "ModIcon": "",
@@ -12,7 +12,7 @@
   "ModNativeDll64": "",
   "Tags": [],
   "CanUnload": false,
-  "HasExports": false,
+  "HasExports": true,
   "IsLibrary": false,
   "ReleaseMetadataFileName": "GBFR.ExtraSigilSlots.Reloaded.ReleaseMetadata.json",
   "PluginData": {},
@@ -20,7 +20,9 @@
   "ModDependencies": [
     "reloaded.sharedlib.hooks"
   ],
-  "OptionalDependencies": [],
+  "OptionalDependencies": [
+    "gbfr.qol.chatoverlay"
+  ],
   "SupportedAppId": [
     "granblue_fantasy_relink.exe"
   ],

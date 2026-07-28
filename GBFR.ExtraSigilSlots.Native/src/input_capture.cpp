@@ -13,7 +13,10 @@ SafetyHookInline g_direct_input_get_state_hook_secondary;
 SafetyHookInline g_direct_input_get_data_hook_secondary;
 std::atomic_bool g_input_capture_requested{false};
 std::atomic_bool g_input_capture_effective{false};
+std::atomic_uint32_t g_input_capture_requested_devices{0};
+std::atomic_uint32_t g_input_capture_effective_devices{0};
 std::atomic_uint32_t g_input_neutral_frames{0};
+std::atomic_bool g_input_hooks_enabled{true};
 std::atomic_bool g_input_iat_hooks_ready{false};
 std::atomic_bool g_direct_input_hook_ready{false};
 std::atomic_uintptr_t g_direct_input_mouse_device{0};
@@ -32,6 +35,22 @@ std::atomic_uint32_t g_active_input_calls{0};
 
 namespace
 {
+bool IsInputDeviceCaptured(uint32_t device) noexcept
+{
+   return (g_input_capture_effective_devices.load(std::memory_order_acquire) & device) != 0;
+}
+
+bool ShouldDiscardDirectInput(uintptr_t device_address) noexcept
+{
+   if (device_address == 0)
+      return false;
+   if (device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire))
+      return IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_KEYBOARD);
+   if (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire))
+      return IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_MOUSE);
+   return false;
+}
+
 constexpr GUID kDirectInputSystemMouse = {
    0x6F1D2B60,
    0xD5A0,
@@ -212,7 +231,7 @@ bool PatchMainModuleImport(
 SHORT WINAPI GetAsyncKeyStateDetour(int virtual_key)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   if (g_input_capture_effective.load(std::memory_order_acquire))
+   if (IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_KEYBOARD))
       return 0;
    return g_original_get_async_key_state != nullptr
       ? g_original_get_async_key_state(virtual_key)
@@ -222,7 +241,7 @@ SHORT WINAPI GetAsyncKeyStateDetour(int virtual_key)
 SHORT WINAPI GetKeyStateDetour(int virtual_key)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   if (g_input_capture_effective.load(std::memory_order_acquire))
+   if (IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_KEYBOARD))
       return 0;
    return g_original_get_key_state != nullptr ? g_original_get_key_state(virtual_key) : 0;
 }
@@ -234,7 +253,7 @@ BOOL WINAPI GetKeyboardStateDetour(PBYTE key_state)
       ? g_original_get_keyboard_state(key_state)
       : FALSE;
    if (result != FALSE && key_state != nullptr &&
-       g_input_capture_effective.load(std::memory_order_acquire))
+       IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_KEYBOARD))
       std::memset(key_state, 0, 256);
    return result;
 }
@@ -242,7 +261,7 @@ BOOL WINAPI GetKeyboardStateDetour(PBYTE key_state)
 BOOL WINAPI GetCursorPosDetour(LPPOINT point)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   if (g_input_capture_effective.load(std::memory_order_acquire))
+   if (IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_MOUSE))
    {
       if (point != nullptr)
          *point = g_frozen_cursor_position;
@@ -254,7 +273,7 @@ BOOL WINAPI GetCursorPosDetour(LPPOINT point)
 BOOL WINAPI SetCursorPosDetour(int x, int y)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   if (g_input_capture_effective.load(std::memory_order_acquire))
+   if (IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_MOUSE))
       return TRUE;
    return g_original_set_cursor_pos != nullptr ? g_original_set_cursor_pos(x, y) : FALSE;
 }
@@ -262,7 +281,7 @@ BOOL WINAPI SetCursorPosDetour(int x, int y)
 BOOL WINAPI ClipCursorDetour(const RECT* rectangle)
 {
    ActiveCallGuard guard(g_active_input_calls);
-   if (g_input_capture_effective.load(std::memory_order_acquire))
+   if (IsInputDeviceCaptured(GBFR20_INPUT_CAPTURE_MOUSE))
    {
       if (g_original_clip_cursor != nullptr)
          (void)g_original_clip_cursor(nullptr);
@@ -395,10 +414,7 @@ HRESULT __fastcall DirectInputGetDeviceStateDetour(
    const HRESULT result = g_direct_input_get_state_hook.call<HRESULT>(
       device, data_size, data);
    const uintptr_t device_address = reinterpret_cast<uintptr_t>(device);
-   const bool discard_input =
-      (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire) ||
-       device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire)) &&
-      g_input_capture_effective.load(std::memory_order_acquire);
+   const bool discard_input = ShouldDiscardDirectInput(device_address);
    if (SUCCEEDED(result) && data != nullptr && data_size != 0 && discard_input)
       std::memset(data, 0, data_size);
    return result;
@@ -413,10 +429,7 @@ HRESULT __fastcall DirectInputGetDeviceStateDetourSecondary(
    const HRESULT result = g_direct_input_get_state_hook_secondary.call<HRESULT>(
       device, data_size, data);
    const uintptr_t device_address = reinterpret_cast<uintptr_t>(device);
-   const bool discard_input =
-      (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire) ||
-       device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire)) &&
-      g_input_capture_effective.load(std::memory_order_acquire);
+   const bool discard_input = ShouldDiscardDirectInput(device_address);
    if (SUCCEEDED(result) && data != nullptr && data_size != 0 && discard_input)
       std::memset(data, 0, data_size);
    return result;
@@ -431,10 +444,7 @@ HRESULT __fastcall DirectInputGetDeviceDataDetour(
 {
    ActiveCallGuard guard(g_active_input_calls);
    const uintptr_t device_address = reinterpret_cast<uintptr_t>(device);
-   const bool discard_buffered_input =
-      (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire) ||
-       device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire)) &&
-      g_input_capture_effective.load(std::memory_order_acquire);
+   const bool discard_buffered_input = ShouldDiscardDirectInput(device_address);
    const DWORD forwarded_flags = discard_buffered_input && object_data != nullptr &&
          object_count != nullptr
       ? flags & ~DIGDD_PEEK
@@ -458,10 +468,7 @@ HRESULT __fastcall DirectInputGetDeviceDataDetourSecondary(
 {
    ActiveCallGuard guard(g_active_input_calls);
    const uintptr_t device_address = reinterpret_cast<uintptr_t>(device);
-   const bool discard_buffered_input =
-      (device_address == g_direct_input_mouse_device.load(std::memory_order_acquire) ||
-       device_address == g_direct_input_keyboard_device.load(std::memory_order_acquire)) &&
-      g_input_capture_effective.load(std::memory_order_acquire);
+   const bool discard_buffered_input = ShouldDiscardDirectInput(device_address);
    const DWORD forwarded_flags = discard_buffered_input && object_data != nullptr &&
          object_count != nullptr
       ? flags & ~DIGDD_PEEK
@@ -625,9 +632,20 @@ void TryInstallDirectInputFactoryHook(void* factory)
    }
 }
 
-bool IsPhysicalInputNeutral()
+bool IsPhysicalInputNeutral(uint32_t devices)
 {
-   if (g_original_get_async_key_state != nullptr)
+   if (g_original_get_async_key_state == nullptr)
+      return true;
+
+   if ((devices & GBFR20_INPUT_CAPTURE_MOUSE) != 0)
+   {
+      constexpr int mouse_buttons[] = {
+         VK_LBUTTON, VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2};
+      for (const int button : mouse_buttons)
+         if ((g_original_get_async_key_state(button) & 0x8000) != 0)
+            return false;
+   }
+   if ((devices & GBFR20_INPUT_CAPTURE_KEYBOARD) != 0)
    {
       for (int key = VK_BACK; key <= 0xFE; ++key)
          if ((g_original_get_async_key_state(key) & 0x8000) != 0)
@@ -745,15 +763,26 @@ bool InstallInputIatHooks()
 
 void UpdateInputCaptureBarrier()
 {
-   if (g_input_capture_requested.load(std::memory_order_acquire))
+   const uint32_t requested =
+      g_input_capture_requested_devices.load(std::memory_order_acquire);
+   uint32_t effective =
+      g_input_capture_effective_devices.load(std::memory_order_acquire);
+   const uint32_t added = requested & ~effective;
+   if (added != 0)
+   {
+      effective |= added;
+      g_input_capture_effective_devices.store(effective, std::memory_order_release);
+      g_input_capture_effective.store(true, std::memory_order_release);
+   }
+
+   const uint32_t pending_release = effective & ~requested;
+   if (pending_release == 0)
    {
       g_input_neutral_frames.store(0, std::memory_order_release);
-      g_input_capture_effective.store(true, std::memory_order_release);
+      g_input_capture_effective.store(effective != 0, std::memory_order_release);
       return;
    }
-   if (!g_input_capture_effective.load(std::memory_order_acquire))
-      return;
-   if (!IsPhysicalInputNeutral())
+   if (!IsPhysicalInputNeutral(pending_release))
    {
       g_input_neutral_frames.store(0, std::memory_order_release);
       return;
@@ -761,6 +790,10 @@ void UpdateInputCaptureBarrier()
    const uint32_t neutral_frames =
       g_input_neutral_frames.fetch_add(1, std::memory_order_acq_rel) + 1;
    if (neutral_frames >= 2)
-      g_input_capture_effective.store(false, std::memory_order_release);
+   {
+      g_input_capture_effective_devices.store(requested, std::memory_order_release);
+      g_input_capture_effective.store(requested != 0, std::memory_order_release);
+      g_input_neutral_frames.store(0, std::memory_order_release);
+   }
 }
 }

@@ -9,40 +9,48 @@ string assemblyPath = Path.Combine(outputDirectory, "GBFR.ExtraSigilSlots.Reload
 PluginLoadContext context = new(assemblyPath);
 Assembly assembly = context.LoadFromAssemblyPath(assemblyPath);
 Type classifierType = assembly.GetType(
-    "GBFR.ExtraSigilSlots.Reloaded.RawInputClassifier",
+    "GBFR.OverlayHub.Runtime.OverlayWindowInputClassifier",
     throwOnError: true)!;
-MethodInfo classifier = classifierType.GetMethod(
-    "IsKeyboardOrMouse",
-    BindingFlags.NonPublic | BindingFlags.Static
-) ?? throw new MissingMethodException(classifierType.FullName, "IsKeyboardOrMouse");
 
-(uint Type, bool Capture, string Name)[] cases =
-[
-    (0, true, "mouse"),
-    (1, true, "keyboard"),
-    (2, false, "HID/controller"),
-    (3, false, "unknown/future"),
-];
-foreach ((uint type, bool expected, string name) in cases)
-{
-    bool actual = (bool)(classifier.Invoke(null, [type]) ?? false);
-    if (actual != expected)
-        throw new InvalidOperationException(
-            $"Raw input type {type} ({name}): expected capture={expected}, got {actual}."
-        );
-    Console.WriteLine($"RAW_TYPE={type} NAME={name} CAPTURE={actual}");
-}
-
-Console.WriteLine("RAW_INPUT_CLASSIFICATION=PASS");
-
-Type windowClassifierType = assembly.GetType(
-    "GBFR.ExtraSigilSlots.Reloaded.WindowInputClassifier",
-    throwOnError: true
-)!;
-MethodInfo windowClassifier = windowClassifierType.GetMethod(
+MethodInfo alwaysCaptured = classifierType.GetMethod(
     "IsAlwaysCaptured",
-    BindingFlags.NonPublic | BindingFlags.Static
-) ?? throw new MissingMethodException(windowClassifierType.FullName, "IsAlwaysCaptured");
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(classifierType.FullName, "IsAlwaysCaptured");
+MethodInfo shouldCapture = classifierType.GetMethod(
+    "ShouldCapture",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(classifierType.FullName, "ShouldCapture");
+MethodInfo shouldCaptureRawInputType = classifierType.GetMethod(
+    "ShouldCaptureRawInputType",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(classifierType.FullName, "ShouldCaptureRawInputType");
+
+Type devicesType = shouldCapture.GetParameters()[2].ParameterType;
+object Devices(int value) => Enum.ToObject(devicesType, value);
+
+(int Type, int Devices, bool Capture, string Name)[] rawCases =
+[
+    (0, 2, true, "mouse captured"),
+    (0, 1, false, "mouse passed through"),
+    (1, 1, true, "keyboard captured"),
+    (1, 2, false, "keyboard passed through"),
+    (2, 3, false, "HID/controller"),
+    (3, 7, false, "unknown/future"),
+];
+foreach ((int type, int devices, bool expected, string name) in rawCases)
+{
+    bool actual = (bool)(shouldCaptureRawInputType.Invoke(
+        null,
+        [type, Devices(devices)]) ?? false);
+    if (actual != expected)
+    {
+        throw new InvalidOperationException(
+            $"Raw input type {type} ({name}): expected capture={expected}, got {actual}.");
+    }
+    Console.WriteLine(
+        $"RAW_TYPE={type} DEVICES={devices} NAME={name} CAPTURE={actual}");
+}
+Console.WriteLine("BROKER_RAW_INPUT_CLASSIFICATION=PASS");
 
 (uint Message, bool Capture, string Name)[] windowCases =
 [
@@ -69,48 +77,37 @@ MethodInfo windowClassifier = windowClassifierType.GetMethod(
 ];
 foreach ((uint message, bool expected, string name) in windowCases)
 {
-    bool actual = (bool)(windowClassifier.Invoke(null, [message]) ?? false);
+    bool actual = (bool)(alwaysCaptured.Invoke(null, [message]) ?? false);
     if (actual != expected)
+    {
         throw new InvalidOperationException(
-            $"Window message 0x{message:X4} ({name}): expected capture={expected}, got {actual}."
-        );
+            $"Window message 0x{message:X4} ({name}): expected capture={expected}, got {actual}.");
+    }
     Console.WriteLine($"WINDOW_MESSAGE=0x{message:X4} NAME={name} CAPTURE={actual}");
 }
+Console.WriteLine("BROKER_WINDOW_INPUT_CLASSIFICATION=PASS");
 
-Console.WriteLine("WINDOW_INPUT_CLASSIFICATION=PASS");
-
-Type capturePolicyType = assembly.GetType(
-    "GBFR.ExtraSigilSlots.Reloaded.InputCapturePolicy",
-    throwOnError: true
-)!;
-MethodInfo capturePolicy = capturePolicyType.GetMethod(
-    "ShouldCaptureWindowMessages",
-    BindingFlags.NonPublic | BindingFlags.Static
-) ?? throw new MissingMethodException(
-    capturePolicyType.FullName,
-    "ShouldCaptureWindowMessages"
-);
-
-(bool MenuOpen, bool NativeActive, bool Capture, string Name)[] captureCases =
+(uint Message, int Devices, bool Capture, string Name)[] deviceCases =
 [
-    (true, true, true, "open menu with native barrier"),
-    (true, false, true, "open menu without native barrier"),
-    (false, false, false, "closed menu after native release"),
-    (false, true, false, "closed menu while native barrier drains"),
+    (0x0100, 1, true, "keyboard key"),
+    (0x0201, 1, false, "keyboard does not capture mouse"),
+    (0x0201, 2, true, "mouse button"),
+    (0x0100, 2, false, "mouse does not capture keyboard"),
+    (0x0102, 4, true, "text character"),
+    (0x0100, 4, false, "text does not capture key state"),
 ];
-foreach ((bool menuOpen, bool nativeActive, bool expected, string name) in captureCases)
+foreach ((uint message, int devices, bool expected, string name) in deviceCases)
 {
-    bool actual = (bool)(capturePolicy.Invoke(null, [menuOpen, nativeActive]) ?? false);
+    bool actual = (bool)(shouldCapture.Invoke(
+        null,
+        [message, IntPtr.Zero, Devices(devices)]) ?? false);
     if (actual != expected)
+    {
         throw new InvalidOperationException(
-            $"Window capture policy ({name}): expected capture={expected}, got {actual}."
-        );
-    Console.WriteLine(
-        $"MENU_OPEN={menuOpen} NATIVE_ACTIVE={nativeActive} WINDOW_CAPTURE={actual}"
-    );
+            $"Device policy ({name}): expected capture={expected}, got {actual}.");
+    }
 }
-
-Console.WriteLine("WINDOW_CAPTURE_LIFECYCLE=PASS");
+Console.WriteLine("BROKER_DEVICE_CAPTURE_POLICY=PASS");
 
 sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
 {
@@ -123,8 +120,9 @@ sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
             return LoadFromAssemblyPath(path);
         string harnessDependency = Path.Combine(
             AppContext.BaseDirectory,
-            assemblyName.Name + ".dll"
-        );
-        return File.Exists(harnessDependency) ? LoadFromAssemblyPath(harnessDependency) : null;
+            assemblyName.Name + ".dll");
+        return File.Exists(harnessDependency)
+            ? LoadFromAssemblyPath(harnessDependency)
+            : null;
     }
 }

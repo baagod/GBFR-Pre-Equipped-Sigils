@@ -306,26 +306,62 @@ int32_t GBFR20_CALL GBFR20_SetLanguage(int32_t language)
    return 1;
 }
 
+int32_t GBFR20_CALL GBFR20_SetInputHooksEnabled(int32_t enabled)
+{
+   const bool requested_mode = enabled != 0;
+   if (g_initialized.load(std::memory_order_acquire) ||
+       g_hooks_ready.load(std::memory_order_acquire) ||
+       g_input_iat_hooks_ready.load(std::memory_order_acquire) ||
+       g_direct_input_hook_ready.load(std::memory_order_acquire))
+   {
+      return g_input_hooks_enabled.load(std::memory_order_acquire) == requested_mode
+         ? 1
+         : 0;
+   }
+   g_input_hooks_enabled.store(requested_mode, std::memory_order_release);
+   return 1;
+}
+
 int32_t GBFR20_CALL GBFR20_SetInputCapture(int32_t requested)
 {
    if (requested < 0)
    {
       g_input_capture_requested.store(false, std::memory_order_release);
       g_input_capture_effective.store(false, std::memory_order_release);
+      g_input_capture_requested_devices.store(0, std::memory_order_release);
+      g_input_capture_effective_devices.store(0, std::memory_order_release);
       g_input_neutral_frames.store(0, std::memory_order_release);
       return 1;
    }
-   const bool enable = requested != 0;
-   g_input_capture_requested.store(enable, std::memory_order_release);
-   if (enable)
+   return GBFR20_SetInputCaptureDevices(requested != 0
+      ? GBFR20_INPUT_CAPTURE_KEYBOARD | GBFR20_INPUT_CAPTURE_MOUSE
+      : 0);
+}
+
+int32_t GBFR20_CALL GBFR20_SetInputCaptureDevices(uint32_t requested_devices)
+{
+   uint32_t normalized = requested_devices &
+      (GBFR20_INPUT_CAPTURE_KEYBOARD | GBFR20_INPUT_CAPTURE_MOUSE);
+   if ((requested_devices & GBFR20_INPUT_CAPTURE_TEXT) != 0)
+      normalized |= GBFR20_INPUT_CAPTURE_KEYBOARD;
+
+   const uint32_t previous_effective =
+      g_input_capture_effective_devices.load(std::memory_order_acquire);
+   if ((normalized & GBFR20_INPUT_CAPTURE_MOUSE) != 0 &&
+       (previous_effective & GBFR20_INPUT_CAPTURE_MOUSE) == 0)
    {
       if (g_original_get_cursor_pos != nullptr)
          (void)g_original_get_cursor_pos(&g_frozen_cursor_position);
       else
          (void)GetCursorPos(&g_frozen_cursor_position);
-      g_input_neutral_frames.store(0, std::memory_order_release);
-      g_input_capture_effective.store(true, std::memory_order_release);
    }
+
+   g_input_capture_requested_devices.store(normalized, std::memory_order_release);
+   g_input_capture_requested.store(normalized != 0, std::memory_order_release);
+   const uint32_t effective = previous_effective | normalized;
+   g_input_capture_effective_devices.store(effective, std::memory_order_release);
+   g_input_capture_effective.store(effective != 0, std::memory_order_release);
+   g_input_neutral_frames.store(0, std::memory_order_release);
    return 1;
 }
 

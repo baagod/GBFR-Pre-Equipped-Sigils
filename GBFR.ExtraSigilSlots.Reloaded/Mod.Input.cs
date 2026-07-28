@@ -1,143 +1,42 @@
 using DearImguiSharp;
-using Reloaded.Imgui.Hook;
-using Reloaded.Imgui.Hook.Implementations;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using GBFR.OverlayHub.Contracts;
 
 namespace GBFR.ExtraSigilSlots.Reloaded;
 
 public sealed partial class Mod
 {
-    private static void SetInputCapture(bool capture)
+    private void SetInputCapture(bool capture)
     {
-        bool nativeBarrierActive = capture;
-        try
+        if (_frontendFailClosed)
         {
-            NativeCore.SetInputCapture(capture);
-            nativeBarrierActive = NativeCore.IsInputCaptureActive();
-        }
-        catch
-        {
-            // Keep the Win32 barrier available even if the native input layer is unavailable.
-        }
-
-        // The native polling barrier may remain active briefly after closing so
-        // a held key or mouse button cannot leak into the game. Window messages
-        // must follow menu visibility immediately; otherwise non-client mouse
-        // messages stay swallowed and a borderless game window cannot be moved.
-        int captureValue = InputCapturePolicy.ShouldCaptureWindowMessages(
-            capture,
-            nativeBarrierActive
-        ) ? 1 : 0;
-        int previousValue = Interlocked.Exchange(ref s_captureInput, captureValue);
-        if (previousValue != captureValue)
+            Volatile.Write(ref _hostedInputCapture, 0);
             ClearTextInputState();
-    }
+            return;
+        }
 
-    private static void ForceReleaseInputCapture()
-    {
-        try
-        {
-            NativeCore.ForceReleaseInput();
-        }
-        catch
-        {
-            // The native module may not have been loaded yet.
-        }
-        Volatile.Write(ref s_captureInput, 0);
+        var devices = capture
+            ? OverlayInputDevices.Keyboard |
+              OverlayInputDevices.Mouse |
+              OverlayInputDevices.Text
+            : OverlayInputDevices.None;
+        bool accepted = _overlayRegistration?.SetInputCapture(devices) == true;
+        Volatile.Write(ref _hostedInputCapture, capture && accepted ? 1 : 0);
         ClearTextInputState();
     }
 
-    private static unsafe IntPtr GetWndProcHandlerPointer()
+    private void ForceReleaseInputCapture()
     {
-        return (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, uint, IntPtr, IntPtr, IntPtr>)&WndProcHandler;
-    }
-
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-    private static unsafe IntPtr WndProcHandler(
-        IntPtr hWnd,
-        uint message,
-        IntPtr wParam,
-        IntPtr lParam)
-    {
-        try
+        if (_frontendFailClosed)
         {
-            MouseButtonStateTracker.ObserveWindowMessage(message, wParam);
-            FrontendOverlayGate.ObserveWindowMessage(message, wParam, lParam);
-            bool captureInput = Volatile.Read(ref s_captureInput) != 0;
-            if (captureInput)
-            {
-                if (message == 0x0051)
-                    ClearTextInputState();
-                else if (message is 0x0100 or 0x0101 or 0x0104 or 0x0105)
-                {
-                    ClearPendingAnsiCharacter();
-                    if ((message == 0x0100 || message == 0x0104) &&
-                        Volatile.Read(ref s_imeResultInjected) != 0)
-                    {
-                        Volatile.Write(ref s_imeCompositionActive, 0);
-                        Volatile.Write(ref s_imeResultInjected, 0);
-                    }
-                }
-                if (TryHandleCapturedTextInput(
-                        hWnd,
-                        message,
-                        wParam,
-                        lParam,
-                        out IntPtr textResult))
-                {
-                    Interlocked.Increment(ref s_capturedMouseKeyboardMessages);
-                    return textResult;
-                }
-                ImGui.ImplWin32_WndProcHandler((void*)hWnd, message, wParam, lParam);
-                if (ImguiHook.Options?.IgnoreWindowUnactivate == true)
-                {
-                    if (message == 0x0008)
-                        return IntPtr.Zero;
-                    if ((message == 0x0006 || message == 0x001C) && wParam == IntPtr.Zero)
-                        return IntPtr.Zero;
-                }
-                if (ShouldCaptureMessage(message, lParam))
-                {
-                    if (message == 0x00FF)
-                        Interlocked.Increment(ref s_capturedRawInputMessages);
-                    else
-                        Interlocked.Increment(ref s_capturedMouseKeyboardMessages);
-                    return IntPtr.Zero;
-                }
-            }
-        }
-        catch
-        {
-            // Keep keyboard and mouse closed to the game even if ImGui throws.
-            // WM_INPUT remains fail-open here because its device type cannot be
-            // classified safely after a Raw Input inspection failure.
-            if (Volatile.Read(ref s_captureInput) != 0 &&
-                WindowInputClassifier.IsAlwaysCaptured(message))
-            {
-                Interlocked.Increment(ref s_capturedMouseKeyboardMessages);
-                return IntPtr.Zero;
-            }
+            Volatile.Write(ref _hostedInputCapture, 0);
+            ClearTextInputState();
+            return;
         }
 
-        try
-        {
-            WndProcHook? hook = WndProcHook.Instance;
-            if (hook is not null)
-            {
-                WndProcHook.WndProc original = hook.Hook.OriginalFunction;
-                s_originalWndProc = original;
-                Volatile.Write(ref s_hasOriginalWndProc, 1);
-                return original.Value.Invoke(hWnd, message, wParam, lParam);
-            }
-            if (Volatile.Read(ref s_hasOriginalWndProc) != 0)
-                return s_originalWndProc.Value.Invoke(hWnd, message, wParam, lParam);
-            return DefWindowProcW(hWnd, message, wParam, lParam);
-        }
-        catch
-        {
-            return DefWindowProcW(hWnd, message, wParam, lParam);
-        }
+        _overlayRegistration?.SetInputCapture(OverlayInputDevices.None);
+        Volatile.Write(ref _hostedInputCapture, 0);
+        ClearTextInputState();
     }
 
     private static unsafe bool TryHandleCapturedTextInput(
@@ -427,58 +326,12 @@ public sealed partial class Mod
             codePage != 0;
     }
 
-    private static bool ShouldCaptureMessage(uint message, IntPtr lParam)
-    {
-        const uint WmInput = 0x00FF;
-        return (message == WmInput && ShouldCaptureRawInput(lParam)) ||
-            WindowInputClassifier.IsAlwaysCaptured(message);
-    }
-
-    private static bool ShouldCaptureRawInput(IntPtr rawInputHandle)
-    {
-        const uint RidHeader = 0x10000005;
-        if (rawInputHandle == IntPtr.Zero)
-            return false;
-
-        uint headerSize = (uint)Marshal.SizeOf<RawInputHeader>();
-        uint dataSize = headerSize;
-        uint copied = GetRawInputData(
-            rawInputHandle,
-            RidHeader,
-            out RawInputHeader header,
-            ref dataSize,
-            headerSize
-        );
-        return copied != uint.MaxValue && copied >= headerSize &&
-            IsKeyboardOrMouseRawInputType(header.Type);
-    }
-
-    private static bool IsKeyboardOrMouseRawInputType(uint type) =>
-        RawInputClassifier.IsKeyboardOrMouse(type);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RawInputHeader
-    {
-        internal uint Type;
-        internal uint Size;
-        internal IntPtr Device;
-        internal IntPtr WParam;
-    }
-
     [DllImport("user32.dll")]
     private static extern IntPtr DefWindowProcW(
         IntPtr hWnd,
         uint message,
         IntPtr wParam,
         IntPtr lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint GetRawInputData(
-        IntPtr rawInputHandle,
-        uint command,
-        out RawInputHeader data,
-        ref uint dataSize,
-        uint headerSize);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -527,6 +380,4 @@ public sealed partial class Mod
         void* buffer,
         uint bufferLength);
 
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentThreadId();
 }

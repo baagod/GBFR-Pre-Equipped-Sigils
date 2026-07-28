@@ -8,7 +8,7 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 10;
+    internal const int AbiVersion = 11;
     internal const int DefaultVirtualSlotCount = 8;
     internal const int VirtualSlotCapacity = 24;
     internal const int OwnerCharacterCapacity = 4;
@@ -181,7 +181,7 @@ internal static unsafe partial class NativeCore
         }
     }
 
-    internal static bool Initialize(Action<string> log)
+    internal static bool Initialize(Action<string> log, bool enableInputHooks = true)
     {
         ArgumentNullException.ThrowIfNull(log);
         lock (NativeLogLock)
@@ -200,6 +200,12 @@ internal static unsafe partial class NativeCore
             {
                 throw new InvalidOperationException(
                     $"Native ABI mismatch: managed {AbiVersion}, native {abiVersion}."
+                );
+            }
+            if (NativeSetInputHooksEnabled(enableInputHooks ? 1 : 0) == 0)
+            {
+                throw new InvalidOperationException(
+                    "Native input-hook mode could not be selected before initialization."
                 );
             }
             log(
@@ -402,6 +408,9 @@ internal static unsafe partial class NativeCore
 
     internal static bool SetInputCapture(bool requested) =>
         NativeSetInputCapture(requested ? 1 : 0) != 0;
+
+    internal static bool SetInputCaptureDevices(uint requestedDevices) =>
+        NativeSetInputCaptureDevices(requestedDevices) != 0;
 
     internal static void ForceReleaseInput() => NativeSetInputCapture(-1);
 

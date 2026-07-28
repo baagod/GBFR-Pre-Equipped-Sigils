@@ -516,6 +516,8 @@ void ShutdownHooks()
    g_hooks_ready.store(false, std::memory_order_release);
    g_input_capture_requested.store(false, std::memory_order_release);
    g_input_capture_effective.store(false, std::memory_order_release);
+   g_input_capture_requested_devices.store(0, std::memory_order_release);
+   g_input_capture_effective_devices.store(0, std::memory_order_release);
    g_native_apply_call_active.store(false, std::memory_order_release);
    g_active_apply_status.store(0, std::memory_order_release);
    g_pending_refresh.store(false, std::memory_order_release);
@@ -683,7 +685,17 @@ bool InstallHooks()
    }
 
    const uint64_t input_hooks_started = BeginStartupPhase("input-iat-hooks");
-   const bool input_hooks_ready = InstallInputIatHooks();
+   const bool input_hooks_enabled =
+      g_input_hooks_enabled.load(std::memory_order_acquire);
+   const bool input_hooks_ready = input_hooks_enabled
+      ? InstallInputIatHooks()
+      : true;
+   if (!input_hooks_enabled)
+   {
+      Log(
+         "Game-local USER32 and DirectInput8 hooks were intentionally skipped; "
+         "the shared Overlay Hub owns keyboard and mouse interception.");
+   }
    CompleteStartupPhase("input-iat-hooks", input_hooks_started, input_hooks_ready);
 
    g_hooks_ready.store(true, std::memory_order_release);

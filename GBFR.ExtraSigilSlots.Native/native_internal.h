@@ -331,7 +331,10 @@ extern std::atomic_uint64_t g_natural_bind_owner_status_address;
 
 extern std::atomic_bool g_input_capture_requested;
 extern std::atomic_bool g_input_capture_effective;
+extern std::atomic_uint32_t g_input_capture_requested_devices;
+extern std::atomic_uint32_t g_input_capture_effective_devices;
 extern std::atomic_uint32_t g_input_neutral_frames;
+extern std::atomic_bool g_input_hooks_enabled;
 extern std::atomic_bool g_input_iat_hooks_ready;
 extern std::atomic_bool g_direct_input_hook_ready;
 extern std::mutex g_input_hook_mutex;

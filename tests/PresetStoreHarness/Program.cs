@@ -33,8 +33,8 @@ try
     IntPtr abiExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetAbiVersion");
     IntPtr applyExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_ApplyPreset");
     GetAbiVersion getAbiVersion = Marshal.GetDelegateForFunctionPointer<GetAbiVersion>(abiExport);
-    if (getAbiVersion() != 10 || applyExport == IntPtr.Zero)
-        throw new InvalidOperationException("Native ABI 10 preset exports are unavailable.");
+    if (getAbiVersion() != 11 || applyExport == IntPtr.Zero)
+        throw new InvalidOperationException("Native ABI 11 preset exports are unavailable.");
 }
 finally
 {
@@ -174,7 +174,7 @@ try
     Console.WriteLine("COMMITTED_REFERENCES=0");
     Console.WriteLine("CAPTURED_CHARACTERS=28");
     Console.WriteLine("LEGACY_DATA_MIGRATION=PASS");
-    Console.WriteLine("ABI_VERSION=10");
+    Console.WriteLine("ABI_VERSION=11");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
     Console.WriteLine("PRESET_RESULT_SIZE=20");
 }

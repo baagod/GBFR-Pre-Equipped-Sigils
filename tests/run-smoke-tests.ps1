@@ -50,5 +50,11 @@ Invoke-Harness `
 Invoke-Harness `
     -Project (Join-Path $PSScriptRoot 'StartupDiagnosticsHarness\StartupDiagnosticsHarness.csproj') `
     -OutputDirectory $managedOutput
+Invoke-Harness `
+    -Project (Join-Path $PSScriptRoot 'OverlayHubContractHarness\OverlayHubContractHarness.csproj') `
+    -OutputDirectory $managedOutput
+Invoke-Harness `
+    -Project (Join-Path $PSScriptRoot 'HostedImguiBindingHarness\HostedImguiBindingHarness.csproj') `
+    -OutputDirectory $managedOutput
 
 Write-Output 'ALL_SMOKE_TESTS=PASS'
