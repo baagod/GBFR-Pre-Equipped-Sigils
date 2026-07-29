@@ -46,6 +46,25 @@ internal static class OverlayBrokerElectionService
 
             if (TryGetCompatibleHub(loader, out var existing))
             {
+                if (existing is IRecoverableGbfrOverlayHub recoverable &&
+                    !recoverable.IsHostAvailable)
+                {
+                    var recoveredHost = recoverable.TryAcquireHost(modId);
+                    if (recoveredHost is not null)
+                    {
+                        try
+                        {
+                            loader.AddOrReplaceController<IGbfrOverlayHub>(owner, existing);
+                            log($"Overlay Broker election transferred the graphics-writer lease to '{modId}'.");
+                            return new OverlayBrokerElection(existing, recoveredHost);
+                        }
+                        catch
+                        {
+                            recoveredHost.MarkHostUnavailable("controller ownership transfer failed");
+                            throw;
+                        }
+                    }
+                }
                 log($"Overlay Broker election joined bootstrap peer '{existing.HostModId}'.");
                 return new OverlayBrokerElection(existing, null);
             }

@@ -24,3 +24,4 @@ The harnesses cover:
 - event-driven frontend wake-up, key-repeat suppression, and closed-frame sleeping.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.
 - deferred full-EXE SHA-256 correctness/non-blocking behavior, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.
+- recoverable Overlay Broker leases, host-generation fencing, surviving-peer rebinding, and stale-writer rejection.

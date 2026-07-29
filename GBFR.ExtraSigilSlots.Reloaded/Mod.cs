@@ -14,6 +14,7 @@ public sealed partial class Mod : IMod, IExports
     private readonly object _lifecycleLock = new();
     private readonly object _imguiOperationLock = new();
     private readonly object _logLock = new();
+    private readonly object _brokerRecoverySync = new();
     private ILogger? _logger;
     private StreamWriter? _fileLog;
     private SigilOverlayUi? _ui;
@@ -24,16 +25,20 @@ public sealed partial class Mod : IMod, IExports
     private CancellationTokenSource? _executableHashCancellation;
     private Task? _executableHashTask;
     private IModLoader? _modLoader;
+    private IReloadedHooks? _reloadedHooks;
     private IGbfrOverlayHub? _overlayHub;
     private IGbfrOverlayRegistration? _overlayRegistration;
     private OverlayHubClient? _overlayHubClient;
-    private bool _ownsOverlayBroker;
+    private volatile bool _ownsOverlayBroker;
     private bool _overlayHubControllerRegistered;
     private OverlayBrokerHost? _overlayBrokerHost;
-    private bool _frontendFailClosed;
+    private volatile bool _frontendFailClosed;
     private int _hostedInputCapture;
     private int _renderStopping;
     private int _activeRenderCallbacks;
+    private int _brokerRecoveryInProgress;
+    private int _disposing;
+    private int _awaitingBrokerRebind;
     private static int s_pendingAnsiLeadByte;
     private static int s_pendingAnsiCodePage;
     private static int s_imeCompositionActive;
@@ -103,6 +108,7 @@ public sealed partial class Mod : IMod, IExports
         try
         {
             var election = OverlayBrokerElectionService.Elect(loader, this, modId, Log);
+            _overlayHub = election.Hub;
             _ownsOverlayBroker = election.IsHost;
             _overlayHubControllerRegistered = election.IsHost;
             _ = StartCoreAsync(loaderApi, modId, election);
@@ -126,6 +132,7 @@ public sealed partial class Mod : IMod, IExports
         OverlayHubClient? pendingClient = null;
         OverlayBrokerHost? pendingBrokerHost = null;
         bool frontendFailClosed = false;
+        bool brokerHostFailed = false;
         try
         {
             IModLoader loader = (IModLoader)loaderApi;
@@ -168,6 +175,7 @@ public sealed partial class Mod : IMod, IExports
                     "Reloaded.Hooks controller is unavailable. Enable reloaded.sharedlib.hooks."
                 );
             }
+            _reloadedHooks = hooks;
             CompleteStartupPhase("reloaded-hooks-controller", hooksControllerStarted);
 
             try
@@ -209,6 +217,7 @@ public sealed partial class Mod : IMod, IExports
             if (shutdownImmediately)
             {
                 pendingRegistration?.Dispose();
+                election.HostControl?.MarkHostUnavailable("bootstrap startup was cancelled");
                 NativeCore.Shutdown();
                 return;
             }
@@ -260,6 +269,7 @@ public sealed partial class Mod : IMod, IExports
                 }
                 catch (Exception exception)
                 {
+                    brokerHostFailed = true;
                     frontendFailClosed = true;
                     Log(
                         "Neutral Overlay Broker graphics initialization failed closed; gameplay " +
@@ -294,7 +304,8 @@ public sealed partial class Mod : IMod, IExports
                         _overlayHub = overlayHub;
                         _overlayRegistration = pendingRegistration;
                         _overlayHubClient = pendingClient;
-                        _ownsOverlayBroker = election.IsHost;
+                        _ownsOverlayBroker =
+                            election.IsHost && pendingBrokerHost?.IsInitialized == true;
                         _overlayBrokerHost = pendingBrokerHost;
                         _frontendFailClosed = frontendFailClosed;
                         _started = true;
@@ -328,11 +339,15 @@ public sealed partial class Mod : IMod, IExports
             if (!frontendFailClosed)
                 Log($"Press {GetConfiguredHotkeyName()} to open the extra-sigil selector.");
             CompleteStartupPhase("managed-initialize", managedStartupStarted);
+            if (brokerHostFailed)
+                RequestOverlayBrokerRecovery("initial graphics writer failed to initialize");
         }
         catch (Exception exception)
         {
             pendingRegistration?.Dispose();
             pendingBrokerHost?.Dispose();
+            election.HostControl?.MarkHostUnavailable(
+                $"bootstrap startup failed: {exception.GetType().Name}");
             bool shutdownCore;
             lock (_imguiOperationLock)
             {
@@ -461,6 +476,16 @@ public sealed partial class Mod : IMod, IExports
 
     private void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposing, 1) != 0)
+            return;
+        lock (_brokerRecoverySync)
+        {
+            DisposeCore();
+        }
+    }
+
+    private void DisposeCore()
+    {
         SigilOverlayUi? ui;
         HotkeyConfig? hotkeyConfiguration;
         CancellationTokenSource? executableHashCancellation;
@@ -523,7 +548,9 @@ public sealed partial class Mod : IMod, IExports
             brokerHost?.Dispose();
             if (shutdownCore)
                 NativeCore.Shutdown();
-            if (removeBrokerController && modLoader is not null)
+            var recoveredElsewhere = _overlayHub is IRecoverableGbfrOverlayHub recoverable &&
+                                     recoverable.IsHostAvailable;
+            if (removeBrokerController && modLoader is not null && !recoveredElsewhere)
                 modLoader.RemoveController<IGbfrOverlayHub>();
         }
         else

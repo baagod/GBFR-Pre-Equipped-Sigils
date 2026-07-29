@@ -104,5 +104,22 @@ public interface IGbfrOverlayHub
 
     OverlayInputDevices CapturedInputDevices { get; }
 
+    /// <summary>
+    /// Registers a peer. The caller must retain a strong reference to
+    /// <paramref name="client"/> for at least as long as the returned registration;
+    /// the Broker intentionally stores only a weak reference.
+    /// </summary>
     IGbfrOverlayRegistration Register(IGbfrOverlayClient client);
+}
+
+/// <summary>
+/// Optional recovery capability implemented by brokers that can transfer their
+/// single graphics-writer lease after the previous host exits. Older compatible
+/// brokers remain usable but continue to fail closed after host loss.
+/// </summary>
+public interface IRecoverableGbfrOverlayHub : IGbfrOverlayHub
+{
+    bool IsHostAvailable { get; }
+
+    IOverlayBrokerHostControl? TryAcquireHost(string candidateModId);
 }

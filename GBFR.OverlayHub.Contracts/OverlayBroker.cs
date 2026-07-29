@@ -1,24 +1,43 @@
 namespace GBFR.OverlayHub.Contracts;
 
-internal sealed class OverlayBroker : IGbfrOverlayHub
+internal sealed class OverlayBroker : IRecoverableGbfrOverlayHub
 {
     private readonly object _sync = new();
     private readonly Dictionary<Guid, Registration> _registrations = [];
     private readonly Action<string> _log;
+    private Registration[] _enabledRegistrations = [];
     private Action<OverlayInputDevices>? _inputCaptureChanged;
-    private string? _hostUnavailableReason;
+    private string _hostModId;
     private OverlayGraphicsBinding _graphicsBinding;
+    private long _nextHostGeneration;
+    private long _activeHostGeneration;
     private int _graphicsReady;
 
     internal OverlayBroker(string hostModId, Action<string> log)
     {
-        HostModId = hostModId;
+        _hostModId = hostModId;
         _log = log;
     }
 
     public int ApiVersion => OverlayHubProtocol.ApiVersion;
 
-    public string HostModId { get; }
+    public string HostModId
+    {
+        get
+        {
+            lock (_sync)
+                return _hostModId;
+        }
+    }
+
+    public bool IsHostAvailable
+    {
+        get
+        {
+            lock (_sync)
+                return _activeHostGeneration != 0;
+        }
+    }
 
     public bool IsGraphicsReady => Volatile.Read(ref _graphicsReady) != 0;
 
@@ -29,6 +48,30 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
             lock (_sync)
                 return CapturedInputDevicesLocked();
         }
+    }
+
+    public IOverlayBrokerHostControl? TryAcquireHost(string candidateModId)
+    {
+        if (string.IsNullOrWhiteSpace(candidateModId))
+            throw new ArgumentException("A Broker host candidate id is required.", nameof(candidateModId));
+
+        long generation;
+        lock (_sync)
+        {
+            if (_activeHostGeneration != 0)
+                return null;
+            generation = ++_nextHostGeneration;
+            _activeHostGeneration = generation;
+            _hostModId = candidateModId;
+            _graphicsBinding = default;
+            Volatile.Write(ref _graphicsReady, 0);
+            _inputCaptureChanged = null;
+            foreach (var registration in _registrations.Values)
+                registration.ClearHostBindingLocked();
+            RebuildEnabledRegistrationsLocked();
+        }
+        TryLog($"Overlay Broker granted graphics-writer generation {generation} to '{candidateModId}'.");
+        return new OverlayBrokerFactory.HostControl(this, generation);
     }
 
     public IGbfrOverlayRegistration Register(IGbfrOverlayClient client)
@@ -42,10 +85,9 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
 
         Registration registration;
         OverlayGraphicsBinding graphicsBinding;
+        long hostGeneration;
         lock (_sync)
         {
-            if (_hostUnavailableReason is { } reason)
-                throw new InvalidOperationException($"Overlay Broker is unavailable: {reason}");
             if (_registrations.Values.Any(existing =>
                     string.Equals(existing.ModId, client.ModId, StringComparison.OrdinalIgnoreCase)))
             {
@@ -55,32 +97,45 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
             registration = new Registration(this, client);
             _registrations.Add(registration.Token, registration);
             graphicsBinding = _graphicsBinding;
+            hostGeneration = _activeHostGeneration;
+            RebuildEnabledRegistrationsLocked();
         }
 
-        if (graphicsBinding.IsValid && !registration.BindGraphics(graphicsBinding))
+        if (graphicsBinding.IsValid &&
+            hostGeneration != 0 &&
+            !registration.BindGraphics(graphicsBinding, hostGeneration))
         {
-            Remove(registration);
-            throw new InvalidOperationException(
-                $"Overlay peer '{client.ModId}' rejected the Broker graphics binding.");
+            if (IsCurrentHost(hostGeneration))
+            {
+                Remove(registration);
+                throw new InvalidOperationException(
+                    $"Overlay peer '{client.ModId}' rejected the Broker graphics binding.");
+            }
         }
+
+        lock (_sync)
+            RebuildEnabledRegistrationsLocked();
 
         TryLog($"Overlay Broker registered peer '{client.ModId}' ({registration.Token}).");
         return registration;
     }
 
-    internal void SetInputCaptureChangedCallback(Action<OverlayInputDevices> callback)
+    internal void SetInputCaptureChangedCallback(
+        long generation,
+        Action<OverlayInputDevices> callback)
     {
         ArgumentNullException.ThrowIfNull(callback);
         OverlayInputDevices current;
         lock (_sync)
         {
+            ThrowIfNotCurrentHostLocked(generation);
             _inputCaptureChanged = callback;
             current = CapturedInputDevicesLocked();
         }
         InvokeInputCaptureChanged(callback, current);
     }
 
-    internal void PublishGraphicsBinding(OverlayGraphicsBinding binding)
+    internal void PublishGraphicsBinding(long generation, OverlayGraphicsBinding binding)
     {
         if (!binding.IsValid)
             throw new ArgumentException("The shared ImGui graphics binding is invalid.", nameof(binding));
@@ -90,6 +145,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         OverlayInputDevices previous;
         lock (_sync)
         {
+            ThrowIfNotCurrentHostLocked(generation);
             previous = CapturedInputDevicesLocked();
             Volatile.Write(ref _graphicsReady, 0);
             _graphicsBinding = binding;
@@ -100,24 +156,34 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
 
         foreach (var registration in registrations)
         {
+            ThrowIfNotCurrentHost(generation);
             if (!registration.TryGetClient(out var client))
             {
                 Remove(registration);
                 continue;
             }
-            if (!registration.BindGraphics(binding))
+            if (!registration.BindGraphics(binding, generation))
+            {
+                ThrowIfNotCurrentHost(generation);
                 FaultPeer(registration, client, "graphics binding", null);
+            }
+        }
+        lock (_sync)
+        {
+            ThrowIfNotCurrentHostLocked(generation);
+            RebuildEnabledRegistrationsLocked();
         }
         TryLog("Overlay Broker published one shared cimgui module and ImGui context.");
     }
 
-    internal void MarkGraphicsReady()
+    internal void MarkGraphicsReady(long generation)
     {
         Action<OverlayInputDevices>? callback;
         OverlayInputDevices previous;
         OverlayInputDevices current;
         lock (_sync)
         {
+            ThrowIfNotCurrentHostLocked(generation);
             if (!_graphicsBinding.IsValid)
                 throw new InvalidOperationException("The Broker graphics binding was not published.");
             previous = CapturedInputDevicesLocked();
@@ -129,12 +195,13 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         TryLog($"Overlay Broker graphics writer is ready (bootstrap peer '{HostModId}').");
     }
 
-    internal void MarkGraphicsSuspended()
+    internal void MarkGraphicsSuspended(long generation)
     {
         Action<OverlayInputDevices>? callback;
         OverlayInputDevices previous;
         lock (_sync)
         {
+            ThrowIfNotCurrentHostLocked(generation);
             previous = CapturedInputDevicesLocked();
             Volatile.Write(ref _graphicsReady, 0);
             callback = _inputCaptureChanged;
@@ -142,7 +209,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         NotifyInputTransition(callback, previous, OverlayInputDevices.None);
     }
 
-    internal void MarkHostUnavailable(string reason)
+    internal void ReleaseHost(long generation, string reason)
     {
         reason = string.IsNullOrWhiteSpace(reason) ? "unknown graphics writer failure" : reason;
         Registration[] registrations;
@@ -150,26 +217,29 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         OverlayInputDevices previous;
         lock (_sync)
         {
-            if (_hostUnavailableReason is not null)
+            if (_activeHostGeneration != generation)
                 return;
             previous = CapturedInputDevicesLocked();
-            _hostUnavailableReason = reason;
+            _activeHostGeneration = 0;
             Volatile.Write(ref _graphicsReady, 0);
+            _graphicsBinding = default;
             registrations = _registrations.Values.ToArray();
             foreach (var registration in registrations)
-                registration.DisableLocked();
+                registration.ClearHostBindingLocked();
             callback = _inputCaptureChanged;
+            _inputCaptureChanged = null;
+            RebuildEnabledRegistrationsLocked();
         }
 
         NotifyInputTransition(callback, previous, OverlayInputDevices.None);
         foreach (var registration in registrations)
             registration.NotifyHostUnavailable(reason);
-        TryLog($"Overlay Broker graphics writer failed closed: {reason}");
+        TryLog($"Overlay Broker graphics writer generation {generation} released: {reason}");
     }
 
-    internal void TickClients()
+    internal void TickClients(long generation)
     {
-        if (Volatile.Read(ref _graphicsReady) == 0)
+        if (!IsCurrentHostReady(generation))
             return;
         foreach (var registration in SnapshotEnabledRegistrations())
         {
@@ -189,9 +259,9 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         }
     }
 
-    internal bool HasRenderableClients()
+    internal bool HasRenderableClients(long generation)
     {
-        if (Volatile.Read(ref _graphicsReady) == 0)
+        if (!IsCurrentHostReady(generation))
             return false;
         var any = false;
         foreach (var registration in SnapshotEnabledRegistrations())
@@ -213,9 +283,9 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         return any;
     }
 
-    internal void RenderClients()
+    internal void RenderClients(long generation)
     {
-        if (Volatile.Read(ref _graphicsReady) == 0)
+        if (!IsCurrentHostReady(generation))
             return;
         foreach (var registration in SnapshotEnabledRegistrations())
         {
@@ -237,12 +307,13 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
     }
 
     internal OverlayWindowMessageResult ObserveWindowMessage(
+        long generation,
         nint windowHandle,
         uint message,
         nint wParam,
         nint lParam)
     {
-        if (Volatile.Read(ref _graphicsReady) == 0)
+        if (!IsCurrentHostReady(generation))
             return OverlayWindowMessageResult.Continue;
 
         var result = OverlayWindowMessageResult.Continue;
@@ -268,12 +339,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
     }
 
     private Registration[] SnapshotEnabledRegistrations()
-    {
-        lock (_sync)
-            return _registrations.Values
-                .Where(static registration => registration.IsEnabled && registration.IsGraphicsBound)
-                .ToArray();
-    }
+        => Volatile.Read(ref _enabledRegistrations);
 
     private bool SetEnabled(Registration registration, bool enabled)
     {
@@ -283,13 +349,13 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         lock (_sync)
         {
             if (!_registrations.TryGetValue(registration.Token, out var currentRegistration) ||
-                !ReferenceEquals(currentRegistration, registration) ||
-                _hostUnavailableReason is not null)
+                !ReferenceEquals(currentRegistration, registration))
             {
                 return false;
             }
             previous = CapturedInputDevicesLocked();
             registration.SetEnabledLocked(enabled);
+            RebuildEnabledRegistrationsLocked();
             current = CapturedInputDevicesLocked();
             callback = _inputCaptureChanged;
         }
@@ -306,8 +372,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         {
             if (!_registrations.TryGetValue(registration.Token, out var currentRegistration) ||
                 !ReferenceEquals(currentRegistration, registration) ||
-                !registration.IsEnabled ||
-                _hostUnavailableReason is not null)
+                !registration.IsEnabled)
             {
                 return false;
             }
@@ -331,6 +396,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
             if (!_registrations.Remove(registration.Token))
                 return;
             registration.DisableLocked();
+            RebuildEnabledRegistrationsLocked();
             current = CapturedInputDevicesLocked();
             callback = _inputCaptureChanged;
         }
@@ -350,6 +416,51 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
             : $"{exception.GetType().Name}: {exception.Message}";
         TryLog($"Overlay Broker isolated peer '{client.ModId}' during {stage}: {detail}.");
         registration.NotifyHostUnavailable($"peer-local failure during {stage}");
+    }
+
+    private bool IsCurrentHostReady(long generation)
+    {
+        lock (_sync)
+            return _activeHostGeneration == generation && Volatile.Read(ref _graphicsReady) != 0;
+    }
+
+    private bool IsCurrentHost(long generation)
+    {
+        lock (_sync)
+            return _activeHostGeneration == generation;
+    }
+
+    private void ThrowIfNotCurrentHost(long generation)
+    {
+        lock (_sync)
+            ThrowIfNotCurrentHostLocked(generation);
+    }
+
+    private void ThrowIfNotCurrentHostLocked(long generation)
+    {
+        if (_activeHostGeneration != generation)
+        {
+            throw new InvalidOperationException(
+                $"Overlay Broker rejected stale graphics-writer generation {generation}.");
+        }
+    }
+
+    private void RebuildEnabledRegistrationsLocked()
+    {
+        if (_registrations.Count == 0)
+        {
+            Volatile.Write(ref _enabledRegistrations, Array.Empty<Registration>());
+            return;
+        }
+
+        var enabled = new List<Registration>(_registrations.Count);
+        foreach (var registration in _registrations.Values)
+        {
+            if (registration.IsEnabled &&
+                registration.IsGraphicsBoundFor(_activeHostGeneration))
+                enabled.Add(registration);
+        }
+        Volatile.Write(ref _enabledRegistrations, enabled.ToArray());
     }
 
     private OverlayInputDevices CapturedInputDevicesLocked()
@@ -408,6 +519,7 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         private readonly WeakReference<IGbfrOverlayClient> _client;
         private readonly object _graphicsSync = new();
         private OverlayGraphicsBinding _boundGraphics;
+        private long _boundHostGeneration;
         private int _disposed;
 
         internal Registration(OverlayBroker owner, IGbfrOverlayClient client)
@@ -424,14 +536,8 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
 
         internal bool IsEnabled { get; private set; }
 
-        internal bool IsGraphicsBound
-        {
-            get
-            {
-                lock (_graphicsSync)
-                    return _boundGraphics.IsValid;
-            }
-        }
+        internal bool IsGraphicsBoundFor(long generation) =>
+            generation != 0 && Volatile.Read(ref _boundHostGeneration) == generation;
 
         internal OverlayInputDevices InputDevices { get; private set; }
 
@@ -450,11 +556,12 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         internal bool TryGetClient(out IGbfrOverlayClient client) =>
             _client.TryGetTarget(out client!);
 
-        internal bool BindGraphics(OverlayGraphicsBinding binding)
+        internal bool BindGraphics(OverlayGraphicsBinding binding, long generation)
         {
             lock (_graphicsSync)
             {
-                if (_boundGraphics.IsValid &&
+                if (Volatile.Read(ref _boundHostGeneration) == generation &&
+                    _boundGraphics.IsValid &&
                     _boundGraphics.NativeLibraryHandle == binding.NativeLibraryHandle &&
                     _boundGraphics.ContextPointer == binding.ContextPointer)
                 {
@@ -465,11 +572,16 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
                 {
                     return false;
                 }
+                if (!_owner.IsCurrentHost(generation))
+                    return false;
                 try
                 {
                     if (!graphicsClient.BindGraphics(binding))
                         return false;
+                    if (!_owner.IsCurrentHost(generation))
+                        return false;
                     _boundGraphics = binding;
+                    Volatile.Write(ref _boundHostGeneration, generation);
                     return true;
                 }
                 catch
@@ -489,6 +601,12 @@ internal sealed class OverlayBroker : IGbfrOverlayHub
         internal void SetInputDevicesLocked(OverlayInputDevices devices) =>
             InputDevices = devices &
                 (OverlayInputDevices.Keyboard | OverlayInputDevices.Mouse | OverlayInputDevices.Text);
+
+        internal void ClearHostBindingLocked()
+        {
+            Volatile.Write(ref _boundHostGeneration, 0);
+            InputDevices = OverlayInputDevices.None;
+        }
 
         internal void DisableLocked()
         {

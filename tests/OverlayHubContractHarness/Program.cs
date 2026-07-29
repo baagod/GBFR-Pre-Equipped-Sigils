@@ -34,6 +34,19 @@ Assert(hubType.GetProperty("CapturedInputDevices") is not null,
     "Overlay Hub API v2 must expose the aggregate device capture policy.");
 Assert(contractAssembly.GetType("GBFR.OverlayHub.Contracts.OverlayBrokerFactory") is not null,
     "The neutral Overlay Broker factory is missing from the shared contract.");
+Type recoverableHubType = contractAssembly.GetType(
+    "GBFR.OverlayHub.Contracts.IRecoverableGbfrOverlayHub",
+    throwOnError: true)!;
+Assert(hubType.IsAssignableFrom(recoverableHubType),
+    "The optional recovery capability must extend the base Hub contract.");
+Assert(recoverableHubType.GetProperty("IsHostAvailable") is not null &&
+       recoverableHubType.GetMethod("TryAcquireHost") is not null,
+    "The recovery capability is missing host availability or lease acquisition.");
+Type hostControlType = contractAssembly.GetType(
+    "GBFR.OverlayHub.Contracts.IOverlayBrokerHostControl",
+    throwOnError: true)!;
+Assert(typeof(IDisposable).IsAssignableFrom(hostControlType),
+    "A host lease must be disposable.");
 Console.WriteLine("OVERLAY_HUB_CONTRACT=PASS");
 
 using (JsonDocument config = JsonDocument.Parse(File.ReadAllText(modConfigPath)))

@@ -54,6 +54,9 @@ Invoke-Harness `
     -Project (Join-Path $PSScriptRoot 'OverlayHubContractHarness\OverlayHubContractHarness.csproj') `
     -OutputDirectory $managedOutput
 Invoke-Harness `
+    -Project (Join-Path $PSScriptRoot 'OverlayBrokerRecoveryHarness\OverlayBrokerRecoveryHarness.csproj') `
+    -OutputDirectory $managedOutput
+Invoke-Harness `
     -Project (Join-Path $PSScriptRoot 'HostedImguiBindingHarness\HostedImguiBindingHarness.csproj') `
     -OutputDirectory $managedOutput
 

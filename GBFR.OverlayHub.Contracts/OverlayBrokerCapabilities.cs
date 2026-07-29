@@ -30,39 +30,53 @@ public static class OverlayBrokerFactory
         ArgumentNullException.ThrowIfNull(log);
 
         var broker = new OverlayBroker(hostModId, log);
-        return new OverlayBrokerEndpoints(broker, new HostControl(broker));
+        var host = broker.TryAcquireHost(hostModId) ??
+            throw new InvalidOperationException("The initial Overlay Broker host lease could not be acquired.");
+        return new OverlayBrokerEndpoints(broker, host);
     }
 
-    private sealed class HostControl : IOverlayBrokerHostControl
+    internal sealed class HostControl : IOverlayBrokerHostControl
     {
         private readonly OverlayBroker _broker;
+        private readonly long _generation;
+        private int _released;
 
-        internal HostControl(OverlayBroker broker) => _broker = broker;
+        internal HostControl(OverlayBroker broker, long generation)
+        {
+            _broker = broker;
+            _generation = generation;
+        }
 
         public void SetInputCaptureChangedCallback(Action<OverlayInputDevices> callback) =>
-            _broker.SetInputCaptureChangedCallback(callback);
+            _broker.SetInputCaptureChangedCallback(_generation, callback);
 
         public void PublishGraphicsBinding(OverlayGraphicsBinding binding) =>
-            _broker.PublishGraphicsBinding(binding);
+            _broker.PublishGraphicsBinding(_generation, binding);
 
-        public void MarkGraphicsReady() => _broker.MarkGraphicsReady();
+        public void MarkGraphicsReady() => _broker.MarkGraphicsReady(_generation);
 
-        public void MarkGraphicsSuspended() => _broker.MarkGraphicsSuspended();
+        public void MarkGraphicsSuspended() => _broker.MarkGraphicsSuspended(_generation);
 
-        public void MarkHostUnavailable(string reason) => _broker.MarkHostUnavailable(reason);
+        public void MarkHostUnavailable(string reason)
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+                _broker.ReleaseHost(_generation, reason);
+        }
 
-        public void TickClients() => _broker.TickClients();
+        public void TickClients() => _broker.TickClients(_generation);
 
-        public bool HasRenderableClients() => _broker.HasRenderableClients();
+        public bool HasRenderableClients() => _broker.HasRenderableClients(_generation);
 
-        public void RenderClients() => _broker.RenderClients();
+        public void RenderClients() => _broker.RenderClients(_generation);
 
         public OverlayWindowMessageResult ObserveWindowMessage(
             nint windowHandle,
             uint message,
             nint wParam,
             nint lParam) =>
-            _broker.ObserveWindowMessage(windowHandle, message, wParam, lParam);
+            _broker.ObserveWindowMessage(_generation, windowHandle, message, wParam, lParam);
+
+        public void Dispose() => MarkHostUnavailable("host lease disposed");
     }
 }
 
@@ -70,7 +84,7 @@ public static class OverlayBrokerFactory
 /// Capability retained only by the first peer. It is deliberately separate from
 /// <see cref="IGbfrOverlayHub"/> so ordinary peers cannot become graphics writers.
 /// </summary>
-public interface IOverlayBrokerHostControl
+public interface IOverlayBrokerHostControl : IDisposable
 {
     void SetInputCaptureChangedCallback(Action<OverlayInputDevices> callback);
 

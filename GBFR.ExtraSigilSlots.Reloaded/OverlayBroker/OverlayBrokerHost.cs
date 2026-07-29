@@ -28,6 +28,7 @@ internal sealed class OverlayBrokerHost : IDisposable
     private readonly Action? _forceNativeInputRelease;
     private readonly Action<bool>? _setNativeCursorRelease;
     private readonly object _lifecycleSync = new();
+    private readonly SemaphoreSlim _initializationGate = new(1, 1);
     private int _capturedInputDevices;
     private int _initialized;
     private int _disposed;
@@ -75,28 +76,37 @@ internal sealed class OverlayBrokerHost : IDisposable
     {
         ArgumentNullException.ThrowIfNull(hooks);
         ArgumentNullException.ThrowIfNull(implementationFactory);
-        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-
-        if (Interlocked.CompareExchange(ref s_activeHost, this, null) is not null)
-            throw new InvalidOperationException("A process-local Overlay Broker graphics writer is already active.");
-        if (IsSharedImguiHookClaimed())
-        {
-            Interlocked.CompareExchange(ref s_activeHost, null, this);
-            throw new InvalidOperationException(
-                "Reloaded.Imgui.Hook is already owned by an uncoordinated overlay; " +
-                "the Broker refused to install a second writer.");
-        }
-
-        _renderCallback = RenderClients;
-        IImguiHook? implementation = null;
+        await _initializationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            SDK.Init(hooks, message => TryLog($"ImGui: {message}"));
-            implementation = implementationFactory(
-                PresentTick,
-                _control.HasRenderableClients,
-                HandlePermanentGraphicsFailure);
-            await ImguiHook.Create(
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+            if (Interlocked.CompareExchange(ref s_activeHost, this, null) is not null)
+            {
+                Interlocked.Exchange(ref _disposed, 1);
+                _control.MarkHostUnavailable("another process-local graphics writer is already active");
+                throw new InvalidOperationException("A process-local Overlay Broker graphics writer is already active.");
+            }
+            if (IsSharedImguiHookClaimed())
+            {
+                Interlocked.CompareExchange(ref s_activeHost, null, this);
+                Interlocked.Exchange(ref _disposed, 1);
+                _control.MarkHostUnavailable("Reloaded.Imgui.Hook is already owned by an uncoordinated overlay");
+                throw new InvalidOperationException(
+                    "Reloaded.Imgui.Hook is already owned by an uncoordinated overlay; " +
+                    "the Broker refused to install a second writer.");
+            }
+
+            _renderCallback = RenderClients;
+            IImguiHook? implementation = null;
+            try
+            {
+                SDK.Init(hooks, message => TryLog($"ImGui: {message}"));
+                implementation = implementationFactory(
+                    PresentTick,
+                    _control.HasRenderableClients,
+                    HandlePermanentGraphicsFailure);
+                await ImguiHook.Create(
                     _renderCallback,
                     new ImguiHookOptions
                     {
@@ -105,37 +115,45 @@ internal sealed class OverlayBrokerHost : IDisposable
                         CustomWndProcHandlerPointer = GetCustomWndProcPointer(),
                         Implementations = new List<IImguiHook> { implementation },
                     })
-                .ConfigureAwait(false);
-            if (!ReferenceEquals(ImguiHook.Render, _renderCallback))
-                throw new InvalidOperationException("Overlay Broker ImGui ownership changed during initialization.");
+                    .ConfigureAwait(false);
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+                if (!ReferenceEquals(ImguiHook.Render, _renderCallback))
+                    throw new InvalidOperationException("Overlay Broker ImGui ownership changed during initialization.");
 
-            _control.PublishGraphicsBinding(SharedImguiGraphicsBinding.Capture());
-            lock (_lifecycleSync)
-            {
-                Volatile.Write(ref _initialized, 1);
-                _control.MarkGraphicsReady();
-            }
-            TryLog("Neutral Overlay Broker initialized one Present/WndProc writer for all registered peers.");
-        }
-        catch (Exception exception)
-        {
-            Volatile.Write(ref _initialized, 0);
-            if (_renderCallback is not null && ReferenceEquals(ImguiHook.Render, _renderCallback))
-            {
-                try { ImguiHook.Destroy(); }
-                catch (Exception cleanupException)
+                _control.PublishGraphicsBinding(SharedImguiGraphicsBinding.Capture());
+                lock (_lifecycleSync)
                 {
-                    TryLog($"Overlay Broker initialization cleanup was contained: {cleanupException.Message}");
+                    ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+                    Volatile.Write(ref _initialized, 1);
+                    _control.MarkGraphicsReady();
                 }
+                TryLog("Neutral Overlay Broker initialized one Present/WndProc writer for all registered peers.");
             }
-            else
+            catch (Exception exception)
             {
-                try { implementation?.Dispose(); } catch { }
+                Volatile.Write(ref _initialized, 0);
+                if (_renderCallback is not null && ReferenceEquals(ImguiHook.Render, _renderCallback))
+                {
+                    try { ImguiHook.Destroy(); }
+                    catch (Exception cleanupException)
+                    {
+                        TryLog($"Overlay Broker initialization cleanup was contained: {cleanupException.Message}");
+                    }
+                }
+                else
+                {
+                    try { implementation?.Dispose(); } catch { }
+                }
+                Interlocked.CompareExchange(ref s_activeHost, null, this);
+                ForceReleaseInputCapture();
+                Interlocked.Exchange(ref _disposed, 1);
+                _control.MarkHostUnavailable($"graphics initialization failed: {exception.GetType().Name}");
+                throw;
             }
-            Interlocked.CompareExchange(ref s_activeHost, null, this);
-            ForceReleaseInputCapture();
-            _control.MarkHostUnavailable($"graphics initialization failed: {exception.GetType().Name}");
-            throw;
+        }
+        finally
+        {
+            _initializationGate.Release();
         }
     }
 
@@ -248,8 +266,8 @@ internal sealed class OverlayBrokerHost : IDisposable
             return;
         Volatile.Write(ref _initialized, 0);
         ForceReleaseInputCapture();
-        _control.MarkHostUnavailable("permanent graphics backend failure");
-        TryLog("Overlay Broker graphics writer failed closed; healthy peer business state remains isolated.");
+        _ = Task.Run(() => ShutdownWriter("permanent graphics backend failure"));
+        TryLog("Overlay Broker graphics writer failed closed and scheduled coordinated lease recovery.");
     }
 
     private static unsafe nint GetCustomWndProcPointer() =>
@@ -350,20 +368,31 @@ internal sealed class OverlayBrokerHost : IDisposable
     }
 
     public void Dispose()
+        => ShutdownWriter("bootstrap peer disposed");
+
+    private void ShutdownWriter(string reason)
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
-        lock (_lifecycleSync)
+        _initializationGate.Wait();
+        try
         {
-            Volatile.Write(ref _initialized, 0);
-            ForceReleaseInputCapture();
-            _control.MarkHostUnavailable("bootstrap peer disposed");
-            if (_renderCallback is not null && ReferenceEquals(ImguiHook.Render, _renderCallback))
+            lock (_lifecycleSync)
             {
-                try { ImguiHook.Destroy(); } catch (Exception exception) { TryLog($"Broker teardown was contained: {exception.Message}"); }
+                Volatile.Write(ref _initialized, 0);
+                ForceReleaseInputCapture();
+                if (_renderCallback is not null && ReferenceEquals(ImguiHook.Render, _renderCallback))
+                {
+                    try { ImguiHook.Destroy(); } catch (Exception exception) { TryLog($"Broker teardown was contained: {exception.Message}"); }
+                }
+                Interlocked.CompareExchange(ref s_activeHost, null, this);
             }
-            Interlocked.CompareExchange(ref s_activeHost, null, this);
         }
+        finally
+        {
+            _initializationGate.Release();
+        }
+        _control.MarkHostUnavailable(reason);
     }
 
     private static nint CallDefaultWindowProc(nint hWnd, uint message, nint wParam, nint lParam) =>
