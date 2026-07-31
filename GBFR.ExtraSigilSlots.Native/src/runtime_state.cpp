@@ -15,6 +15,8 @@ std::filesystem::path g_compatibility_path;
 std::once_flag g_initialize_once;
 std::atomic_bool g_initialized{false};
 std::atomic_bool g_hooks_ready{false};
+std::atomic_bool g_layout_ready{false};
+ResolvedGameLayout g_game_layout{};
 std::atomic_bool g_shutting_down{false};
 std::atomic_bool g_shutdown_complete{false};
 std::atomic<GBFR20_LogCallback> g_log_callback{nullptr};

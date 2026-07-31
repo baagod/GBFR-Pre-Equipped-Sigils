@@ -63,23 +63,6 @@ uint32_t CountSelectedSlots(
       [](uint32_t slot_id) { return slot_id != 0; }));
 }
 
-template <size_t Size>
-bool RequireCodePreflight(
-   std::string_view stage,
-   uintptr_t rva,
-   const std::array<uint8_t, Size>& expected)
-{
-   if (MatchesBytes(g_image_base + rva, expected))
-      return true;
-
-   std::ostringstream message;
-   message << "Native code preflight failed: stage=" << stage << ", RVA=0x"
-           << ToUpperHex(static_cast<uint32_t>(rva)) << ", expected " << Size
-           << " bytes; no hook or byte patch was installed.";
-   SetRuntimeMessage(message.str(), true);
-   return false;
-}
-
 void BeginNaturalContributionTracking(
    uintptr_t status,
    const StatusIdentity& identity,
@@ -194,9 +177,11 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
    ActiveCallGuard active_call(g_active_getter_calls);
    const uintptr_t return_address = reinterpret_cast<uintptr_t>(_ReturnAddress());
    const bool from_trait_apply_loop =
-      return_address == g_image_base + kTraitApplyGetterReturnRva;
+      return_address ==
+      g_image_base + g_game_layout.trait_apply_getter_return_rva;
    const bool from_trait_category_loop =
-      return_address == g_image_base + kTraitCategoryGetterReturnRva;
+      return_address ==
+      g_image_base + g_game_layout.trait_category_getter_return_rva;
    const bool from_trait_data_loop =
       from_trait_apply_loop || from_trait_category_loop;
    StatusIdentity identity{};
@@ -320,7 +305,7 @@ void OnTraitFetch(safetyhook::Context& context)
    ActiveCallGuard active_call(g_active_mid_calls);
    if (context.r13 >= static_cast<uintptr_t>(kNativeInternalSlotCount) &&
        context.r13 < static_cast<uintptr_t>(GetExpandedInternalSlotCount()))
-      context.rip = g_image_base + kTraitFetchCallPathRva;
+      context.rip = g_image_base + g_game_layout.trait_fetch_call_path_rva;
 }
 
 void OnLocalContext1BindCall(safetyhook::Context& context)
@@ -510,6 +495,54 @@ void ScheduleSelectedStatusRebind()
       GetTickCount64() + 1000, std::memory_order_release);
 }
 
+namespace
+{
+void RollbackGameplayHookInstallation() noexcept
+{
+   g_hooks_ready.store(false, std::memory_order_release);
+   if (g_status_owner_tick_hook)
+      (void)g_status_owner_tick_hook.disable();
+   if (g_trait_fetch_hook)
+      (void)g_trait_fetch_hook.disable();
+   if (g_get_gem_hook)
+      (void)g_get_gem_hook.disable();
+
+   while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
+          g_active_mid_calls.load(std::memory_order_acquire) != 0)
+      SwitchToThread();
+
+   if (g_image_base != 0 && g_layout_ready.load(std::memory_order_acquire))
+   {
+      const uint8_t expanded_slot_count =
+         static_cast<uint8_t>(GetExpandedInternalSlotCount());
+      uint8_t current = 0;
+      if (ReadByte(
+             g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
+             current) &&
+          current == expanded_slot_count)
+         (void)WriteByte(
+            g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
+            g_game_layout.trait_apply_original_limit);
+      if (ReadByte(
+             g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
+             current) &&
+          current == expanded_slot_count)
+         (void)WriteByte(
+            g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
+            g_game_layout.trait_category_original_limit);
+   }
+
+   g_status_owner_tick_hook.reset();
+   g_trait_fetch_hook.reset();
+   g_get_gem_hook.reset();
+   {
+      std::unique_lock lock(g_authorization_mutex);
+      g_authorized_statuses.clear();
+   }
+   ResetGameLayout();
+}
+}
+
 void ShutdownHooks()
 {
    g_shutting_down.store(true, std::memory_order_release);
@@ -551,16 +584,28 @@ void ShutdownHooks()
           g_active_input_calls.load(std::memory_order_acquire) != 0)
       SwitchToThread();
 
-   if (g_image_base != 0)
+   if (g_image_base != 0 && g_layout_ready.load(std::memory_order_acquire))
    {
       uint8_t apply_loop_limit = 0;
-      if (ReadByte(g_image_base + kTraitApplyLoopLimitImmediateRva, apply_loop_limit) &&
+      if (ReadByte(
+             g_image_base +
+                g_game_layout.trait_apply_loop_limit_immediate_rva,
+             apply_loop_limit) &&
           apply_loop_limit == static_cast<uint8_t>(GetExpandedInternalSlotCount()))
-         WriteByte(g_image_base + kTraitApplyLoopLimitImmediateRva, kNativeInternalSlotCount);
+         WriteByte(
+            g_image_base +
+               g_game_layout.trait_apply_loop_limit_immediate_rva,
+            g_game_layout.trait_apply_original_limit);
       uint8_t loop_limit = 0;
-      if (ReadByte(g_image_base + kTraitCategoryLoopLimitImmediateRva, loop_limit) &&
+      if (ReadByte(
+             g_image_base +
+                g_game_layout.trait_category_loop_limit_immediate_rva,
+             loop_limit) &&
           loop_limit == static_cast<uint8_t>(GetExpandedInternalSlotCount()))
-         WriteByte(g_image_base + kTraitCategoryLoopLimitImmediateRva, kNativeInternalSlotCount);
+         WriteByte(
+            g_image_base +
+               g_game_layout.trait_category_loop_limit_immediate_rva,
+            g_game_layout.trait_category_original_limit);
    }
    g_status_owner_tick_hook.reset();
    g_local_context1_bind_return_hook.reset();
@@ -568,6 +613,7 @@ void ShutdownHooks()
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
    ResetDirectInputInstanceHooks();
+   ResetGameLayout();
    {
       std::unique_lock lock(g_authorization_mutex);
       g_authorized_statuses.clear();
@@ -581,90 +627,56 @@ void ShutdownHooks()
 bool InstallHooks()
 {
    const uint64_t preflight_started = BeginStartupPhase("required-byte-rva-preflight");
-   const bool preflight_ready = RequireCodePreflight(
-          "trait-apply-loop-limit",
-          kTraitApplyLoopLimitImmediateRva - 4,
-          kTraitApplyLoopPreflight) &&
-       RequireCodePreflight(
-          "trait-apply-getter-return",
-          kTraitApplyGetterReturnRva,
-          kTraitApplyGetterReturnPreflight) &&
-       RequireCodePreflight(
-          "trait-category-loop-limit",
-          kTraitCategoryLoopLimitImmediateRva - 6,
-          kTraitCategoryLoopPreflight) &&
-       RequireCodePreflight(
-          "trait-fetch-path",
-          kTraitFetchPathRva,
-          kTraitFetchPreflight) &&
-       RequireCodePreflight(
-          "trait-fetch-call-path",
-          kTraitFetchCallPathRva,
-          kTraitFetchCallPathPreflight) &&
-       RequireCodePreflight(
-          "trait-category-getter-return",
-          kTraitCategoryGetterReturnRva,
-          kTraitCategoryGetterReturnPreflight) &&
-       RequireCodePreflight(
-          "gem-data-getter",
-          kGetGemDataByIndexRva,
-          kGetterPreflight) &&
-       RequireCodePreflight(
-          "status-rebuild",
-          kStatusRebuildRva,
-          kStatusRebuildPreflight) &&
-       RequireCodePreflight(
-          "status-notifier",
-          kStatusNotifierRva,
-          kStatusNotifierPreflight) &&
-       RequireCodePreflight(
-          "status-owner-tick",
-          kStatusOwnerTickRva,
-          kStatusOwnerTickPreflight) &&
-       RequireCodePreflight(
-          "status-owner-character-loop",
-          kStatusOwnerCharacterLoopRva,
-          kStatusOwnerCharacterLoopPreflight);
+   const bool preflight_ready = RevalidateGameLayout();
    CompleteStartupPhase(
       "required-byte-rva-preflight", preflight_started, preflight_ready);
    if (!preflight_ready)
    {
+      ResetGameLayout();
+      SetRuntimeMessage(
+         "Resolved game layout changed before hook installation; no gameplay hook or byte patch was installed.",
+         true);
       return false;
    }
 
    const uint64_t gem_hook_started = BeginStartupPhase("gem-data-getter-hook");
    g_get_gem_hook = safetyhook::create_inline(
-      reinterpret_cast<void*>(g_image_base + kGetGemDataByIndexRva),
+      reinterpret_cast<void*>(
+         g_image_base + g_game_layout.get_gem_data_by_index_rva),
       reinterpret_cast<void*>(&GetGemDataByIndexDetour));
    CompleteStartupPhase(
       "gem-data-getter-hook", gem_hook_started, static_cast<bool>(g_get_gem_hook));
    if (!g_get_gem_hook)
    {
+      RollbackGameplayHookInstallation();
       SetRuntimeMessage("Failed to install the GemData getter hook.", true);
       return false;
    }
 
    const uint64_t trait_hook_started = BeginStartupPhase("trait-fetch-hook");
    g_trait_fetch_hook = safetyhook::create_mid(
-      reinterpret_cast<void*>(g_image_base + kTraitFetchPathRva), &OnTraitFetch);
+      reinterpret_cast<void*>(
+         g_image_base + g_game_layout.trait_fetch_path_rva),
+      &OnTraitFetch);
    CompleteStartupPhase(
       "trait-fetch-hook", trait_hook_started, static_cast<bool>(g_trait_fetch_hook));
    if (!g_trait_fetch_hook)
    {
-      g_get_gem_hook.reset();
+      RollbackGameplayHookInstallation();
       SetRuntimeMessage("Failed to install the trait fetch-path hook.", true);
       return false;
    }
 
    const uint64_t owner_hook_started = BeginStartupPhase("status-owner-hook");
    g_status_owner_tick_hook = safetyhook::create_mid(
-      reinterpret_cast<void*>(g_image_base + kStatusOwnerCharacterLoopRva),
+      reinterpret_cast<void*>(
+         g_image_base + g_game_layout.status_owner_character_loop_rva),
       &OnStatusOwnerCharacterLoop);
    CompleteStartupPhase(
       "status-owner-hook", owner_hook_started, static_cast<bool>(g_status_owner_tick_hook));
    if (!g_status_owner_tick_hook)
    {
-      ShutdownHooks();
+      RollbackGameplayHookInstallation();
       SetRuntimeMessage("Failed to install the status owner-thread trace hook.", true);
       return false;
    }
@@ -672,37 +684,29 @@ bool InstallHooks()
    const uint8_t expanded_slot_count = static_cast<uint8_t>(GetExpandedInternalSlotCount());
    const uint64_t loop_patch_started = BeginStartupPhase("trait-loop-limit-patches");
    const bool loop_patches_ready =
-      WriteByte(g_image_base + kTraitApplyLoopLimitImmediateRva, expanded_slot_count) &&
-      WriteByte(g_image_base + kTraitCategoryLoopLimitImmediateRva, expanded_slot_count);
+      WriteByte(
+         g_image_base +
+            g_game_layout.trait_apply_loop_limit_immediate_rva,
+         expanded_slot_count) &&
+      WriteByte(
+         g_image_base +
+            g_game_layout.trait_category_loop_limit_immediate_rva,
+         expanded_slot_count);
    CompleteStartupPhase(
       "trait-loop-limit-patches", loop_patch_started, loop_patches_ready);
    if (!loop_patches_ready)
    {
-      ShutdownHooks();
+      RollbackGameplayHookInstallation();
       SetRuntimeMessage(
          "Failed to patch both native trait loop limits; changes were rolled back.", true);
       return false;
    }
 
-   const uint64_t input_hooks_started = BeginStartupPhase("input-iat-hooks");
-   const bool input_hooks_enabled =
-      g_input_hooks_enabled.load(std::memory_order_acquire);
-   const bool input_hooks_ready = input_hooks_enabled
-      ? InstallInputIatHooks()
-      : true;
-   if (!input_hooks_enabled)
-   {
-      Log(
-         "Game-local USER32 and DirectInput8 hooks were intentionally skipped; "
-         "the shared Overlay Hub owns keyboard and mouse interception.");
-   }
-   CompleteStartupPhase("input-iat-hooks", input_hooks_started, input_hooks_ready);
-
    g_hooks_ready.store(true, std::memory_order_release);
    SetRuntimeMessage(
       "Native hook installation completed with " +
          std::to_string(GetVirtualSlotCount()) +
-         " virtual slots; compatibility was verified synchronously by every required byte/RVA preflight. Full-executable SHA-256 is deferred and diagnostic-only.",
+         " virtual slots; compatibility was resolved synchronously from unique semantic anchors and revalidated before every hook and byte patch.",
       false);
    return true;
 }

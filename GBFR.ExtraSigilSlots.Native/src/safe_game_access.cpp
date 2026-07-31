@@ -20,13 +20,13 @@ bool SafeReadUiSelectedCharacterHash(uint32_t& character_hash) noexcept
 {
    character_hash = 0;
    uintptr_t ui_manager = 0;
-   if (g_image_base == 0 ||
-       !SafeReadPointer(g_image_base + kUiManagerGlobalRva, ui_manager) || ui_manager == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) || g_image_base == 0 ||
+       !SafeReadPointer(g_image_base + g_game_layout.ui_manager_global_rva, ui_manager) || ui_manager == 0)
       return false;
    __try
    {
       const uint32_t value =
-         *reinterpret_cast<const uint32_t*>(ui_manager + kUiSelectedCharacterHashOffset);
+         *reinterpret_cast<const uint32_t*>(ui_manager + g_game_layout.ui_selected_character_hash_offset);
       if (value == 0 || value == kUnwornCharacterHash)
          return false;
       character_hash = value;
@@ -57,17 +57,19 @@ void SafeReadUiModes(int32_t& ui_mode, int32_t& source_mode) noexcept
 {
    ui_mode = -1;
    source_mode = -1;
+   if (!g_layout_ready.load(std::memory_order_acquire))
+      return;
    uintptr_t ui_manager = 0;
    if (g_image_base != 0 &&
-       SafeReadPointer(g_image_base + kUiManagerGlobalRva, ui_manager) &&
+       SafeReadPointer(g_image_base + g_game_layout.ui_manager_global_rva, ui_manager) &&
        ui_manager != 0)
-      (void)SafeReadInt32(ui_manager + kUiModeOffset, ui_mode);
+      (void)SafeReadInt32(ui_manager + g_game_layout.ui_mode_offset, ui_mode);
 
    uintptr_t source = 0;
    if (g_image_base != 0 &&
-       SafeReadPointer(g_image_base + kUiStateSourceGlobalRva, source) &&
+       SafeReadPointer(g_image_base + g_game_layout.ui_state_source_global_rva, source) &&
        source != 0)
-      (void)SafeReadInt32(source + kUiStateSourceModeOffset, source_mode);
+      (void)SafeReadInt32(source + g_game_layout.ui_state_source_mode_offset, source_mode);
 }
 
 void UpdateEditSessionState() noexcept
@@ -139,12 +141,12 @@ bool SafeReadGem(uintptr_t address, GemData& value) noexcept
 
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept
 {
-   if (status == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) || status == 0)
       return false;
    __try
    {
-      identity.character_hash = *reinterpret_cast<const uint32_t*>(status + kStatusCharacterHashOffset);
-      identity.context_mode = *reinterpret_cast<const int32_t*>(status + kStatusContextModeOffset);
+      identity.character_hash = *reinterpret_cast<const uint32_t*>(status + g_game_layout.status_character_hash_offset);
+      identity.context_mode = *reinterpret_cast<const int32_t*>(status + g_game_layout.status_context_mode_offset);
       return identity.character_hash != 0;
    }
    __except (EXCEPTION_EXECUTE_HANDLER)
@@ -192,17 +194,17 @@ bool SafeResolveStatusByMapKey(
    uintptr_t& status) noexcept
 {
    status = 0;
-   if (manager == 0 || map_key == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) || manager == 0 || map_key == 0)
       return false;
 
    __try
    {
       const uintptr_t sentinel =
-         *reinterpret_cast<const uintptr_t*>(manager + kStatusMapSentinelOffset);
+         *reinterpret_cast<const uintptr_t*>(manager + g_game_layout.status_map_sentinel_offset);
       const uintptr_t buckets =
-         *reinterpret_cast<const uintptr_t*>(manager + kStatusMapBucketsOffset);
+         *reinterpret_cast<const uintptr_t*>(manager + g_game_layout.status_map_buckets_offset);
       const uint32_t mask =
-         *reinterpret_cast<const uint32_t*>(manager + kStatusMapMaskOffset);
+         *reinterpret_cast<const uint32_t*>(manager + g_game_layout.status_map_mask_offset);
       if (sentinel == 0 || buckets == 0 || (sentinel & 0x7) != 0 || (buckets & 0x7) != 0)
          return false;
 
@@ -253,17 +255,17 @@ bool SafeResolveCharacterRecordByOwnerKey(
    uintptr_t& record) noexcept
 {
    record = 0;
-   if (manager == 0 || owner_key == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) || manager == 0 || owner_key == 0)
       return false;
 
    __try
    {
       const uintptr_t sentinel = *reinterpret_cast<const uintptr_t*>(
-         manager + kCharacterRecordMapSentinelOffset);
+         manager + g_game_layout.character_record_map_sentinel_offset);
       const uintptr_t buckets = *reinterpret_cast<const uintptr_t*>(
-         manager + kCharacterRecordMapBucketsOffset);
+         manager + g_game_layout.character_record_map_buckets_offset);
       const uint32_t mask = *reinterpret_cast<const uint32_t*>(
-         manager + kCharacterRecordMapMaskOffset);
+         manager + g_game_layout.character_record_map_mask_offset);
       if (sentinel == 0 || buckets == 0 || (sentinel & 0x7) != 0 ||
           (buckets & 0x7) != 0)
          return false;
@@ -312,15 +314,15 @@ bool SafeResolveCharacterRecordByOwnerKey(
 bool SafeReadCharacterRecordHash(uintptr_t record, uint32_t& character_hash) noexcept
 {
    character_hash = 0;
-   if (record == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) || record == 0)
       return false;
    __try
    {
       uint32_t value = *reinterpret_cast<const uint32_t*>(
-         record + kCharacterRecordPrimaryHashOffset);
+         record + g_game_layout.character_record_primary_hash_offset);
       if (value == kUnwornCharacterHash)
          value = *reinterpret_cast<const uint32_t*>(
-            record + kCharacterRecordFallbackHashOffset);
+            record + g_game_layout.character_record_fallback_hash_offset);
       if (value == 0 || value == kUnwornCharacterHash)
          return false;
       character_hash = value;
@@ -406,8 +408,9 @@ bool SafeResolveCharacterStatus(
 {
    manager = 0;
    status = 0;
-   return g_image_base != 0 && character_hash != 0 &&
-      SafeReadPointer(g_image_base + kStatusManagerGlobalRva, manager) &&
+   return g_layout_ready.load(std::memory_order_acquire) &&
+      g_image_base != 0 && character_hash != 0 &&
+      SafeReadPointer(g_image_base + g_game_layout.status_manager_global_rva, manager) &&
       manager != 0 &&
       SafeResolveStatusByMapKey(manager, character_hash, status);
 }
@@ -430,6 +433,9 @@ bool SafeResolveSelectedCharacterStatus(
 
 bool SafeCanEditCharacter(uint32_t character_hash) noexcept
 {
+   if (!g_layout_ready.load(std::memory_order_acquire) ||
+       !g_hooks_ready.load(std::memory_order_acquire))
+      return false;
    UpdateEditSessionState();
    const int32_t edit_session = g_edit_session_state.load(std::memory_order_acquire);
    if (edit_session != EditSessionEquipment &&
@@ -599,7 +605,9 @@ bool SafeInvokeStatusRebuild(
    bool preserve_context) noexcept
 {
    restored_identity = {};
-   if (g_image_base == 0 || status == 0 || character_hash == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) ||
+       !g_hooks_ready.load(std::memory_order_acquire) ||
+       g_image_base == 0 || status == 0 || character_hash == 0)
       return false;
 
    StatusIdentity original_identity{};
@@ -614,11 +622,11 @@ bool SafeInvokeStatusRebuild(
    {
       if (!preserve_context)
       {
-         *reinterpret_cast<uint32_t*>(status + kStatusCharacterHashOffset) = character_hash;
-         *reinterpret_cast<int32_t*>(status + kStatusContextModeOffset) = 0;
+         *reinterpret_cast<uint32_t*>(status + g_game_layout.status_character_hash_offset) = character_hash;
+         *reinterpret_cast<int32_t*>(status + g_game_layout.status_context_mode_offset) = 0;
          identity_was_overridden = true;
       }
-      reinterpret_cast<void(__fastcall*)(void*)>(g_image_base + kStatusRebuildRva)(
+      reinterpret_cast<void(__fastcall*)(void*)>(g_image_base + g_game_layout.status_rebuild_rva)(
          reinterpret_cast<void*>(status));
       rebuild_succeeded = true;
    }
@@ -631,9 +639,9 @@ bool SafeInvokeStatusRebuild(
    {
       __try
       {
-         *reinterpret_cast<uint32_t*>(status + kStatusCharacterHashOffset) =
+         *reinterpret_cast<uint32_t*>(status + g_game_layout.status_character_hash_offset) =
             original_identity.character_hash;
-         *reinterpret_cast<int32_t*>(status + kStatusContextModeOffset) =
+         *reinterpret_cast<int32_t*>(status + g_game_layout.status_context_mode_offset) =
             original_identity.context_mode;
       }
       __except (EXCEPTION_EXECUTE_HANDLER)
@@ -652,12 +660,14 @@ bool SafeNotifyStatusDirty(
    uint32_t character_hash,
    uint32_t dirty_mask) noexcept
 {
-   if (g_image_base == 0 || manager == 0 || character_hash == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) ||
+       !g_hooks_ready.load(std::memory_order_acquire) ||
+       g_image_base == 0 || manager == 0 || character_hash == 0)
       return false;
    __try
    {
       reinterpret_cast<void(__fastcall*)(void*, uint32_t, uint32_t)>(
-         g_image_base + kStatusNotifierRva)(
+         g_image_base + g_game_layout.status_notifier_rva)(
          reinterpret_cast<void*>(manager), character_hash, dirty_mask);
       return true;
    }

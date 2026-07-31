@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.7.7'
+    [string]$Version = '0.7.8'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -102,6 +102,7 @@ foreach ($requiredFile in @(
 
 foreach ($excludedFile in @(
     'GBFR.ExtraSigilSlots.Reloaded.pdb',
+    'GBFR-ExtraSigilSlotsNumConfig.ini',
     'GBFR-ExtraSigilSlots20.ini',
     'GBFR-ExtraSigilSlots.presets.json',
     'GBFR-ExtraSigilSlots20.presets.json',
@@ -125,6 +126,13 @@ $legacyArtifact = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
     Select-Object -First 1
 if ($legacyArtifact) {
     throw "Legacy ExtraSigilSlots20 artifact was packaged: $($legacyArtifact.FullName)"
+}
+
+$packagedNumConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
+    Where-Object { $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.ini' } |
+    Select-Object -First 1
+if ($packagedNumConfig) {
+    throw "NumConfig must be runtime-created and was packaged unexpectedly: $($packagedNumConfig.FullName)"
 }
 
 Compress-Archive -LiteralPath $packageDir -DestinationPath $zipPath -CompressionLevel Optimal

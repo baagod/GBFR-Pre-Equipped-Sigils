@@ -1,5 +1,6 @@
 #include "../native_internal.h"
 
+#include <limits>
 #include <sstream>
 
 namespace gbfr::native
@@ -14,17 +15,36 @@ std::vector<InventoryItem> g_inventory_snapshot;
 
 namespace
 {
+bool TryGetInventoryBase(uintptr_t system_data, uintptr_t& inventory_base) noexcept
+{
+   inventory_base = 0;
+   if (!g_layout_ready.load(std::memory_order_acquire) || system_data == 0 ||
+       g_game_layout.main_gem_array_offset >
+          std::numeric_limits<uintptr_t>::max() - system_data)
+      return false;
+
+   const uintptr_t candidate = system_data + g_game_layout.main_gem_array_offset;
+   constexpr uintptr_t kInventorySpan =
+      static_cast<uintptr_t>(kMainGemCapacity - 1) * sizeof(GemData);
+   if (candidate > std::numeric_limits<uintptr_t>::max() - kInventorySpan)
+      return false;
+   inventory_base = candidate;
+   return true;
+}
+
 bool RebuildInventoryIndexLocked(uintptr_t system_data)
 {
    g_inventory_by_slot_id.clear();
-   if (system_data == 0)
+   uintptr_t inventory_base = 0;
+   if (!TryGetInventoryBase(system_data, inventory_base))
    {
       g_indexed_system_data = 0;
       return false;
    }
-   uintptr_t address = system_data + kMainGemArrayOffset;
-   for (int index = 0; index < kMainGemCapacity; ++index, address += sizeof(GemData))
+   for (int index = 0; index < kMainGemCapacity; ++index)
    {
+      const uintptr_t address = inventory_base +
+         static_cast<uintptr_t>(index) * sizeof(GemData);
       GemData gem{};
       if (!SafeReadGem(address, gem))
       {
@@ -42,10 +62,12 @@ bool RebuildInventoryIndexLocked(uintptr_t system_data)
 
 uintptr_t ResolveGemAddress(uint32_t slot_id)
 {
-   if (slot_id == 0 || g_image_base == 0)
+   if (!g_layout_ready.load(std::memory_order_acquire) ||
+       !g_hooks_ready.load(std::memory_order_acquire) ||
+       slot_id == 0 || g_image_base == 0)
       return 0;
    uintptr_t system_data = 0;
-   if (!SafeReadPointer(g_image_base + kSystemDataGlobalRva, system_data) || system_data == 0)
+   if (!SafeReadPointer(g_image_base + g_game_layout.system_data_global_rva, system_data) || system_data == 0)
       return 0;
 
    std::scoped_lock lock(g_inventory_index_mutex);
@@ -72,14 +94,11 @@ uintptr_t ResolveGemAddress(uint32_t slot_id)
 bool RefreshInventorySnapshot()
 {
    uintptr_t system_data = 0;
-   if (!g_hooks_ready.load(std::memory_order_acquire) ||
-       !SafeReadPointer(g_image_base + kSystemDataGlobalRva, system_data) ||
+   if (!g_layout_ready.load(std::memory_order_acquire) ||
+       !g_hooks_ready.load(std::memory_order_acquire) ||
+       !SafeReadPointer(g_image_base + g_game_layout.system_data_global_rva, system_data) ||
        system_data == 0)
-   {
-      std::scoped_lock lock(g_inventory_snapshot_mutex);
-      g_inventory_snapshot.clear();
       return false;
-   }
 
    struct RawInventoryRecord
    {
@@ -91,16 +110,16 @@ bool RefreshInventorySnapshot()
    records.reserve(kMainGemCapacity);
    std::unordered_map<uint32_t, uintptr_t> new_index;
    std::unordered_map<uint32_t, GemData> gems_by_slot_id;
-   uintptr_t address = system_data + kMainGemArrayOffset;
-   for (int index = 0; index < kMainGemCapacity; ++index, address += sizeof(GemData))
+   uintptr_t inventory_base = 0;
+   if (!TryGetInventoryBase(system_data, inventory_base))
+      return false;
+   for (int index = 0; index < kMainGemCapacity; ++index)
    {
+      const uintptr_t address = inventory_base +
+         static_cast<uintptr_t>(index) * sizeof(GemData);
       GemData gem{};
       if (!SafeReadGem(address, gem))
-      {
-         std::scoped_lock lock(g_inventory_snapshot_mutex);
-         g_inventory_snapshot.clear();
          return false;
-      }
       if (gem.slot_id == 0)
          continue;
 

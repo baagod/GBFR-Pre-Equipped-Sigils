@@ -43,11 +43,14 @@ stores and coordinators, but stores must not install or disable hooks.
 
 ## Non-negotiable invariants
 
-1. Only a verified Granblue Fantasy: Relink ER 2.0.2 code layout may install
-   game hooks. The executable name remains mandatory. A known executable hash
-   identifies the tested build, while an unknown hash is diagnostic only and
-   must pass every required RVA/byte preflight before any hook or byte patch is
-   installed. A failed preflight rejects the entire transaction.
+1. Only a layout resolved from unique semantic anchors and validated against
+   the current Granblue Fantasy: Relink executable may install game hooks. The
+   executable name remains mandatory. The resolver derives code entry points,
+   globals, and object offsets from instruction relationships instead of a
+   version-wide RVA delta, then requires every exact local byte contract to
+   match before any hook or byte patch is installed. Ambiguous or incomplete
+   resolution rejects the entire gameplay transaction. Full-file hashes remain
+   diagnostic only.
 2. Every game-memory read remains guarded. SEH-safe reads, pointer/range checks,
    and executable-address checks are safety boundaries, not optional cleanup.
 3. Hook installation and shutdown remain transactional. A partial install must
@@ -60,7 +63,8 @@ stores and coordinators, but stores must not install or disable hooks.
 6. Physical inventory identity is the native slot id. A physical sigil can have
    at most one virtual owner, and native body-slot ownership always wins.
 7. Native body slots remain 1-12. Configurable virtual slots remain 1-24 with a
-   default of 8; shrinking the configured count clears hidden reservations.
+   default of 8; shrinking the configured count clears hidden reservations in
+   memory without rewriting a valid NumConfig during startup.
 8. Input capture suppresses keyboard and mouse only. DirectInput devices are
    classified when `CreateDevice` receives `GUID_SysKeyboard` or
    `GUID_SysMouse`; XInput, DirectInput gamepad input, Raw HID, and unknown
@@ -70,10 +74,16 @@ stores and coordinators, but stores must not install or disable hooks.
 10. Dynamic unloading is unsupported (`Mod.CanUnload` is false). Managed
     teardown calls `GBFR20_Shutdown` before process exit; `DllMain` remains
     loader-lock safe and does not attempt complex hook teardown.
-11. Required byte/RVA preflight and every game hook install remain synchronous.
-    Full-file EXE SHA-256 is a managed, post-hook diagnostic only and cannot
-    participate in the compatibility decision or patch rollback.
-12. Reloaded-II launch-source diagnostics classify only the official
+11. Semantic layout resolution, required local-byte preflight, and every game
+    hook install remain synchronous and run once during initialization. They
+    must never move into a timer or per-frame scan. Full-file EXE SHA-256 is a
+    managed, post-hook diagnostic only and cannot participate in the
+    compatibility decision or patch rollback.
+12. A resolved layout is published once and remains immutable for the process
+    lifetime. Shutdown or failed installation revokes `g_layout_ready` but does
+    not clear the layout structure underneath readers that may already have
+    acquired the previous ready state.
+13. Reloaded-II launch-source diagnostics classify only the official
     `Reloaded.Mod.Loader.Bootstrapper.dll` or deployed `.asi` module with its
     `InitializeASI` export; ambiguous or similarly named modules remain unknown.
 
@@ -89,6 +99,7 @@ GBFR.ExtraSigilSlots.Native/
     exports.cpp
     input_capture.cpp
     inventory_store.cpp
+    layout_resolver.cpp
     name_tables.cpp
     runtime.cpp
     runtime_state.cpp
@@ -109,10 +120,11 @@ temporary `.inl` fragments or unity-build includes are used.
 | `runtime_state.cpp` / `runtime.cpp` | initialization state, shutdown state, module paths, messages, tick coordination | detour bodies |
 | `safe_game_access.cpp` | guarded reads, pointer/range validation, status identity and authorization validation | UI rendering |
 | `input_capture.cpp` | USER32/DInput8 IAT patches, event-driven DirectInput device classification, keyboard/mouse method-target inline gates without COM-vptr replacement, capture barrier, cursor freeze state | overlay policy |
-| `config_store.cpp` | INI normalization, settings and persisted character selections | game-memory reads |
+| `config_store.cpp` | runtime-only NumConfig creation, whole-file validation, invalid-file backup, settings and persisted character selections | game-memory reads |
 | `name_tables.cpp` | localized name tables and immutable compatibility mapping | inventory mutation |
 | `selection_store.cpp` | per-character selections, reverse ownership and apply-generation transactions | hook installation |
 | `inventory_store.cpp` | physical-slot index, validated inventory snapshot and revision | persistent presets |
+| `layout_resolver.cpp` | one-shot PE validation, unique semantic anchors, decoded globals/object offsets, and exact local-byte revalidation | hook installation or game-memory mutation |
 | `trait_hooks.cpp` | TLS contribution frame, detour callbacks, preflight, install, rollback and quiescent shutdown | managed state |
 | `exports.cpp` / `dllmain.cpp` | packed C ABI wrappers and loader-lock-safe module entry | business policy |
 
@@ -122,14 +134,15 @@ guards, and rollback logic must not be removed merely to reduce line count.
 
 ## LocalContext1 quarantine
 
-`kLocalContext1BindCallRva`, `kLocalContext1BindReturnRva`, their preflight
-patterns, callbacks, hook handles, map, and TLS state were all introduced in the
-initial repository commit. `InstallHooks` has never installed either hook, so
-the callback is unreachable and the binding map cannot be populated.
+The LocalContext1 callbacks, hook handles, map, TLS state, and quarantined
+record offsets descend from the initial implementation. `InstallHooks` has
+never installed either hook, so the callback is unreachable and the binding
+map cannot be populated. Active fixed RVAs for this dormant path are not part
+of the semantic resolver.
 
 The subsystem must remain explicitly quarantined during mechanical extraction:
 
-- do not activate it just because constants and callbacks exist;
+- do not activate it just because callbacks and dormant state exist;
 - do not use its empty map as evidence that context-1 ownership is valid;
 - do not delete it until the target instructions and register contract have
   been verified against the supported executable;
@@ -149,7 +162,8 @@ quarantined as described above.
 All future changes must:
 
 - compile Debug and Release x64 where practical;
-- keep the existing default release package layout;
+- keep the existing default release package layout, excluding runtime-owned
+  NumConfig and preset files from every archive;
 - pass the repository smoke harnesses;
 - contain no unrelated behavior change.
 

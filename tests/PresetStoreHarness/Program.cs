@@ -62,11 +62,6 @@ string legacyConfigPath = Path.Combine(legacyDirectory, "GBFR-ExtraSigilSlotsNum
 try
 {
     File.WriteAllText(
-        configPath,
-        "[Settings]\nConfigVersion=2\nToggleKey=119\nShowEquipped=0\n" +
-        "AutoApply=1\nLanguage=zh-CN\nVirtualSlotCount=8\n",
-        new UTF8Encoding(false));
-    File.WriteAllText(
         legacyConfigPath,
         "[Settings]\nConfigVersion=2\nToggleKey=119\nShowEquipped=1\n" +
         "AutoApply=1\nLanguage=en\nVirtualSlotCount=12\n",
@@ -107,14 +102,14 @@ try
         null,
         [testDirectory, new Action<string>(migrationLogs.Add)]);
     if (!File.Exists(jsonPath) ||
-        !File.ReadAllText(configPath).Contains("VirtualSlotCount=12", StringComparison.Ordinal) ||
+        File.Exists(configPath) ||
         !File.Exists(legacyJsonPath) ||
-        migrationLogs.Count(message => message.StartsWith("Migrated", StringComparison.Ordinal)) != 2)
+        migrationLogs.Count(message => message.StartsWith("Migrated", StringComparison.Ordinal)) != 1)
     {
-        throw new InvalidOperationException("Legacy settings/preset migration failed.");
+        throw new InvalidOperationException(
+            "Legacy preset migration or runtime-owned NumConfig creation policy failed.");
     }
 
-    string migratedConfig = File.ReadAllText(configPath);
     string migratedPresets = File.ReadAllText(jsonPath);
     File.WriteAllText(
         legacyConfigPath,
@@ -127,7 +122,7 @@ try
     migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
         null,
         [testDirectory, new Action<string>(migrationLogs.Add)]);
-    if (File.ReadAllText(configPath) != migratedConfig ||
+    if (File.Exists(configPath) ||
         File.ReadAllText(jsonPath) != migratedPresets)
     {
         throw new InvalidOperationException("Migration overwrote canonical user data.");
@@ -173,7 +168,8 @@ try
     Console.WriteLine("ROLLBACK_REFERENCES=2");
     Console.WriteLine("COMMITTED_REFERENCES=0");
     Console.WriteLine("CAPTURED_CHARACTERS=28");
-    Console.WriteLine("LEGACY_DATA_MIGRATION=PASS");
+    Console.WriteLine("LEGACY_PRESET_MIGRATION=PASS");
+    Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
     Console.WriteLine("ABI_VERSION=11");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
     Console.WriteLine("PRESET_RESULT_SIZE=20");

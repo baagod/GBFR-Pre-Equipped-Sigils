@@ -28,6 +28,9 @@ void GBFR20_CALL GBFR20_Tick()
    g_overlay_frame_count.fetch_add(1, std::memory_order_acq_rel);
    EnsureInitialized();
    UpdateInputCaptureBarrier();
+   if (!g_hooks_ready.load(std::memory_order_acquire) ||
+       !g_layout_ready.load(std::memory_order_acquire))
+      return;
    UpdateEditSessionState();
    ValidateAuthorizedStatuses();
    ScheduleSelectedStatusRebind();
@@ -279,6 +282,8 @@ int32_t GBFR20_CALL GBFR20_SetToggleKey(int32_t virtual_key)
       return 0;
    {
       std::scoped_lock lock(g_settings_mutex);
+      if (g_settings.toggle_key == virtual_key)
+         return 1;
       g_settings.toggle_key = virtual_key;
    }
    SaveUiSettings();

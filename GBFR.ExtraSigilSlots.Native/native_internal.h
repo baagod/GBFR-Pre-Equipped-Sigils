@@ -25,43 +25,48 @@
 
 namespace gbfr::native
 {
-inline constexpr uintptr_t kTraitApplyLoopLimitImmediateRva = 0x00A25484;
-inline constexpr uintptr_t kTraitApplyGetterReturnRva = 0x00A254A9;
-inline constexpr uintptr_t kTraitCategoryLoopLimitImmediateRva = 0x00A26096;
-inline constexpr uintptr_t kTraitFetchPathRva = 0x00A260AE;
-inline constexpr uintptr_t kTraitFetchCallPathRva = 0x00A260F0;
-inline constexpr uintptr_t kTraitCategoryGetterReturnRva = 0x00A260FE;
-inline constexpr uintptr_t kGetGemDataByIndexRva = 0x00A2C610;
-inline constexpr uintptr_t kStatusRebuildRva = 0x00A23CC0;
-inline constexpr uintptr_t kStatusNotifierRva = 0x002D93F0;
-inline constexpr uintptr_t kStatusOwnerTickRva = 0x0024B2F0;
-inline constexpr uintptr_t kStatusOwnerCharacterLoopRva = 0x0024CA4A;
-inline constexpr uintptr_t kLocalContext1BindCallRva = 0x002EA29D;
-inline constexpr uintptr_t kLocalContext1BindReturnRva = 0x002EA2A2;
-inline constexpr uintptr_t kSystemDataGlobalRva = 0x07C20940;
-inline constexpr uintptr_t kStatusManagerGlobalRva = 0x07C24980;
-inline constexpr uintptr_t kUiManagerGlobalRva = 0x07C4A140;
-inline constexpr uintptr_t kUiStateSourceGlobalRva = 0x07C4A1A8;
+struct ResolvedGameLayout
+{
+   uintptr_t trait_apply_loop_limit_immediate_rva = 0;
+   uintptr_t trait_apply_getter_return_rva = 0;
+   uintptr_t trait_category_loop_limit_immediate_rva = 0;
+   uintptr_t trait_fetch_path_rva = 0;
+   uintptr_t trait_fetch_call_path_rva = 0;
+   uintptr_t trait_category_getter_return_rva = 0;
+   uintptr_t get_gem_data_by_index_rva = 0;
+   uintptr_t status_rebuild_rva = 0;
+   uintptr_t status_notifier_rva = 0;
+   uintptr_t status_owner_tick_rva = 0;
+   uintptr_t status_owner_character_loop_rva = 0;
+   uintptr_t system_data_global_rva = 0;
+   uintptr_t status_manager_global_rva = 0;
+   uintptr_t ui_manager_global_rva = 0;
+   uintptr_t ui_state_source_global_rva = 0;
+   uintptr_t main_gem_array_offset = 0;
+   uintptr_t ui_selected_character_hash_offset = 0;
+   uintptr_t ui_mode_offset = 0;
+   uintptr_t ui_state_source_mode_offset = 0;
+   uintptr_t status_map_sentinel_offset = 0;
+   uintptr_t status_map_buckets_offset = 0;
+   uintptr_t status_map_mask_offset = 0;
+   uintptr_t character_record_map_sentinel_offset = 0;
+   uintptr_t character_record_map_buckets_offset = 0;
+   uintptr_t character_record_map_mask_offset = 0;
+   uintptr_t character_record_primary_hash_offset = 0;
+   uintptr_t character_record_fallback_hash_offset = 0;
+   uintptr_t status_character_hash_offset = 0;
+   uintptr_t status_context_mode_offset = 0;
+   uint8_t trait_apply_original_limit = 0;
+   uint8_t trait_category_original_limit = 0;
+   uint32_t pe_timestamp = 0;
+};
+
 inline constexpr int kNativeInternalSlotCount = 13;
 inline constexpr int kDefaultVirtualSlotCount = 8;
 inline constexpr int kVirtualSlotCapacity = 24;
 inline constexpr int kMainGemCapacity = 5100;
 inline constexpr int kCurrentSettingsVersion = 2;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
-inline constexpr uintptr_t kMainGemArrayOffset = 0x25D0;
-inline constexpr uintptr_t kUiSelectedCharacterHashOffset = 0x5F0;
-inline constexpr uintptr_t kUiModeOffset = 0xB14;
-inline constexpr uintptr_t kUiStateSourceModeOffset = 0x34;
-inline constexpr uintptr_t kStatusMapSentinelOffset = 0xA30;
-inline constexpr uintptr_t kStatusMapBucketsOffset = 0xA40;
-inline constexpr uintptr_t kStatusMapMaskOffset = 0xA58;
-inline constexpr uintptr_t kCharacterRecordMapSentinelOffset = 0xED738;
-inline constexpr uintptr_t kCharacterRecordMapBucketsOffset = 0xED748;
-inline constexpr uintptr_t kCharacterRecordMapMaskOffset = 0xED760;
-inline constexpr uintptr_t kCharacterRecordPrimaryHashOffset = 0x59F4;
-inline constexpr uintptr_t kCharacterRecordFallbackHashOffset = 0x59F0;
-inline constexpr uintptr_t kStatusCharacterHashOffset = 0x5EA8;
-inline constexpr uintptr_t kStatusContextModeOffset = 0x5EAC;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kLocalPlayerSlotKey = 0xDBD9A18D;
 
@@ -241,6 +246,8 @@ extern std::filesystem::path g_compatibility_path;
 extern std::once_flag g_initialize_once;
 extern std::atomic_bool g_initialized;
 extern std::atomic_bool g_hooks_ready;
+extern std::atomic_bool g_layout_ready;
+extern ResolvedGameLayout g_game_layout;
 extern std::atomic_bool g_shutting_down;
 extern std::atomic_bool g_shutdown_complete;
 extern std::atomic<GBFR20_LogCallback> g_log_callback;
@@ -417,7 +424,7 @@ void ResetDirectInputInstanceHooks() noexcept;
 bool InstallInputIatHooks();
 void UpdateInputCaptureBarrier();
 
-void LoadSettingsAndSelections();
+void LoadSettingsAndSelections(bool activate_selection_ownership);
 void SaveUiSettings();
 void SaveCharacterSelection(uint32_t character_hash);
 bool ReloadNameTable(std::string_view language);
@@ -436,6 +443,9 @@ uintptr_t ResolveGemAddress(uint32_t slot_id);
 bool RefreshInventorySnapshot();
 
 void ScheduleSelectedStatusRebind();
+bool ResolveGameLayout();
+bool RevalidateGameLayout();
+void ResetGameLayout() noexcept;
 void ShutdownHooks();
 bool InstallHooks();
 void Initialize();

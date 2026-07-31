@@ -93,6 +93,7 @@
     <ClCompile Include="src\exports.cpp" />
     <ClCompile Include="src\input_capture.cpp" />
     <ClCompile Include="src\inventory_store.cpp" />
+    <ClCompile Include="src\layout_resolver.cpp" />
     <ClCompile Include="src\name_tables.cpp" />
     <ClCompile Include="src\runtime.cpp" />
     <ClCompile Include="src\runtime_state.cpp" />

@@ -37,6 +37,9 @@
     <ClCompile Include="src\inventory_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\layout_resolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\name_tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

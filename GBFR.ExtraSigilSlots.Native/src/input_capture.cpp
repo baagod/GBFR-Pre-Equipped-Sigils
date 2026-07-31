@@ -653,11 +653,9 @@ bool IsPhysicalInputNeutral(uint32_t devices)
    }
    return true;
 }
-}
 
-void RestoreInputIatHooks()
+void RestoreInputIatHooksLocked() noexcept
 {
-   std::scoped_lock lock(g_input_hook_mutex);
    for (auto iterator = g_iat_patches.rbegin(); iterator != g_iat_patches.rend(); ++iterator)
    {
       if (iterator->slot == nullptr || iterator->original == nullptr)
@@ -673,6 +671,13 @@ void RestoreInputIatHooks()
    }
    g_iat_patches.clear();
    g_input_iat_hooks_ready.store(false, std::memory_order_release);
+}
+}
+
+void RestoreInputIatHooks()
+{
+   std::scoped_lock lock(g_input_hook_mutex);
+   RestoreInputIatHooksLocked();
 }
 
 void RestoreDirectInputInstanceHooks() noexcept
@@ -709,55 +714,69 @@ void ResetDirectInputInstanceHooks() noexcept
 
 bool InstallInputIatHooks()
 {
-   std::scoped_lock lock(g_input_hook_mutex);
-   if (g_input_iat_hooks_ready.load(std::memory_order_acquire))
-      return true;
+   bool succeeded = false;
+   {
+      std::scoped_lock lock(g_input_hook_mutex);
+      if (g_input_iat_hooks_ready.load(std::memory_order_acquire))
+         return true;
 
-   const uint64_t user32_started = BeginStartupPhase("user32-input-iat-hooks");
-   void* original = nullptr;
-   bool user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetAsyncKeyState", reinterpret_cast<void*>(&GetAsyncKeyStateDetour), original);
-   g_original_get_async_key_state = reinterpret_cast<GetAsyncKeyStateFn>(original);
+      const uint64_t user32_started = BeginStartupPhase("user32-input-iat-hooks");
+      void* original = nullptr;
+      bool user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "GetAsyncKeyState", reinterpret_cast<void*>(&GetAsyncKeyStateDetour), original);
+      g_original_get_async_key_state = reinterpret_cast<GetAsyncKeyStateFn>(original);
 
-   original = nullptr;
-   user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetKeyState", reinterpret_cast<void*>(&GetKeyStateDetour), original) && user32_succeeded;
-   g_original_get_key_state = reinterpret_cast<GetKeyStateFn>(original);
+      original = nullptr;
+      user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "GetKeyState", reinterpret_cast<void*>(&GetKeyStateDetour), original) && user32_succeeded;
+      g_original_get_key_state = reinterpret_cast<GetKeyStateFn>(original);
 
-   original = nullptr;
-   user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetKeyboardState", reinterpret_cast<void*>(&GetKeyboardStateDetour), original) && user32_succeeded;
-   g_original_get_keyboard_state = reinterpret_cast<GetKeyboardStateFn>(original);
+      original = nullptr;
+      user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "GetKeyboardState", reinterpret_cast<void*>(&GetKeyboardStateDetour), original) && user32_succeeded;
+      g_original_get_keyboard_state = reinterpret_cast<GetKeyboardStateFn>(original);
 
-   original = nullptr;
-   user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "GetCursorPos", reinterpret_cast<void*>(&GetCursorPosDetour), original) && user32_succeeded;
-   g_original_get_cursor_pos = reinterpret_cast<GetCursorPosFn>(original);
+      original = nullptr;
+      user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "GetCursorPos", reinterpret_cast<void*>(&GetCursorPosDetour), original) && user32_succeeded;
+      g_original_get_cursor_pos = reinterpret_cast<GetCursorPosFn>(original);
 
-   original = nullptr;
-   user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "SetCursorPos", reinterpret_cast<void*>(&SetCursorPosDetour), original) && user32_succeeded;
-   g_original_set_cursor_pos = reinterpret_cast<SetCursorPosFn>(original);
+      original = nullptr;
+      user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "SetCursorPos", reinterpret_cast<void*>(&SetCursorPosDetour), original) && user32_succeeded;
+      g_original_set_cursor_pos = reinterpret_cast<SetCursorPosFn>(original);
 
-   original = nullptr;
-   user32_succeeded = PatchMainModuleImport(
-      "USER32.dll", "ClipCursor", reinterpret_cast<void*>(&ClipCursorDetour), original) && user32_succeeded;
-   g_original_clip_cursor = reinterpret_cast<ClipCursorFn>(original);
-   CompleteStartupPhase("user32-input-iat-hooks", user32_started, user32_succeeded);
+      original = nullptr;
+      user32_succeeded = PatchMainModuleImport(
+         "USER32.dll", "ClipCursor", reinterpret_cast<void*>(&ClipCursorDetour), original) && user32_succeeded;
+      g_original_clip_cursor = reinterpret_cast<ClipCursorFn>(original);
+      CompleteStartupPhase("user32-input-iat-hooks", user32_started, user32_succeeded);
 
-   const uint64_t direct_input_started = BeginStartupPhase("directinput-iat-hook");
-   original = nullptr;
-   const bool direct_input_succeeded = PatchMainModuleImport(
-      "DINPUT8.dll", "DirectInput8Create", reinterpret_cast<void*>(&DirectInput8CreateDetour), original);
-   g_original_direct_input8_create = reinterpret_cast<DirectInput8CreateFn>(original);
-   CompleteStartupPhase(
-      "directinput-iat-hook", direct_input_started, direct_input_succeeded);
+      const uint64_t direct_input_started = BeginStartupPhase("directinput-iat-hook");
+      original = nullptr;
+      const bool direct_input_succeeded = PatchMainModuleImport(
+         "DINPUT8.dll", "DirectInput8Create", reinterpret_cast<void*>(&DirectInput8CreateDetour), original);
+      g_original_direct_input8_create = reinterpret_cast<DirectInput8CreateFn>(original);
+      CompleteStartupPhase(
+         "directinput-iat-hook", direct_input_started, direct_input_succeeded);
 
-   const bool succeeded = user32_succeeded && direct_input_succeeded;
-   g_input_iat_hooks_ready.store(succeeded, std::memory_order_release);
+      succeeded = user32_succeeded && direct_input_succeeded;
+      if (succeeded)
+         g_input_iat_hooks_ready.store(true, std::memory_order_release);
+      else
+         RestoreInputIatHooksLocked();
+   }
+
+   if (!succeeded)
+   {
+      RestoreDirectInputInstanceHooks();
+      while (g_active_input_calls.load(std::memory_order_acquire) != 0)
+         SwitchToThread();
+      ResetDirectInputInstanceHooks();
+   }
    Log(succeeded
       ? "Game-local USER32 and DirectInput8 keyboard/mouse gates installed; controller input is passed through."
-      : "One or more game-local USER32/DirectInput8 keyboard and mouse gates failed to install.");
+      : "One or more game-local USER32/DirectInput8 keyboard and mouse gates failed to install; the partial input transaction was rolled back.");
    return succeeded;
 }
 

@@ -30,9 +30,6 @@
     <None Include="..\GBFR.ExtraSigilSlots.Native\bin\$(Configuration)\GBFR.ExtraSigilSlots.Native.dll"
           Link="GBFR.ExtraSigilSlots.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ExtraSigilSlots.Native\GBFR-ExtraSigilSlotsNumConfig.ini"
-          Link="GBFR-ExtraSigilSlotsNumConfig.ini"
-          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\GBFR.ExtraSigilSlots.Native\GBFR-ExtraSigilSlots.names.en.tsv"
           Link="GBFR-ExtraSigilSlots.names.en.tsv"
           CopyToOutputDirectory="PreserveNewest" />
