@@ -24,6 +24,15 @@ MethodInfo shouldCaptureRawInputType = classifierType.GetMethod(
     "ShouldCaptureRawInputType",
     BindingFlags.NonPublic | BindingFlags.Static)
     ?? throw new MissingMethodException(classifierType.FullName, "ShouldCaptureRawInputType");
+Type brokerHostType = assembly.GetType(
+    "GBFR.OverlayHub.Runtime.OverlayBrokerHost",
+    throwOnError: true)!;
+MethodInfo shouldSuppressWindowMessage = brokerHostType.GetMethod(
+    "ShouldSuppressWindowMessage",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(
+        brokerHostType.FullName,
+        "ShouldSuppressWindowMessage");
 
 Type devicesType = shouldCapture.GetParameters()[2].ParameterType;
 object Devices(int value) => Enum.ToObject(devicesType, value);
@@ -108,6 +117,30 @@ foreach ((uint message, int devices, bool expected, string name) in deviceCases)
     }
 }
 Console.WriteLine("BROKER_DEVICE_CAPTURE_POLICY=PASS");
+
+(uint Message, int Devices, bool Suppress, string Name)[] brokerCases =
+[
+    (0x0006, 3, false, "WM_ACTIVATE must reach the game"),
+    (0x0008, 3, false, "WM_KILLFOCUS must reach the game"),
+    (0x001C, 3, false, "WM_ACTIVATEAPP must reach the game"),
+    (0x001F, 3, false, "WM_CANCELMODE must reach the game"),
+    (0x0215, 3, false, "WM_CAPTURECHANGED must reach the game"),
+    (0x0100, 1, true, "captured keyboard key"),
+    (0x0201, 2, true, "captured mouse button"),
+    (0x0100, 0, false, "no active capture"),
+];
+foreach ((uint message, int devices, bool expected, string name) in brokerCases)
+{
+    bool actual = (bool)(shouldSuppressWindowMessage.Invoke(
+        null,
+        [message, IntPtr.Zero, Devices(devices)]) ?? false);
+    if (actual != expected)
+    {
+        throw new InvalidOperationException(
+            $"Broker WndProc policy ({name}): expected suppress={expected}, got {actual}.");
+    }
+}
+Console.WriteLine("BROKER_FOCUS_AND_CAPTURE_FORWARDING=PASS");
 
 sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
 {

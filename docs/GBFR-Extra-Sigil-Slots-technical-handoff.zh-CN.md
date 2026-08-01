@@ -4,7 +4,7 @@
 > 基线日期：2026-08-01
 > 当前主线：`main`
 > 初始审计基线：`5e54035` / `v0.7.8`
-> 当前维护版本：`v0.7.9`
+> 当前维护版本：`v0.7.10`
 > 支持游戏版本：Granblue Fantasy: Relink Endless Ragnarok 2.0.2、2.0.3
 > 仓库：`cajoxorize366-oss/GBFR-Extra-Sigil-Slots`
 
@@ -18,6 +18,7 @@
 
 - 本文最初以 `5e54035`／`v0.7.8` 建立代码地图；符号和行号引用仍以该基线为主。
 - `v0.7.9` 收录了 CJK 字形范围扩展、菜单首次打开的重复热键／陈旧鼠标点击防护，以及命名预设的 Reloaded-II 持久目录迁移与损坏文件备份恢复。
+- `v0.7.10` 移除 Broker 重构时重新引入的逐帧光标释放，并确保窗口焦点／激活消息始终返回游戏，修复首次打开和游戏官方菜单的画面闪烁。
 - 接手前仍须先检查实际 `git status`；任何后来出现的用户修改都不得用 `git reset --hard`、`git checkout --` 或类似方式删除。
 - `2026/7/18-backup` 分支保存重构前基线 `1351349`。
 - `Dear_branch_preview` 等分支是实验记录，不是应继续合并到 `main` 的实现。
@@ -99,6 +100,7 @@ flowchart TD
 | Broker 恢复 | `92f339d` (`v0.7.7`) | generation-fenced host lease、host 消失后的 surviving peer 接管与重新绑定。 |
 | 2.0.3 与配置保护 | `5e54035` (`v0.7.8`) | 新增一次性语义布局解析器；支持 2.0.2／2.0.3；NumConfig 不再随包，合法文件不改，非法文件先备份再重建。 |
 | 首次输入与预设持久化 | `v0.7.9` | 热键需抬起后才能再次触发；鼠标完整事件序列参与首次交互门控；首次库存只刷新一次；命名预设迁入 Reloaded-II 持久配置目录，损坏 JSON 按内容哈希备份后恢复。 |
+| 光标与焦点回归修复 | `v0.7.10` | Broker 只在输入捕获状态切换时释放／恢复光标，不再逐帧调用 `ClipCursor(NULL)`；焦点、激活和 capture-change 消息继续传给游戏原始 WndProc。 |
 
 ### 4.1 已放弃或只保留作研究的路线
 
@@ -383,7 +385,7 @@ Mod 的目标是只劫持键盘和鼠标：
 - UTF-16 注入 ImGui；
 - composition 结束时清状态。
 
-字体侧还需包含中文、全角标点、CJK 标点和用户自定义预设名所需字形。当前工作区的 `CjkConfiguredDx11Hook.cs` 有用户未提交扩展，重构时必须保留。
+字体侧还需包含中文、全角标点、CJK 标点和用户自定义预设名所需字形。`v0.7.9` 已将扩展字体候选和字形范围纳入主线，后续重构时必须保留。
 
 ## 9. 配置、选择与预设的数据完整性
 
@@ -520,6 +522,7 @@ Mod 的目标是只劫持键盘和鼠标：
 | 鼠标移动不乱但点击仍穿透 | 只拦移动／键盘，没有完整覆盖 mouse button 和非客户区消息 | 完整 WndProc mouse 分类、RawInput 分类和 native mouse capture transition。 |
 | 无边框窗口无法拖动 | Overlay 隐藏后仍持有 capture／clip 或仍拦截非客户区鼠标 | 关闭时强制释放并恢复原窗口状态。 |
 | 打开菜单时鼠标短暂冻结或随机换因子 | 打开瞬间沿用了上一个 frame 的按钮状态；两帧之间完整发生的按下／抬起会被“当前未按住”判断遗漏 | 热键增加 key-up latch；鼠标门控同时追踪完整按钮事件序列，最后一次事件后经过干净帧才允许交互。 |
+| 首次打开或战斗中打开官方菜单时画面闪烁 | Hub 重构重新引入逐帧 `ClipCursor(NULL)`，并在捕获期间吞掉窗口失焦／激活消息，游戏与 Overlay 反复争夺窗口状态 | Broker 只在输入状态切换时操作光标；焦点、激活、取消模式和 capture-change 消息全部转回游戏原始 WndProc。 |
 | 两个 ImGui Mod 一个能开、另一个空 context | host／guest 在各自 ALC 加载了不同 cimgui context；固定 host 退出后 guest 无法恢复 | P2P peer + 中立 Broker + exact graphics binding + generation recovery。 |
 | Steam 启动／ASI 模式首次加载卡死或闪退 | 注入顺序与 DirectInput／ReShade／Reloaded bootstrapper 顺序变化；粗暴异步安装又会制造新竞态 | 保持 Hook 同步，输入事务独立回滚；记录启动 phase；只识别官方 bootstrapper 模块和 `InitializeASI`。native DLL 本身不是 `.asi`。 |
 | 更新包覆盖或重置槽位配置 | NumConfig 曾随包复制，安装器覆盖用户文件 | `v0.7.8` 起任何包都排除 NumConfig；运行时缺失创建、合法不动、非法备份后重建。 |
@@ -796,6 +799,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 - [ ] trait contribution 仍验证 thread/TLS/generation/character/context/count。
 - [ ] 只有键盘、鼠标和文本被捕获；controller/HID 仍放行。
 - [ ] Overlay 关闭、host 失败时输入一定释放。
+- [ ] Broker 不逐帧重复释放光标；窗口焦点／激活／capture-change 消息仍到达游戏。
 - [ ] Broker 仍只有一个 graphics writer，旧 generation 无写权限。
 - [ ] 所有 peer 使用 exact same cimgui module/context。
 - [ ] Broker shared files 在 Extra Sigil 与 ChatOverlay 两仓库字节一致。

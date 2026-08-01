@@ -14,10 +14,6 @@ namespace GBFR.OverlayHub.Runtime;
 /// </summary>
 internal sealed class OverlayBrokerHost : IDisposable
 {
-    private const uint WmKillFocus = 0x0008;
-    private const uint WmActivate = 0x0006;
-    private const uint WmActivateApp = 0x001C;
-
     private static OverlayBrokerHost? s_activeHost;
     private static int s_hasOriginalWndProc;
     private static WndProcHook.WndProc s_originalWndProc;
@@ -164,8 +160,6 @@ internal sealed class OverlayBrokerHost : IDisposable
             _control.RenderClients();
             var devices = (OverlayInputDevices)Volatile.Read(ref _capturedInputDevices);
             var mouseCaptured = (devices & OverlayInputDevices.Mouse) != 0;
-            if (mouseCaptured)
-                _ = ClipCursor(nint.Zero);
             ImGui.GetIO().MouseDrawCursor = mouseCaptured;
         }
         catch (Exception exception)
@@ -208,7 +202,6 @@ internal sealed class OverlayBrokerHost : IDisposable
         if (captureMouse)
         {
             BeginReleasedMouse();
-            _ = ClipCursor(nint.Zero);
             ResetImGuiMouseState();
         }
         else
@@ -288,16 +281,8 @@ internal sealed class OverlayBrokerHost : IDisposable
 
                 ImGui.ImplWin32_WndProcHandler((void*)hWnd, message, wParam, lParam);
                 var devices = (OverlayInputDevices)Volatile.Read(ref host._capturedInputDevices);
-                if (devices != OverlayInputDevices.None)
-                {
-                    if (message == WmKillFocus ||
-                        ((message is WmActivate or WmActivateApp) && wParam == nint.Zero))
-                    {
-                        return nint.Zero;
-                    }
-                    if (OverlayWindowInputClassifier.ShouldCapture(message, lParam, devices))
-                        return nint.Zero;
-                }
+                if (ShouldSuppressWindowMessage(message, lParam, devices))
+                    return nint.Zero;
             }
 
             var hook = WndProcHook.Instance;
@@ -335,6 +320,13 @@ internal sealed class OverlayBrokerHost : IDisposable
             return CallDefaultWindowProc(hWnd, message, wParam, lParam);
         }
     }
+
+    internal static bool ShouldSuppressWindowMessage(
+        uint message,
+        nint lParam,
+        OverlayInputDevices devices) =>
+        devices != OverlayInputDevices.None &&
+        OverlayWindowInputClassifier.ShouldCapture(message, lParam, devices);
 
     private void LogWndProcFailure(Exception exception)
     {
