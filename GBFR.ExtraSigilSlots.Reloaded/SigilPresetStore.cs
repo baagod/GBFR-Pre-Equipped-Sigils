@@ -223,6 +223,7 @@ internal sealed class SigilPresetStore
         if (!File.Exists(_path))
         {
             RebuildReferenceIndex();
+            _log($"No sigil preset file found at {_path}; starting with an empty preset list.");
             return;
         }
 
@@ -234,13 +235,15 @@ internal sealed class SigilPresetStore
             _document = loaded ?? new PresetDocument();
             NormalizeDocument(_document);
             RebuildReferenceIndex();
-            _log($"Loaded {_document.Presets.Count} sigil presets.");
+            _log($"Loaded {_document.Presets.Count} sigil presets from {_path}.");
         }
         catch (Exception exception)
         {
             _document = new PresetDocument();
             RebuildReferenceIndex();
-            _log($"Could not load sigil presets; the existing file was left untouched: {exception}");
+            _log(
+                $"Could not load sigil presets from {_path}; " +
+                $"the existing file was left untouched: {exception}");
         }
     }
 

@@ -43,12 +43,12 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
     private bool _disposed;
 
     internal SigilOverlayUi(
-        string modDirectory,
+        string presetDirectory,
         Action<bool> setInputCapture,
         Action<string> log,
         bool brokerOwnsMouseCapture = false)
     {
-        _presetStore = new SigilPresetStore(modDirectory, log);
+        _presetStore = new SigilPresetStore(presetDirectory, log);
         _setInputCapture = setInputCapture;
         _log = log;
         _brokerOwnsMouseCapture = brokerOwnsMouseCapture;
@@ -71,7 +71,9 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         if (!_windowOpen)
             return;
 
-        _mouseInteractionGate.Observe(MouseButtonStateTracker.PressedButtons);
+        _mouseInteractionGate.Observe(
+            MouseButtonStateTracker.PressedButtons,
+            MouseButtonStateTracker.ButtonEventSequence);
 
         if (!NativeCore.TryGetState(out _state))
         {
@@ -81,8 +83,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         FrontendOverlayGate.SetToggleKey(_state.ToggleKey);
         if (openedThisFrame)
             RefreshInventory();
-
-        if (_inventory.Count == 0 || NativeCore.IsInventoryDirty())
+        else if (_inventory.Count == 0 || NativeCore.IsInventoryDirty())
             RefreshInventory();
 
         uint characterHash = _state.EffectiveCharacterHash;
@@ -457,7 +458,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         _setInputCapture(open);
         if (open)
         {
-            _mouseInteractionGate.Open();
+            _mouseInteractionGate.Open(MouseButtonStateTracker.ButtonEventSequence);
             if (!_brokerOwnsMouseCapture)
             {
                 ResetImGuiMouseState();

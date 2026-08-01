@@ -141,6 +141,8 @@ public sealed partial class Mod : IMod, IExports
 
             string modDirectory = loader.GetDirectoryForModId(modId);
             Directory.CreateDirectory(modDirectory);
+            string configDirectory = loader.GetModConfigDirectory(modId);
+            Directory.CreateDirectory(configDirectory);
             lock (_logLock)
             {
                 _fileLog?.Dispose();
@@ -163,7 +165,7 @@ public sealed partial class Mod : IMod, IExports
             Log(ReloadedInjectionSourceDetector.FormatLogMessage(injectionSource));
 
             long migrationStarted = BeginStartupPhase("legacy-data-migration");
-            LegacyDataMigrator.Migrate(modDirectory, Log);
+            LegacyDataMigrator.Migrate(modDirectory, configDirectory, Log);
             CompleteStartupPhase("legacy-data-migration", migrationStarted);
 
             long hooksControllerStarted = BeginStartupPhase("reloaded-hooks-controller");
@@ -279,7 +281,7 @@ public sealed partial class Mod : IMod, IExports
 
             long overlayUiStarted = BeginStartupPhase("overlay-ui");
             SigilOverlayUi ui = new(
-                modDirectory,
+                configDirectory,
                 SetInputCapture,
                 Log,
                 brokerOwnsMouseCapture: true);

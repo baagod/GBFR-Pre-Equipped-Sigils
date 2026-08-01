@@ -11,12 +11,17 @@ internal static class FrontendOverlayGate
 {
     private const int DefaultToggleKey = 0x77; // F8
     private const uint WmKeyDown = 0x0100;
+    private const uint WmKeyUp = 0x0101;
     private const uint WmSysKeyDown = 0x0104;
+    private const uint WmSysKeyUp = 0x0105;
+    private const uint WmKillFocus = 0x0008;
+    private const uint WmActivateApp = 0x001C;
     private const long PreviousKeyStateMask = 1L << 30;
 
     private static int s_windowOpen;
     private static int s_pendingToggleCount;
     private static int s_toggleKey = DefaultToggleKey;
+    private static int s_toggleKeyHeld;
 
     internal static bool ShouldRenderFrame =>
         Volatile.Read(ref s_windowOpen) != 0 ||
@@ -28,6 +33,7 @@ internal static class FrontendOverlayGate
 
     internal static void SetToggleKey(int virtualKey)
     {
+        Volatile.Write(ref s_toggleKeyHeld, 0);
         Volatile.Write(
             ref s_toggleKey,
             virtualKey is >= 1 and <= 255 ? virtualKey : DefaultToggleKey);
@@ -41,9 +47,23 @@ internal static class FrontendOverlayGate
         IntPtr wParam,
         IntPtr lParam)
     {
+        if (message == WmKillFocus ||
+            (message == WmActivateApp && wParam == IntPtr.Zero))
+        {
+            Volatile.Write(ref s_toggleKeyHeld, 0);
+            return false;
+        }
+
+        if (unchecked((int)wParam.ToInt64()) != CurrentToggleKey)
+            return false;
+        if (message is WmKeyUp or WmSysKeyUp)
+        {
+            Volatile.Write(ref s_toggleKeyHeld, 0);
+            return false;
+        }
         if (message is not WmKeyDown and not WmSysKeyDown ||
-            unchecked((int)wParam.ToInt64()) != CurrentToggleKey ||
-            (lParam.ToInt64() & PreviousKeyStateMask) != 0)
+            (lParam.ToInt64() & PreviousKeyStateMask) != 0 ||
+            Interlocked.Exchange(ref s_toggleKeyHeld, 1) != 0)
         {
             return false;
         }
@@ -59,5 +79,6 @@ internal static class FrontendOverlayGate
     {
         Volatile.Write(ref s_windowOpen, 0);
         Interlocked.Exchange(ref s_pendingToggleCount, 0);
+        Volatile.Write(ref s_toggleKeyHeld, 0);
     }
 }

@@ -29,6 +29,8 @@ Assert(!ReadBool(isOpen), "The frontend must start closed.");
 bool queued = (bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false);
 Assert(queued, "The first F8 keydown must queue a toggle.");
 Assert(ReadBool(shouldRender), "A pending toggle must wake one frontend frame.");
+Assert(!(bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? true),
+    "A duplicate keydown without key-up must not queue another toggle.");
 
 bool repeated = (bool)(observe.Invoke(
     null,
@@ -37,6 +39,7 @@ Assert(!repeated, "An autorepeated keydown must not queue another toggle.");
 Assert((bool)(consume.Invoke(null, null) ?? false), "The queued toggle must be consumed.");
 setOpen.Invoke(null, [true]);
 Assert(ReadBool(isOpen) && ReadBool(shouldRender), "An open frontend must render.");
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
 
 observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]);
 Assert((bool)(consume.Invoke(null, null) ?? false), "The close toggle must be consumed.");
@@ -62,6 +65,7 @@ forceClosed.Invoke(null, null);
 setToggleKey.Invoke(null, [0x77]);
 
 observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]);
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
 observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]);
 Assert(!(bool)(consume.Invoke(null, null) ?? true),
     "Two physical toggles before a frame must cancel by parity.");
@@ -75,6 +79,7 @@ Type buttonTrackerType = assembly.GetType(
 MethodInfo resetButtons = GetStaticMethod(buttonTrackerType, "Reset");
 MethodInfo observeMouseMessage = GetStaticMethod(buttonTrackerType, "ObserveWindowMessage");
 PropertyInfo pressedButtons = GetStaticProperty(buttonTrackerType, "PressedButtons");
+PropertyInfo buttonEventSequence = GetStaticProperty(buttonTrackerType, "ButtonEventSequence");
 
 resetButtons.Invoke(null, null);
 observeMouseMessage.Invoke(null, [0x0201u, IntPtr.Zero]);
@@ -100,31 +105,45 @@ MethodInfo closeMouseGate = GetInstanceMethod(mouseGateType, "Close");
 MethodInfo observeButtons = GetInstanceMethod(mouseGateType, "Observe");
 PropertyInfo mouseGateArmed = GetInstanceProperty(mouseGateType, "IsArmed");
 
-openMouseGate.Invoke(mouseGate, null);
+openMouseGate.Invoke(mouseGate, [ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "Opening must disarm pointer interaction immediately.");
-observeButtons.Invoke(mouseGate, [1u]);
+observeButtons.Invoke(mouseGate, [1u, ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "A held mouse button must keep pointer interaction disarmed.");
-observeButtons.Invoke(mouseGate, [0u]);
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "The release frame itself must remain non-interactive.");
-observeButtons.Invoke(mouseGate, [2u]);
+observeButtons.Invoke(mouseGate, [2u, ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "A button pressed before the clean boundary must restart arming.");
-observeButtons.Invoke(mouseGate, [0u]);
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "The restarted release frame must remain non-interactive.");
-observeButtons.Invoke(mouseGate, [0u]);
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
 Assert(ReadInstanceBool(mouseGate, mouseGateArmed),
     "Two clean released frames must arm pointer interaction.");
 closeMouseGate.Invoke(mouseGate, null);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "Closing must disarm and reset pointer interaction.");
-openMouseGate.Invoke(mouseGate, null);
-observeButtons.Invoke(mouseGate, [0u]);
+openMouseGate.Invoke(mouseGate, [ReadLong(buttonEventSequence)]);
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "Reopening must not inherit the previous armed state.");
+
+observeMouseMessage.Invoke(null, [0x0201u, IntPtr.Zero]);
+observeMouseMessage.Invoke(null, [0x0202u, IntPtr.Zero]);
+Assert(ReadUInt(pressedButtons) == 0u,
+    "A complete click between frames must finish with no held button.");
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
+Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
+    "A complete click between frames must restart the clean-input boundary.");
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
+Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
+    "The first stable frame after a click must remain non-interactive.");
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
+Assert(ReadInstanceBool(mouseGate, mouseGateArmed),
+    "Two stable frames after the last mouse event must arm interaction.");
 
 resetButtons.Invoke(null, null);
 Console.WriteLine("MOUSE_INTERACTION_LIFECYCLE=PASS");
@@ -142,6 +161,8 @@ PropertyInfo GetProperty(string name) => gate.GetProperty(
 static bool ReadBool(PropertyInfo property) => (bool)(property.GetValue(null) ?? false);
 
 static uint ReadUInt(PropertyInfo property) => (uint)(property.GetValue(null) ?? 0u);
+
+static long ReadLong(PropertyInfo property) => (long)(property.GetValue(null) ?? 0L);
 
 static bool ReadInstanceBool(object instance, PropertyInfo property) =>
     (bool)(property.GetValue(instance) ?? false);

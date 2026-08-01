@@ -6,7 +6,7 @@ The repository contains a C++ native hook and a C# Reloaded-II loader, but they 
 
 Reloaded-II 1.30.3 or newer is recommended. The native DLL is loaded by the managed Reloaded-II mod and is not a standalone ASI plugin. To launch through Steam with ASI injection, use Reloaded-II's `Edit Application -> Advanced Tools & Options -> Deploy ASI Loader`, then launch the normal game executable. Re-deploy the ASI Loader after moving or updating Reloaded-II, and do not rename `GBFR.ExtraSigilSlots.Native.dll` to `.asi`.
 
-The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.7.8 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, named multi-character presets, usage filters, body-slot conflict reporting, and confirmed ownership transfers.
+The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.7.9 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, named multi-character presets, usage filters, body-slot conflict reporting, and confirmed ownership transfers.
 
 ## Virtual slot count
 
@@ -32,17 +32,17 @@ Run from the repository root:
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 ```
 
-The script defaults to `Release`, `x64`, and version `0.7.8`. These defaults can
+The script defaults to `Release`, `x64`, and version `0.7.9`. These defaults can
 be overridden explicitly, for example with `-Configuration Debug` or
-`-Version 0.7.8-test`.
+`-Version 0.7.9-test`.
 
 The installable archive is generated at:
 
 ```text
-dist\GBFR-Extra-Sigil-Slots-0.7.8.zip
+dist\GBFR-Extra-Sigil-Slots-0.7.9.zip
 ```
 
-Extract the `GBFR.ExtraSigilSlots.Reloaded` folder from the ZIP into Reloaded-II's `Mods` directory. Remove or disable the old `GBFR.ExtraSigilSlots20.Reloaded` mod so Reloaded-II cannot load both identities. Neither `GBFR-ExtraSigilSlotsNumConfig.ini` nor the runtime-created `GBFR-ExtraSigilSlots.presets.json` is included in an archive, so installing an update cannot overwrite either file. Missing NumConfig is created by the native runtime; existing valid NumConfig is preserved byte-for-byte; existing invalid NumConfig is backed up before a complete default is generated. Named presets can still migrate from the old sibling directory when the new preset file does not exist; settings are no longer copied into a missing NumConfig by the managed migrator.
+Extract the `GBFR.ExtraSigilSlots.Reloaded` folder from the ZIP into Reloaded-II's `Mods` directory. Remove or disable the old `GBFR.ExtraSigilSlots20.Reloaded` mod so Reloaded-II cannot load both identities. Neither `GBFR-ExtraSigilSlotsNumConfig.ini` nor `GBFR-ExtraSigilSlots.presets.json` is included in an archive. Missing NumConfig is created by the native runtime; an existing valid NumConfig is preserved byte-for-byte, while an invalid NumConfig is backed up before a complete default is generated. Named presets are stored in Reloaded-II's persistent mod-config directory and automatically migrate from valid current/legacy JSON files left in an older mod directory. An invalid persistent preset file is preserved as a content-addressed `.invalid-<digest>.bak` before recovery is attempted. Settings are not copied into a missing NumConfig by the managed migrator.
 
 If first launch appears to hang, collect `%APPDATA%\Reloaded-Mod-Loader-II\Logs` and the mod's `ExtraSigilSlots.Reloaded.log`. Startup entries use `phase`, `state`, and `elapsed_ms`; the last `state=begin` line identifies the operation that did not return. One-shot semantic layout resolution, exact local-byte preflight, and hook installation remain synchronous so the game cannot run ahead of the hooks. There is no timer or per-frame signature scan. An ambiguous or incomplete layout fails closed without rewriting saved sigil selections; the independent input transaction remains available so the overlay can report the compatibility error. Only after initialization does a background `executable-sha256` diagnostic read the full EXE; it is marked `diagnostic_only=true` and never enables, rejects, or rolls back hooks. The same log explicitly reports `由 Launcher 注入`, `由 .asi Bootstrapper 加载`, or `source=unknown` after checking the official Reloaded bootstrapper module and its `InitializeASI` export.
 

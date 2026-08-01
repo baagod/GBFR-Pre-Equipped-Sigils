@@ -19,7 +19,7 @@ directories are ignored by Git.
 The harnesses cover:
 
 - missing NumConfig creation, byte-for-byte preservation of valid files, exact backup plus default replacement for invalid settings/selections, fail-closed in-memory handling before executable/layout verification, native startup-phase callbacks, and the absence of full-EXE hashing from the synchronous native startup path;
-- packed ABI v10 sizes and transactional preset-reference updates;
+- packed ABI v11 sizes and transactional preset-reference updates;
 - keyboard/mouse versus HID/controller Raw Input classification.
 - event-driven frontend wake-up, key-repeat suppression, and closed-frame sleeping.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.

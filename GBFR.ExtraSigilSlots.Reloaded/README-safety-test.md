@@ -1,14 +1,14 @@
-# GBFR 扩展因子槽 0.7.8
+# GBFR 扩展因子槽 0.7.9
 
 这是 Reloaded-II 独立版，不依赖或修改 Luma、ReShade 与游戏存档。插件支持 1–24 个可配置扩展槽、命名预设、因子占用筛选、中文输入和键鼠独占／手柄直通。
 
 ## 安装与旧版迁移
 
 1. 完全退出游戏。
-2. 如需从旧 ModId 迁移设置，请手动备份并复制旧目录中的 `GBFR-ExtraSigilSlotsNumConfig.ini`；命名预设仍可在目标文件不存在时自动迁移。
+2. 如需从旧 ModId 迁移设置，请手动备份并复制旧目录中的 `GBFR-ExtraSigilSlotsNumConfig.ini`；命名预设会自动从旧 Mod 目录迁移到 Reloaded-II 的持久配置目录。
 3. 安装新目录 `GBFR.ExtraSigilSlots.Reloaded`，随后删除或禁用旧 ModId，不能让 Reloaded-II 同时加载两个版本。
 4. 发布包不再携带 NumConfig。目标文件不存在时，原生运行库会创建完整默认配置；文件完整合法时保持逐字节不变；文件非法时先生成带时间戳的 `.invalid-*.bak` 原始备份，再创建完整默认配置。
-5. 新文件名为 `GBFR-ExtraSigilSlotsNumConfig.ini` 与 `GBFR-ExtraSigilSlots.presets.json`。
+5. `GBFR-ExtraSigilSlotsNumConfig.ini` 保留在 Mod 目录；`GBFR-ExtraSigilSlots.presets.json` 存放在 Reloaded-II 的该 Mod 持久配置目录。损坏的预设 JSON 会先保存为 `.invalid-<digest>.bak`，再尝试从有效旧副本恢复。
 
 ## 基本验证
 

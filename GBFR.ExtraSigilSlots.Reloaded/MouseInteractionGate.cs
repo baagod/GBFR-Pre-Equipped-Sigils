@@ -6,13 +6,15 @@ internal sealed class MouseInteractionGate
 
     private bool _open;
     private int _releasedFrames;
+    private long _lastButtonEventSequence;
 
     internal bool IsArmed { get; private set; }
 
-    internal void Open()
+    internal void Open(long buttonEventSequence)
     {
         _open = true;
         _releasedFrames = 0;
+        _lastButtonEventSequence = buttonEventSequence;
         IsArmed = false;
     }
 
@@ -23,10 +25,16 @@ internal sealed class MouseInteractionGate
         IsArmed = false;
     }
 
-    internal void Observe(uint pressedButtons)
+    internal void Observe(uint pressedButtons, long buttonEventSequence)
     {
         if (!_open || IsArmed)
             return;
+        if (buttonEventSequence != _lastButtonEventSequence)
+        {
+            _lastButtonEventSequence = buttonEventSequence;
+            _releasedFrames = 0;
+            return;
+        }
         if (pressedButtons != 0)
         {
             _releasedFrames = 0;

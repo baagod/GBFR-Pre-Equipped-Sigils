@@ -96,6 +96,7 @@ internal sealed unsafe class CjkConfiguredDx11Hook : IImguiHook
         [
             Path.Combine(fontsDirectory, "msyh.ttc"),
             Path.Combine(fontsDirectory, "msyhl.ttc"),
+            Path.Combine(fontsDirectory, "msyhbd.ttc"),
             Path.Combine(fontsDirectory, "simhei.ttf"),
             Path.Combine(fontsDirectory, "simsun.ttc"),
         ];
@@ -107,10 +108,13 @@ internal sealed unsafe class CjkConfiguredDx11Hook : IImguiHook
         SortedSet<ushort> glyphs = [];
         for (int codePoint = 0x20; codePoint <= 0xFF; ++codePoint)
             glyphs.Add((ushort)codePoint);
-        // Preset names are user-defined, so they cannot be covered by the
-        // static UI seed or the localized sigil-name table alone.
+        AddRange(glyphs, 0x2000, 0x206F); // General punctuation
+        AddRange(glyphs, 0x3000, 0x30FF); // CJK punctuation and kana
+        AddRange(glyphs, 0x31F0, 0x31FF); // Katakana extensions
         for (int codePoint = 0x3400; codePoint <= 0x9FFF; ++codePoint)
             glyphs.Add((ushort)codePoint);
+        AddRange(glyphs, 0xF900, 0xFAFF); // CJK compatibility ideographs
+        AddRange(glyphs, 0xFF00, 0xFFEF); // Full-width forms
 
         string tablePath = Path.Combine(
             _modDirectory,
@@ -160,6 +164,12 @@ internal sealed unsafe class CjkConfiguredDx11Hook : IImguiHook
         }
         ranges.Add(0);
         return ranges.ToArray();
+    }
+
+    private static void AddRange(ISet<ushort> glyphs, int first, int last)
+    {
+        for (int codePoint = first; codePoint <= last; ++codePoint)
+            glyphs.Add((ushort)codePoint);
     }
 
     public void Dispose()

@@ -9,9 +9,13 @@ internal static class MouseButtonStateTracker
     internal const uint Extra2 = 1u << 4;
 
     private static int s_pressedButtons;
+    private static long s_buttonEventSequence;
 
     internal static uint PressedButtons =>
         unchecked((uint)Volatile.Read(ref s_pressedButtons));
+
+    internal static long ButtonEventSequence =>
+        Volatile.Read(ref s_buttonEventSequence);
 
     internal static void ObserveWindowMessage(uint message, IntPtr wParam)
     {
@@ -74,11 +78,18 @@ internal static class MouseButtonStateTracker
                     ref s_pressedButtons,
                     unchecked((int)updated),
                     observed) == observed)
+            {
+                Interlocked.Increment(ref s_buttonEventSequence);
                 return;
+            }
         }
     }
 
-    internal static void Reset() => Volatile.Write(ref s_pressedButtons, 0);
+    internal static void Reset()
+    {
+        Volatile.Write(ref s_pressedButtons, 0);
+        Interlocked.Increment(ref s_buttonEventSequence);
+    }
 
     private static uint ExtraButtonMask(IntPtr wParam)
     {

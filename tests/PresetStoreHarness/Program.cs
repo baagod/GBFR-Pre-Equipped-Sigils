@@ -52,9 +52,10 @@ string testRoot = Path.Combine(
     "GBFRES-preset-test-" + Guid.NewGuid().ToString("N"));
 string testDirectory = Path.Combine(testRoot, "GBFR.ExtraSigilSlots.Reloaded");
 string legacyDirectory = Path.Combine(testRoot, "GBFR.ExtraSigilSlots20.Reloaded");
+string configDirectory = Path.Combine(testRoot, "ReloadedConfig");
 Directory.CreateDirectory(testDirectory);
 Directory.CreateDirectory(legacyDirectory);
-string jsonPath = Path.Combine(testDirectory, "GBFR-ExtraSigilSlots.presets.json");
+string jsonPath = Path.Combine(configDirectory, "GBFR-ExtraSigilSlots.presets.json");
 string legacyJsonPath = Path.Combine(legacyDirectory, "GBFR-ExtraSigilSlots20.presets.json");
 string configPath = Path.Combine(testDirectory, "GBFR-ExtraSigilSlotsNumConfig.ini");
 string legacyConfigPath = Path.Combine(legacyDirectory, "GBFR-ExtraSigilSlotsNumConfig.ini");
@@ -100,7 +101,7 @@ try
     List<string> migrationLogs = [];
     migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
         null,
-        [testDirectory, new Action<string>(migrationLogs.Add)]);
+        [testDirectory, configDirectory, new Action<string>(migrationLogs.Add)]);
     if (!File.Exists(jsonPath) ||
         File.Exists(configPath) ||
         !File.Exists(legacyJsonPath) ||
@@ -121,18 +122,58 @@ try
         new UTF8Encoding(false));
     migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
         null,
-        [testDirectory, new Action<string>(migrationLogs.Add)]);
+        [testDirectory, configDirectory, new Action<string>(migrationLogs.Add)]);
     if (File.Exists(configPath) ||
         File.ReadAllText(jsonPath) != migratedPresets)
     {
         throw new InvalidOperationException("Migration overwrote canonical user data.");
     }
 
+    string currentDirectoryPreset = Path.Combine(
+        testDirectory,
+        "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(currentDirectoryPreset, migratedPresets, new UTF8Encoding(false));
+    File.WriteAllText(jsonPath, "{ invalid", new UTF8Encoding(false));
+    migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
+        null,
+        [testDirectory, configDirectory, new Action<string>(migrationLogs.Add)]);
+    if (File.ReadAllText(jsonPath) != migratedPresets ||
+        Directory.GetFiles(
+            configDirectory,
+            "GBFR-ExtraSigilSlots.presets.json.invalid-*.bak").Length != 1)
+    {
+        throw new InvalidOperationException(
+            "Invalid persistent presets were not backed up and recovered from the prior mod directory.");
+    }
+
+    const string structurallyInvalidPresets = "{\"Version\":2,\"Presets\":[1]}";
+    File.WriteAllText(jsonPath, structurallyInvalidPresets, new UTF8Encoding(false));
+    File.WriteAllText(currentDirectoryPreset, structurallyInvalidPresets, new UTF8Encoding(false));
+    File.Delete(legacyJsonPath);
+    migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
+        null,
+        [testDirectory, configDirectory, new Action<string>(migrationLogs.Add)]);
+    if (File.ReadAllText(jsonPath) != structurallyInvalidPresets ||
+        Directory.GetFiles(
+            configDirectory,
+            "GBFR-ExtraSigilSlots.presets.json.invalid-*.bak").Length != 2)
+    {
+        throw new InvalidOperationException(
+            "A structurally invalid candidate was accepted or its destination evidence was not preserved.");
+    }
+
+    File.WriteAllText(currentDirectoryPreset, migratedPresets, new UTF8Encoding(false));
+    migratorType.GetMethod("Migrate", staticFlags)!.Invoke(
+        null,
+        [testDirectory, configDirectory, new Action<string>(migrationLogs.Add)]);
+    if (File.ReadAllText(jsonPath) != migratedPresets)
+        throw new InvalidOperationException("A valid prior preset file did not recover persistent storage.");
+
     object store = Activator.CreateInstance(
         storeType,
         instanceFlags,
         binder: null,
-        args: [testDirectory, new Action<string>(_ => { })],
+        args: [configDirectory, new Action<string>(_ => { })],
         culture: null)!;
 
     MethodInfo referencesMethod = storeType.GetMethod("GetPresetNamesForSlot", instanceFlags)!;
@@ -169,6 +210,7 @@ try
     Console.WriteLine("COMMITTED_REFERENCES=0");
     Console.WriteLine("CAPTURED_CHARACTERS=28");
     Console.WriteLine("LEGACY_PRESET_MIGRATION=PASS");
+    Console.WriteLine("PERSISTENT_PRESET_RECOVERY=PASS");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
     Console.WriteLine("ABI_VERSION=11");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
