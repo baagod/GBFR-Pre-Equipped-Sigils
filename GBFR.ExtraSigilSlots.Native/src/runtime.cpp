@@ -28,6 +28,10 @@ void Initialize()
    g_compatibility_path =
       g_module_directory / L"GBFR-ExtraSigilSlots.compatibility.tsv";
 
+   const uint64_t slot_count_started = BeginStartupPhase("pending-slot-count");
+   const bool slot_count_applied = ApplyPendingVirtualSlotCount();
+   CompleteStartupPhase("pending-slot-count", slot_count_started, slot_count_applied);
+
    const uint64_t settings_started = BeginStartupPhase("settings-and-selections");
    LoadSettingsAndSelections(false);
    CompleteStartupPhase("settings-and-selections", settings_started, true);

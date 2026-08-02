@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using GBFR.ExtraSigilSlots.Reloaded;
 
 if (args.Length != 1)
     throw new ArgumentException("Pass the native build output directory.");
@@ -7,6 +8,7 @@ if (args.Length != 1)
 string outputDirectory = Path.GetFullPath(args[0]);
 string nativeSource = Path.Combine(outputDirectory, "GBFR.ExtraSigilSlots.Native.dll");
 const string ConfigFileName = "GBFR-ExtraSigilSlotsNumConfig.ini";
+const string PendingFileName = "GBFR-ExtraSigilSlotsNumConfig.pending";
 byte[] defaultConfig = Encoding.UTF8.GetBytes(
     "[Settings]\r\n" +
     "ConfigVersion=2\r\n" +
@@ -101,7 +103,35 @@ foreach ((string label, string text, int expectedSlotCount, uint[] expectedSelec
 foreach ((string label, byte[] bytes) in invalidCases)
     RunInvalidCase(label, bytes);
 
+RunInputNormalizationCases();
+RunPendingResizeCases();
+
 Console.WriteLine("SLOT_CONFIG_TEST=PASS");
+
+void RunInputNormalizationCases()
+{
+    (string Input, int Expected)[] cases =
+    [
+        ("1", 1),
+        ("24", 24),
+        ("", 1),
+        ("0", 1),
+        ("25", 1),
+        ("-1", 1),
+        ("1.5", 1),
+        ("abc", 1),
+        (" 8 ", 1),
+        ("999999999999999999999999", 1),
+    ];
+    foreach ((string input, int expected) in cases)
+    {
+        int actual = VirtualSlotCountInput.Normalize(input, 24);
+        if (actual != expected)
+            throw new InvalidOperationException(
+                $"input '{input}' expected {expected}, got {actual}.");
+    }
+    Console.WriteLine("SLOT_COUNT_INPUT_NORMALIZATION=True");
+}
 
 void RunMissingCase()
 {
@@ -194,6 +224,151 @@ void RunInvalidCase(string label, byte[] original)
             throw new InvalidOperationException($"{label}: replacement log was not emitted.");
         }
         Console.WriteLine($"CASE={label} BACKUP_EXACT=True REPLACED_DEFAULT=True");
+    }
+    finally
+    {
+        Directory.Delete(testDirectory, recursive: true);
+    }
+}
+
+void RunPendingResizeCases()
+{
+    byte[] shrinkOriginal = Encoding.UTF8.GetBytes(
+        "[Settings]\r\n" +
+        "ConfigVersion=2\r\n" +
+        "ToggleKey=119\r\n" +
+        "ShowEquipped=0\r\n" +
+        "AutoApply=1\r\n" +
+        "Language=zh-CN\r\n" +
+        "VirtualSlotCount=12\r\n\r\n" +
+        "[Character_2A26B1B2]\r\n" +
+        "Slots=00000001,00000002,00000003,00000004,00000005,00000006," +
+        "00000007,00000008,00000009,0000000A,0000000B,0000000C\r\n");
+    RunPendingResizeCase(
+        "pending-shrink",
+        shrinkOriginal,
+        8,
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        "Slots=00000001,00000002,00000003,00000004,00000005,00000006,00000007,00000008",
+        expectBackup: true,
+        expectConfigUnchanged: false);
+
+    byte[] expandOriginal = Encoding.UTF8.GetBytes(
+        "[Settings]\r\n" +
+        "ConfigVersion=2\r\n" +
+        "ToggleKey=119\r\n" +
+        "ShowEquipped=0\r\n" +
+        "AutoApply=1\r\n" +
+        "Language=zh-CN\r\n" +
+        "VirtualSlotCount=8\r\n\r\n" +
+        "[Character_2A26B1B2]\r\n" +
+        "Slots=00000001,00000002,00000003,00000004,00000005,00000006," +
+        "00000007,00000008,00000009,0000000A,0000000B,0000000C\r\n");
+    RunPendingResizeCase(
+        "pending-expand",
+        expandOriginal,
+        12,
+        [1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0],
+        "Slots=00000001,00000002,00000003,00000004,00000005,00000006," +
+        "00000007,00000008,00000000,00000000,00000000,00000000",
+        expectBackup: true,
+        expectConfigUnchanged: false);
+
+    RunPendingResizeCase(
+        "pending-no-op",
+        defaultConfig,
+        8,
+        [],
+        "VirtualSlotCount=8",
+        expectBackup: false,
+        expectConfigUnchanged: true);
+
+    RunInvalidPendingCase();
+}
+
+void RunInvalidPendingCase()
+{
+    string testDirectory = CreateTestDirectory("pending-invalid");
+    try
+    {
+        string iniPath = Path.Combine(testDirectory, ConfigFileName);
+        string pendingPath = Path.Combine(testDirectory, PendingFileName);
+        byte[] invalidPending = Encoding.UTF8.GetBytes("VirtualSlotCount=abc\r\n");
+        File.WriteAllBytes(iniPath, defaultConfig);
+        File.WriteAllBytes(pendingPath, invalidPending);
+
+        NativeResult result = RunNative(testDirectory);
+        AssertRuntime(result, 8, "pending-invalid");
+        AssertBytesEqual(defaultConfig, File.ReadAllBytes(iniPath), "pending-invalid: config");
+        AssertBytesEqual(invalidPending, File.ReadAllBytes(pendingPath), "pending-invalid: request");
+        if (!result.Logs.Any(line => line.Contains(
+                "pending virtual-slot-count request is invalid", StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException("pending-invalid: diagnostic log was missing.");
+        }
+        Console.WriteLine("CASE=pending-invalid CONFIG_UNCHANGED=True REQUEST_PRESERVED=True");
+    }
+    finally
+    {
+        Directory.Delete(testDirectory, recursive: true);
+    }
+}
+
+void RunPendingResizeCase(
+    string label,
+    byte[] original,
+    int targetSlotCount,
+    uint[] expectedSelection,
+    string expectedConfigFragment,
+    bool expectBackup,
+    bool expectConfigUnchanged)
+{
+    string testDirectory = CreateTestDirectory(label);
+    try
+    {
+        string iniPath = Path.Combine(testDirectory, ConfigFileName);
+        string pendingPath = Path.Combine(testDirectory, PendingFileName);
+        File.WriteAllBytes(iniPath, original);
+        File.WriteAllText(
+            pendingPath,
+            $"VirtualSlotCount={targetSlotCount}\r\n",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        NativeResult result = RunNative(testDirectory);
+        AssertRuntime(result, targetSlotCount, label);
+        if (File.Exists(pendingPath))
+            throw new InvalidOperationException($"{label}: completed pending request was not removed.");
+        byte[] actualConfig = File.ReadAllBytes(iniPath);
+        if (expectConfigUnchanged)
+            AssertBytesEqual(original, actualConfig, $"{label}: no-op config");
+        string actualText = Encoding.UTF8.GetString(actualConfig);
+        if (!actualText.Contains(expectedConfigFragment, StringComparison.Ordinal))
+            throw new InvalidOperationException($"{label}: rewritten config fragment was missing.");
+        for (int index = 0; index < expectedSelection.Length; ++index)
+        {
+            if (result.Selection[index] != expectedSelection[index])
+            {
+                throw new InvalidOperationException(
+                    $"{label}: selection {index} expected {expectedSelection[index]:X8}, " +
+                    $"got {result.Selection[index]:X8}.");
+            }
+        }
+        for (int index = expectedSelection.Length; index < result.Selection.Length; ++index)
+        {
+            if (result.Selection[index] != 0)
+                throw new InvalidOperationException($"{label}: inactive selection {index} was not cleared.");
+        }
+
+        string[] backups = Directory.GetFiles(
+            testDirectory,
+            ConfigFileName + ".resize-*.bak*",
+            SearchOption.TopDirectoryOnly);
+        if (backups.Length != (expectBackup ? 1 : 0))
+            throw new InvalidOperationException($"{label}: unexpected resize backup count {backups.Length}.");
+        if (expectBackup)
+            AssertBytesEqual(original, File.ReadAllBytes(backups[0]), $"{label}: resize backup bytes");
+        Console.WriteLine(
+            $"CASE={label} TARGET={targetSlotCount} BACKUP={expectBackup} TRANSACTION=True");
     }
     finally
     {

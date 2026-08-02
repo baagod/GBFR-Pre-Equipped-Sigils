@@ -6,16 +6,18 @@ The repository contains a C++ native hook and a C# Reloaded-II loader, but they 
 
 Reloaded-II 1.30.3 or newer is recommended. The native DLL is loaded by the managed Reloaded-II mod and is not a standalone ASI plugin. To launch through Steam with ASI injection, use Reloaded-II's `Edit Application -> Advanced Tools & Options -> Deploy ASI Loader`, then launch the normal game executable. Re-deploy the ASI Loader after moving or updating Reloaded-II, and do not rename `GBFR.ExtraSigilSlots.Native.dll` to `.asi`.
 
-The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.7.10 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, named multi-character presets, usage filters, body-slot conflict reporting, and confirmed ownership transfers.
+The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.8.0 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, named multi-character presets, usage filters, body-slot conflict reporting, and confirmed ownership transfers.
 
 ## Virtual slot count
 
-Set `VirtualSlotCount` in `GBFR-ExtraSigilSlotsNumConfig.ini`, then restart the game. The default is `8` and the supported range is `1` through `24`. The release archive never contains this mutable file.
+Enter the desired count in the in-game ImGui menu and save it, then restart the game. The current effective count never changes while the game is running. The default is `8`, the supported range is `1` through `24`, and invalid input is normalized to `1`. Manual `VirtualSlotCount` editing in `GBFR-ExtraSigilSlotsNumConfig.ini` remains supported.
 
 - If the file is missing, the native runtime creates a complete default INI.
 - If the complete settings and character-selection data is valid, startup leaves every byte untouched.
 - If any required setting or saved slot value is invalid—including `0`, a negative value, non-numeric text, or a value above `24`—the original bytes are first saved beside it as `GBFR-ExtraSigilSlotsNumConfig.ini.invalid-<timestamp>.bak`, then a complete default INI is created with `VirtualSlotCount=8`.
-- Reducing the valid count disables selections beyond the active range in memory without rewriting the valid file during startup.
+- A UI count change is stored separately until restart. On the next start, the native runtime first makes an exact `.resize-<timestamp>.bak`, atomically rewrites NumConfig, and clears every character's current selection beyond the new limit. Inventory sigils are only detached, never deleted; named presets retain all 24 stored slot definitions.
+- Increasing the count creates empty new current slots. It does not silently restore old high-slot assignments; a saved preset may reapply them through the normal ownership and conflict checks.
+- The release archive contains neither mutable NumConfig nor its pending count request.
 
 ## Build and package
 
@@ -32,14 +34,14 @@ Run from the repository root:
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 ```
 
-The script defaults to `Release`, `x64`, and version `0.7.10`. These defaults can
+The script defaults to `Release`, `x64`, and version `0.8.0`. These defaults can
 be overridden explicitly, for example with `-Configuration Debug` or
-`-Version 0.7.10-test`.
+`-Version 0.8.0-test`.
 
 The installable archive is generated at:
 
 ```text
-dist\GBFR-Extra-Sigil-Slots-0.7.10.zip
+dist\GBFR-Extra-Sigil-Slots-0.8.0.zip
 ```
 
 Extract the `GBFR.ExtraSigilSlots.Reloaded` folder from the ZIP into Reloaded-II's `Mods` directory. Remove or disable the old `GBFR.ExtraSigilSlots20.Reloaded` mod so Reloaded-II cannot load both identities. Neither `GBFR-ExtraSigilSlotsNumConfig.ini` nor `GBFR-ExtraSigilSlots.presets.json` is included in an archive. Missing NumConfig is created by the native runtime; an existing valid NumConfig is preserved byte-for-byte, while an invalid NumConfig is backed up before a complete default is generated. Named presets are stored in Reloaded-II's persistent mod-config directory and automatically migrate from valid current/legacy JSON files left in an older mod directory. An invalid persistent preset file is preserved as a content-addressed `.invalid-<digest>.bak` before recovery is attempted. Settings are not copied into a missing NumConfig by the managed migrator.

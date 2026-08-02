@@ -8,7 +8,7 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 11;
+    internal const int AbiVersion = 12;
     internal const int DefaultVirtualSlotCount = 8;
     internal const int VirtualSlotCapacity = 24;
     internal const int OwnerCharacterCapacity = 4;
@@ -66,6 +66,13 @@ internal static unsafe partial class NativeCore
         Cycle = 4,
         DepthExceeded = 5,
         UnsupportedJump = 6,
+    }
+
+    internal enum VirtualSlotCountRequestResult : int
+    {
+        Failed = 0,
+        Pending = 1,
+        Cleared = 2,
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -405,6 +412,11 @@ internal static unsafe partial class NativeCore
     internal static bool SetToggleKey(int virtualKey) => NativeSetToggleKey(virtualKey) != 0;
 
     internal static bool SetLanguage(int language) => NativeSetLanguage(language) != 0;
+
+    internal static VirtualSlotCountRequestResult RequestVirtualSlotCount(int slotCount) =>
+        (VirtualSlotCountRequestResult)NativeRequestVirtualSlotCount(slotCount);
+
+    internal static int GetPendingVirtualSlotCount() => NativeGetPendingVirtualSlotCount();
 
     internal static bool SetInputCapture(bool requested) =>
         NativeSetInputCapture(requested ? 1 : 0) != 0;

@@ -311,6 +311,18 @@ int32_t GBFR20_CALL GBFR20_SetLanguage(int32_t language)
    return 1;
 }
 
+int32_t GBFR20_CALL GBFR20_RequestVirtualSlotCount(int32_t slot_count)
+{
+   EnsureInitialized();
+   return RequestPendingVirtualSlotCount(slot_count);
+}
+
+int32_t GBFR20_CALL GBFR20_GetPendingVirtualSlotCount()
+{
+   EnsureInitialized();
+   return GetPendingVirtualSlotCount();
+}
+
 int32_t GBFR20_CALL GBFR20_SetInputHooksEnabled(int32_t enabled)
 {
    const bool requested_mode = enabled != 0;

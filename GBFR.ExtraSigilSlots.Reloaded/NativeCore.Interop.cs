@@ -90,6 +90,12 @@ internal static unsafe partial class NativeCore
     private static extern int GBFR20_SetLanguage(int language);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    private static extern int GBFR20_RequestVirtualSlotCount(int slotCount);
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    private static extern int GBFR20_GetPendingVirtualSlotCount();
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     private static extern int GBFR20_SetInputHooksEnabled(int enabled);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
@@ -168,6 +174,10 @@ internal static unsafe partial class NativeCore
     private static int NativeSetShowEquipped(int enabled) => GBFR20_SetShowEquipped(enabled);
     private static int NativeSetToggleKey(int key) => GBFR20_SetToggleKey(key);
     private static int NativeSetLanguage(int language) => GBFR20_SetLanguage(language);
+    private static int NativeRequestVirtualSlotCount(int slotCount) =>
+        GBFR20_RequestVirtualSlotCount(slotCount);
+    private static int NativeGetPendingVirtualSlotCount() =>
+        GBFR20_GetPendingVirtualSlotCount();
     private static int NativeSetInputHooksEnabled(int enabled) => GBFR20_SetInputHooksEnabled(enabled);
     private static int NativeSetInputCapture(int requested) => GBFR20_SetInputCapture(requested);
     private static int NativeSetInputCaptureDevices(uint requestedDevices) =>

@@ -100,6 +100,10 @@ internal sealed unsafe partial class SigilOverlayUi
         SigilPreset? selected = ResolveSelectedPreset();
         string selectedName = selected?.Name ?? (english ? "<none>" : "<无>");
         ImGui.Text(english ? $"Current preset: {selectedName}" : $"当前预设：{selectedName}");
+        ImGui.TextWrapped(
+            english
+                ? "Presets always retain all 24 slots. Reducing the active count does not delete higher preset slots, and they can be applied again after expanding."
+                : "预设始终保留全部 24 个槽位。缩减生效数量不会删除高位预设，重新扩展后可再次套用。");
 
         ImGui.BeginDisabled(_presetStore.Presets.Count < 2);
         if (ImGui.SmallButton("<##preset_previous"))
@@ -343,8 +347,12 @@ internal sealed unsafe partial class SigilOverlayUi
 
         try
         {
+            IReadOnlyDictionary<uint, uint[]> selections =
+                _presetStore.GetSelections(preset);
+            int requested = selections.Values.Sum(slots =>
+                slots.Count(slotId => slotId != 0));
             NativeCore.PresetApplySummary? summary = NativeCore.ApplyPreset(
-                _presetStore.GetSelections(preset),
+                selections,
                 ActiveVirtualSlotCount);
             if (summary is null)
             {
@@ -356,14 +364,12 @@ internal sealed unsafe partial class SigilOverlayUi
             }
 
             _presetConflicts.Clear();
-            int requested = 0;
             int applied = 0;
             int conflicts = 0;
             foreach (NativeCore.PresetSlotResult result in summary.SlotResults)
             {
                 if (result.RequestedSlotId == 0)
                     continue;
-                ++requested;
                 if (result.Status == NativeCore.PresetSlotStatus.Applied)
                 {
                     ++applied;

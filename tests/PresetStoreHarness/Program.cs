@@ -12,6 +12,53 @@ Assembly assembly = Assembly.LoadFrom(managedPath);
 BindingFlags staticFlags = BindingFlags.Static | BindingFlags.NonPublic;
 BindingFlags instanceFlags = BindingFlags.Instance | BindingFlags.NonPublic;
 
+Type uiLocalization = assembly.GetType(
+    "GBFR.ExtraSigilSlots.Reloaded.UiLocalization",
+    throwOnError: true)!;
+MethodInfo characterNameMethod = uiLocalization.GetMethod("CharacterName", staticFlags)!;
+(uint Hash, string Chinese, string English)[] expectedCharacters =
+[
+    (0x2A26B1B2, "主角（格兰/姬塔）", "Captain (Gran/Djeeta)"),
+    (0x18E2F9F9, "卡塔莉娜", "Katalina"),
+    (0x079DF0CC, "拉卡姆", "Rackam"),
+    (0x4D0A60C3, "伊欧", "Io"),
+    (0xDD7A151E, "欧根", "Eugen"),
+    (0xC8616284, "萝赛塔", "Rosetta"),
+    (0xC3FFD418, "菲莉", "Ferry"),
+    (0x22E437E5, "兰斯洛特", "Lancelot"),
+    (0x2EBE91D5, "巴恩", "Vane"),
+    (0xBDEF7181, "珀西瓦尔", "Percival"),
+    (0x627BCB0D, "齐格飞", "Siegfried"),
+    (0xFD3BE362, "夏洛特", "Charlotta"),
+    (0xFC6CDF7B, "尤达拉哈", "Yodarha"),
+    (0xE7053919, "娜露梅", "Narmaya"),
+    (0x978E4B18, "冈达葛萨", "Ghandagoza"),
+    (0x0D21B430, "塞达", "Zeta"),
+    (0xF0EB77EF, "巴萨拉卡", "Vaseraga"),
+    (0xAA66178A, "卡莉奥丝特罗", "Cagliostro"),
+    (0xA3A3CB2F, "伊德", "Id"),
+    (0x718E1A14, "圣德芬", "Sandalphon"),
+    (0x296471BE, "希耶提", "Seofon"),
+    (0xBAD16E3B, "索恩", "Tweyen"),
+    (0x1BB37EF0, "伽兰查", "Gallanza"),
+    (0x25D46F4B, "玛琪拉菲菈", "Maglielle"),
+    (0x9A8AF295, "贝阿朵丽丝", "Beatrix"),
+    (0x9B15CFB1, "尤斯提斯", "Eustace"),
+    (0x646C3168, "芙劳", "Fraux"),
+    (0x74DD4C79, "菲迪埃尔", "Fediel"),
+];
+foreach ((uint hash, string chinese, string english) in expectedCharacters)
+{
+    string actualChinese = (string)characterNameMethod.Invoke(null, [hash, false])!;
+    string actualEnglish = (string)characterNameMethod.Invoke(null, [hash, true])!;
+    if (actualChinese != chinese || actualEnglish != english)
+    {
+        throw new InvalidOperationException(
+            $"Character mapping mismatch for 0x{hash:X8}: " +
+            $"'{actualChinese}'/'{actualEnglish}'.");
+    }
+}
+
 Type nativeCore = assembly.GetType(
     "GBFR.ExtraSigilSlots.Reloaded.NativeCore",
     throwOnError: true)!;
@@ -33,8 +80,8 @@ try
     IntPtr abiExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetAbiVersion");
     IntPtr applyExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_ApplyPreset");
     GetAbiVersion getAbiVersion = Marshal.GetDelegateForFunctionPointer<GetAbiVersion>(abiExport);
-    if (getAbiVersion() != 11 || applyExport == IntPtr.Zero)
-        throw new InvalidOperationException("Native ABI 11 preset exports are unavailable.");
+    if (getAbiVersion() != 12 || applyExport == IntPtr.Zero)
+        throw new InvalidOperationException("Native ABI 12 preset exports are unavailable.");
 }
 finally
 {
@@ -89,7 +136,7 @@ try
               "Characters": [
                 {
                   "CharacterHash": 417542649,
-                  "Slots": [0, 123, 0, 0, 0, 0, 0, 0]
+                  "Slots": [0, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 777]
                 }
               ]
             }
@@ -179,6 +226,8 @@ try
     MethodInfo referencesMethod = storeType.GetMethod("GetPresetNamesForSlot", instanceFlags)!;
     MethodInfo transferMethod = storeType.GetMethod("ClearSlotReferencesAndRun", instanceFlags)!;
     MethodInfo createMethod = storeType.GetMethod("Create", instanceFlags)!;
+    MethodInfo findByIdMethod = storeType.GetMethod("FindById", instanceFlags)!;
+    MethodInfo getSelectionsMethod = storeType.GetMethod("GetSelections", instanceFlags)!;
 
     int InitialReferenceCount() =>
         ((System.Collections.ICollection)referencesMethod.Invoke(store, [123u])!).Count;
@@ -196,6 +245,18 @@ try
     if (!commitResult || InitialReferenceCount() != 0 || JsonContainsSlot(jsonPath, 123))
         throw new InvalidOperationException("Successful transfer did not clear every reference.");
 
+    object retainedPreset = findByIdMethod.Invoke(store, ["second"])!;
+    IReadOnlyDictionary<uint, uint[]> retainedSelections =
+        (IReadOnlyDictionary<uint, uint[]>)getSelectionsMethod.Invoke(store, [retainedPreset])!;
+    if (!retainedSelections.TryGetValue(417542649u, out uint[]? retainedSlots) ||
+        retainedSlots.Length != 24 ||
+        retainedSlots[23] != 777 ||
+        !JsonContainsSlot(jsonPath, 777))
+    {
+        throw new InvalidOperationException(
+            "Preset normalization or transfer discarded a higher inactive slot.");
+    }
+
     object created = createMethod.Invoke(store, ["中文自定义预设"])!;
     Type presetType = created.GetType();
     string createdName = (string)presetType.GetProperty("Name")!.GetValue(created)!;
@@ -211,8 +272,10 @@ try
     Console.WriteLine("CAPTURED_CHARACTERS=28");
     Console.WriteLine("LEGACY_PRESET_MIGRATION=PASS");
     Console.WriteLine("PERSISTENT_PRESET_RECOVERY=PASS");
+    Console.WriteLine("CHARACTER_NAME_MAP=28/28");
+    Console.WriteLine("PRESET_HIGH_SLOT_RETENTION=PASS");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
-    Console.WriteLine("ABI_VERSION=11");
+    Console.WriteLine("ABI_VERSION=12");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
     Console.WriteLine("PRESET_RESULT_SIZE=20");
 }

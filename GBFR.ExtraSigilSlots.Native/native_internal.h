@@ -425,6 +425,9 @@ bool InstallInputIatHooks();
 void UpdateInputCaptureBarrier();
 
 void LoadSettingsAndSelections(bool activate_selection_ownership);
+bool ApplyPendingVirtualSlotCount();
+int RequestPendingVirtualSlotCount(int slot_count);
+int GetPendingVirtualSlotCount();
 void SaveUiSettings();
 void SaveCharacterSelection(uint32_t character_hash);
 bool ReloadNameTable(std::string_view language);

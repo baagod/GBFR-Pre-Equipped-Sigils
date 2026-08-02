@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.7.10'
+    [string]$Version = '0.8.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -103,6 +103,7 @@ foreach ($requiredFile in @(
 foreach ($excludedFile in @(
     'GBFR.ExtraSigilSlots.Reloaded.pdb',
     'GBFR-ExtraSigilSlotsNumConfig.ini',
+    'GBFR-ExtraSigilSlotsNumConfig.pending',
     'GBFR-ExtraSigilSlots20.ini',
     'GBFR-ExtraSigilSlots.presets.json',
     'GBFR-ExtraSigilSlots20.presets.json',
@@ -129,10 +130,13 @@ if ($legacyArtifact) {
 }
 
 $packagedNumConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
-    Where-Object { $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.ini' } |
+    Where-Object {
+        $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.ini' -or
+        $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.pending'
+    } |
     Select-Object -First 1
 if ($packagedNumConfig) {
-    throw "NumConfig must be runtime-created and was packaged unexpectedly: $($packagedNumConfig.FullName)"
+    throw "Mutable NumConfig state must be runtime-created and was packaged unexpectedly: $($packagedNumConfig.FullName)"
 }
 
 Compress-Archive -LiteralPath $packageDir -DestinationPath $zipPath -CompressionLevel Optimal

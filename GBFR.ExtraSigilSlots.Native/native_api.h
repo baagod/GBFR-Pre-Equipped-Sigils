@@ -10,7 +10,7 @@
 
 #define GBFR20_CALL __cdecl
 
-constexpr uint32_t GBFR20_ABI_VERSION = 11;
+constexpr uint32_t GBFR20_ABI_VERSION = 12;
 constexpr uint32_t GBFR20_VIRTUAL_SLOT_CAPACITY = 24;
 constexpr uint32_t GBFR20_OWNER_CHARACTER_CAPACITY = 4;
 constexpr uint32_t GBFR20_PRESET_CHARACTER_CAPACITY = 32;
@@ -25,6 +25,10 @@ constexpr int32_t GBFR20_PRESET_SLOT_EQUIPPED = -2;
 constexpr int32_t GBFR20_PRESET_SLOT_DISABLED = -3;
 constexpr int32_t GBFR20_PRESET_SLOT_CHARACTER_RESTRICTED = -4;
 constexpr int32_t GBFR20_PRESET_SLOT_DUPLICATE = -5;
+
+constexpr int32_t GBFR20_SLOT_COUNT_REQUEST_FAILED = 0;
+constexpr int32_t GBFR20_SLOT_COUNT_REQUEST_PENDING = 1;
+constexpr int32_t GBFR20_SLOT_COUNT_REQUEST_CLEARED = 2;
 
 using GBFR20_LogCallback = void(GBFR20_CALL*)(const char* message);
 
@@ -180,6 +184,8 @@ GBFR20_API int32_t GBFR20_CALL GBFR20_SetAutoApply(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetShowEquipped(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetToggleKey(int32_t virtual_key);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetLanguage(int32_t language);
+GBFR20_API int32_t GBFR20_CALL GBFR20_RequestVirtualSlotCount(int32_t slot_count);
+GBFR20_API int32_t GBFR20_CALL GBFR20_GetPendingVirtualSlotCount();
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputHooksEnabled(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCapture(int32_t requested);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCaptureDevices(uint32_t requested_devices);

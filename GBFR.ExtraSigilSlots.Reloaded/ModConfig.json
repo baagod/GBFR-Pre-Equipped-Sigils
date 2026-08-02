@@ -2,7 +2,7 @@
   "ModId": "GBFR.ExtraSigilSlots.Reloaded",
   "ModName": "GBFR Extra Sigil Slots - Reloaded ImGui (ER 2.0.2/2.0.3)",
   "ModAuthor": "Hiyajomaho-num9",
-  "ModVersion": "0.7.10",
+  "ModVersion": "0.8.0",
   "ModDescription": "Reloaded-II-only configurable extra-sigil selector for ER 2.0.2/2.0.3 with 1-24 virtual slots, named multi-character presets, usage filters and safe ownership transfer, a compact bilingual UI, Chinese IME support, localized character names, and a Reloaded-II configurable hotkey (F8 by default). No ReShade or Luma dependency.",
   "ModDll": "GBFR.ExtraSigilSlots.Reloaded.dll",
   "ModIcon": "",

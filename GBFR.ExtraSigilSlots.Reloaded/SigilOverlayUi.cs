@@ -82,7 +82,10 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         }
         FrontendOverlayGate.SetToggleKey(_state.ToggleKey);
         if (openedThisFrame)
+        {
             RefreshInventory();
+            InitializeVirtualSlotCountUi();
+        }
         else if (_inventory.Count == 0 || NativeCore.IsInventoryDirty())
             RefreshInventory();
 
@@ -146,6 +149,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
                 ? "The game does not support hot-updating sigils during battle. Thank you for understanding."
                 : "游戏不支持战斗状态热更新因子，请谅解"
         );
+        DrawVirtualSlotCountSetting(english);
 
         ImGui.Separator();
         DrawPresetBar(characterHash, canEdit, english);
@@ -162,6 +166,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         DrawPicker(characterHash, canEdit, english, pickerTitle);
         DrawPresetManager(characterHash, canEdit, english);
         DrawPresetNameDialog(english);
+        DrawVirtualSlotCountConfirmation(english);
         ImGui.End();
     }
 
@@ -479,6 +484,8 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
             _requestBodyDialogOpen = false;
             _requestTransferDialogOpen = false;
             _suppressTransferPrompt = false;
+            _slotCountConfirmationOpen = false;
+            _openSlotCountConfirmationNextFrame = false;
         }
     }
 
