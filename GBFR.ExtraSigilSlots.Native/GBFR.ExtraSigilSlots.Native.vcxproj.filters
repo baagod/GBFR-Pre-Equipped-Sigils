@@ -31,6 +31,9 @@
     <ClCompile Include="src\exports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gem_protection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\input_capture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -546,6 +546,22 @@ std::wstring ReadIniString(const wchar_t* section, const wchar_t* key, const wch
    return buffer.data();
 }
 
+std::wstring ReadLargeIniString(
+   const wchar_t* section,
+   const wchar_t* key,
+   const wchar_t* fallback)
+{
+   std::vector<wchar_t> buffer(65536, L'\0');
+   GetPrivateProfileStringW(
+      section,
+      key,
+      fallback,
+      buffer.data(),
+      static_cast<DWORD>(buffer.size()),
+      g_config_path.c_str());
+   return buffer.data();
+}
+
 void WriteIniInt(const wchar_t* section, const wchar_t* key, int value)
 {
    const std::wstring text = std::to_wstring(value);
@@ -999,6 +1015,100 @@ void SaveCharacterSelection(uint32_t character_hash)
    WritePrivateProfileStringW(section.c_str(), L"Slots", value.c_str(), g_config_path.c_str());
 }
 
+void LoadManagedProtectionSlots()
+{
+   const std::wstring text = ReadLargeIniString(
+      L"Internal", L"ManagedProtectionSlots", L"");
+   std::unordered_map<uint32_t, uint64_t> parsed;
+   bool valid = true;
+   size_t offset = 0;
+   while (offset < text.size())
+   {
+      const size_t comma = text.find(L',', offset);
+      const std::wstring_view token(
+         text.data() + offset,
+         comma == std::wstring::npos ? text.size() - offset : comma - offset);
+      if (token.size() != 25 || token[8] != L':')
+      {
+         valid = false;
+         break;
+      }
+
+      uint64_t slot_id = 0;
+      uint64_t fingerprint = 0;
+      const auto parse_hex = [](std::wstring_view value, uint64_t& parsed_value) {
+         parsed_value = 0;
+         for (const wchar_t character : value)
+         {
+            uint64_t digit = 0;
+            if (character >= L'0' && character <= L'9')
+               digit = static_cast<uint64_t>(character - L'0');
+            else if (character >= L'a' && character <= L'f')
+               digit = static_cast<uint64_t>(character - L'a' + 10);
+            else if (character >= L'A' && character <= L'F')
+               digit = static_cast<uint64_t>(character - L'A' + 10);
+            else
+               return false;
+            parsed_value = (parsed_value << 4) | digit;
+         }
+         return true;
+      };
+      if (!parse_hex(token.substr(0, 8), slot_id) ||
+          !parse_hex(token.substr(9, 16), fingerprint) || slot_id == 0 ||
+          slot_id > std::numeric_limits<uint32_t>::max() || fingerprint == 0 ||
+          !parsed.emplace(
+             static_cast<uint32_t>(slot_id), fingerprint).second)
+      {
+         valid = false;
+         break;
+      }
+      if (comma == std::wstring::npos)
+         break;
+      offset = comma + 1;
+   }
+
+   {
+      std::scoped_lock lock(g_gem_protection_mutex);
+      g_mod_owned_protections = valid
+         ? std::move(parsed)
+         : std::unordered_map<uint32_t, uint64_t>{};
+   }
+   if (!valid)
+   {
+      Log(
+         "Invalid internal managed-protection list was discarded; native player locks will be preserved.");
+      WritePrivateProfileStringW(
+         L"Internal", L"ManagedProtectionSlots", L"", g_config_path.c_str());
+   }
+}
+
+void SaveManagedProtectionSlots()
+{
+   std::vector<std::pair<uint32_t, uint64_t>> slots;
+   {
+      std::scoped_lock lock(g_gem_protection_mutex);
+      slots.assign(
+         g_mod_owned_protections.begin(),
+         g_mod_owned_protections.end());
+   }
+   std::sort(slots.begin(), slots.end(), [](const auto& left, const auto& right) {
+      return left.first < right.first;
+   });
+
+   std::wostringstream stream;
+   stream << std::uppercase << std::hex << std::setfill(L'0');
+   for (size_t index = 0; index < slots.size(); ++index)
+   {
+      if (index != 0)
+         stream << L',';
+      stream << std::setw(8) << slots[index].first << L':'
+             << std::setw(16) << slots[index].second;
+   }
+   const std::wstring value = stream.str();
+   WritePrivateProfileStringW(
+      L"Internal", L"ManagedProtectionSlots", value.c_str(), g_config_path.c_str());
+}
+
 void LoadSettingsAndSelections(bool activate_selection_ownership)
 {
    if (!EnsureValidConfigFile())
@@ -1009,11 +1119,21 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
          std::scoped_lock lock(g_settings_mutex);
          g_settings = std::move(defaults);
       }
+      if (activate_selection_ownership)
+      {
+         std::scoped_lock protection_lock(g_gem_protection_mutex);
+         g_mod_owned_protections.clear();
+      }
       std::unique_lock lock(g_selection_mutex);
       g_character_selections.clear();
       g_virtual_owner_by_slot_id.clear();
+      if (activate_selection_ownership)
+         ScheduleGemProtectionReconcile();
       return;
    }
+
+   if (activate_selection_ownership)
+      LoadManagedProtectionSlots();
 
    UiSettings settings;
    const int toggle_key = static_cast<int>(GetPrivateProfileIntW(
@@ -1045,6 +1165,8 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
       std::unique_lock lock(g_selection_mutex);
       g_character_selections.clear();
       g_virtual_owner_by_slot_id.clear();
+      if (activate_selection_ownership)
+         ScheduleGemProtectionReconcile();
       return;
    }
 
@@ -1102,6 +1224,8 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
          inactive_slot_id = 0;
       }
    }
+   lock.unlock();
+   ScheduleGemProtectionReconcile();
 }
 
 void SaveUiSettings()

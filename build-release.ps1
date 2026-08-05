@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.8.0'
+    [string]$Version = '0.8.1'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -137,6 +137,16 @@ $packagedNumConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
     Select-Object -First 1
 if ($packagedNumConfig) {
     throw "Mutable NumConfig state must be runtime-created and was packaged unexpectedly: $($packagedNumConfig.FullName)"
+}
+
+$packagedPresetState = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
+    Where-Object {
+        $_.Name -like 'GBFR-ExtraSigilSlots.presets.json*' -or
+        $_.Name -like 'GBFR-ExtraSigilSlots20.presets.json*'
+    } |
+    Select-Object -First 1
+if ($packagedPresetState) {
+    throw "Mutable preset state or a preset backup was packaged unexpectedly: $($packagedPresetState.FullName)"
 }
 
 Compress-Archive -LiteralPath $packageDir -DestinationPath $zipPath -CompressionLevel Optimal

@@ -267,13 +267,14 @@ bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_
                : 0);
       if (source_address == 0 || source.slot_id != inventory_slot_id ||
           source.gem_id == 0 || source.worn_by != kUnwornCharacterHash ||
-          (source.flags & 0x10) != 0 ||
+          (source.flags & kGemInvalidFlag) != 0 ||
           (required_character != 0 && required_character != character_hash))
          return false;
    }
 
    std::unordered_set<uint32_t> affected_characters;
    {
+      std::scoped_lock transition_lock(g_gem_protection_transition_mutex);
       std::unique_lock lock(g_selection_mutex);
       auto& target_slots = g_character_selections[character_hash];
       const uint32_t previous_slot_id = target_slots[static_cast<size_t>(virtual_slot)];
@@ -299,6 +300,7 @@ bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_
    }
    for (const uint32_t affected_hash : affected_characters)
       SaveCharacterSelection(affected_hash);
+   ScheduleGemProtectionReconcile();
    MarkInventoryDirty();
 
    bool auto_apply = false;
@@ -386,7 +388,7 @@ bool ApplyPresetSelections(
             results.push_back(result);
             continue;
          }
-         if ((source.flags & 0x10) != 0)
+         if ((source.flags & kGemInvalidFlag) != 0)
          {
             result.status = GBFR20_PRESET_SLOT_DISABLED;
             results.push_back(result);
@@ -425,6 +427,7 @@ bool ApplyPresetSelections(
 
    std::unordered_set<uint32_t> affected_characters;
    {
+      std::scoped_lock transition_lock(g_gem_protection_transition_mutex);
       std::unique_lock lock(g_selection_mutex);
       auto next_selections = g_character_selections;
 
@@ -487,6 +490,7 @@ bool ApplyPresetSelections(
 
    for (const uint32_t affected_hash : affected_characters)
       SaveCharacterSelection(affected_hash);
+   ScheduleGemProtectionReconcile();
    MarkInventoryDirty();
 
    bool auto_apply = false;

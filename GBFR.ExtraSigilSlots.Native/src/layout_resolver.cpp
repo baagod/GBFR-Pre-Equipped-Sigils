@@ -23,6 +23,15 @@ constexpr PatternView MakePattern(
    return {bytes, mask, ByteCount};
 }
 
+template <size_t ByteCount, size_t MaskCount>
+constexpr PatternView MakePattern(
+   const std::array<uint8_t, ByteCount>& bytes,
+   const char (&mask)[MaskCount]) noexcept
+{
+   static_assert(ByteCount + 1 == MaskCount);
+   return {bytes.data(), mask, ByteCount};
+}
+
 constexpr uint8_t kApplyLoopBytes[] = {
    0xFF, 0xC7, 0x83, 0xFF, 0x0D, 0x0F, 0x84, 0, 0, 0, 0,
    0xC5, 0xF8, 0x11, 0x75, 0xF0};
@@ -120,6 +129,10 @@ constexpr uint8_t kCharacterMapBytes[] = {
    0x49, 0x8B, 0x4C, 0x08, 0x08};
 constexpr auto kCharacterMapPattern =
    MakePattern(kCharacterMapBytes, "xx????xxxxxx????xxx????xxxxxxxxxxxx");
+
+constexpr auto kGemProtectionSetterTailPattern = MakePattern(
+   kGemProtectionSetterTailPreflight,
+   "xxxxxxxxxxxxxxxxxxxxxxx");
 
 struct ImageView
 {
@@ -539,6 +552,14 @@ bool ValidateResolvedGameLayout(
           image,
           layout.get_gem_data_by_index_rva,
           kGetterPreflight) ||
+       !MatchesBytesAtRva(
+          image,
+          layout.set_gem_protection_rva,
+          kGemProtectionSetterPreflight) ||
+       !MatchesBytesAtRva(
+          image,
+          layout.set_gem_protection_tail_rva,
+          kGemProtectionSetterTailPreflight) ||
        !MatchesBytesAtRva(image, layout.status_rebuild_rva, kStatusRebuildPreflight) ||
        !MatchesBytesAtRva(image, layout.status_notifier_rva, kStatusNotifierPreflight) ||
        !MatchesBytesAtRva(
@@ -641,6 +662,7 @@ bool ResolveGameLayout()
    uintptr_t owner_loop = 0;
    uintptr_t ui_mode_pair = 0;
    uintptr_t ui_character = 0;
+   uintptr_t gem_protection_tail = 0;
    if (!FindUniquePattern(
           image, image.code_rva, image.code_size, kApplyLoopPattern, apply_loop) ||
        !FindUniquePattern(
@@ -652,7 +674,13 @@ bool ResolveGameLayout()
        !FindUniquePattern(
           image, image.code_rva, image.code_size, kUiModePairPattern, ui_mode_pair) ||
        !FindUniquePattern(
-          image, image.code_rva, image.code_size, kUiCharacterPattern, ui_character))
+          image, image.code_rva, image.code_size, kUiCharacterPattern, ui_character) ||
+       !FindUniquePattern(
+          image,
+          image.code_rva,
+          image.code_size,
+          kGemProtectionSetterTailPattern,
+          gem_protection_tail))
       return FailResolution("unique semantic anchors");
 
    layout.trait_apply_loop_limit_immediate_rva = apply_loop + 4;
@@ -684,6 +712,7 @@ bool ResolveGameLayout()
    FunctionRange getter_function{};
    FunctionRange apply_helper{};
    FunctionRange owner_function{};
+   FunctionRange gem_protection_function{};
    if (!FindRuntimeFunction(image, apply_getter, getter_function) ||
        getter_function.begin != apply_getter ||
        !MatchesBytesAtRva(image, apply_getter, kGetterPreflight) ||
@@ -695,10 +724,19 @@ bool ResolveGameLayout()
        !FindRuntimeFunction(image, apply_loop, apply_helper) ||
        !FindRuntimeFunction(image, owner_loop, owner_function) ||
        owner_function.begin > owner_loop ||
+       !FindRuntimeFunction(
+          image, gem_protection_tail, gem_protection_function) ||
+       gem_protection_function.begin >= gem_protection_tail ||
+       !MatchesBytesAtRva(
+          image,
+          gem_protection_function.begin,
+          kGemProtectionSetterPreflight) ||
        !MatchesBytesAtRva(
           image, owner_function.begin, kStatusOwnerTickPreflight))
       return FailResolution("runtime-function boundaries");
    layout.status_owner_tick_rva = owner_function.begin;
+   layout.set_gem_protection_rva = gem_protection_function.begin;
+   layout.set_gem_protection_tail_rva = gem_protection_tail;
    if (!FindStatusRebuild(image, apply_helper, layout.status_rebuild_rva))
       return FailResolution("status rebuild call graph");
 
@@ -802,6 +840,7 @@ bool ResolveGameLayout()
    message << "Resolved and validated game layout from semantic anchors: PE timestamp=0x"
            << std::uppercase << std::hex << layout.pe_timestamp
            << ", getter RVA=0x" << layout.get_gem_data_by_index_rva
+           << ", protection setter RVA=0x" << layout.set_gem_protection_rva
            << ", SystemData RVA=0x" << layout.system_data_global_rva
            << ", StatusManager RVA=0x" << layout.status_manager_global_rva
            << ", UiManager RVA=0x" << layout.ui_manager_global_rva << ".";

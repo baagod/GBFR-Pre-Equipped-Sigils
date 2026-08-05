@@ -91,6 +91,7 @@
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\dxgi_present_bridge.cpp" />
     <ClCompile Include="src\exports.cpp" />
+    <ClCompile Include="src\gem_protection.cpp" />
     <ClCompile Include="src\input_capture.cpp" />
     <ClCompile Include="src\inventory_store.cpp" />
     <ClCompile Include="src\layout_resolver.cpp" />

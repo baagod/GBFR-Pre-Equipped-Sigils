@@ -172,6 +172,82 @@ void TrackNaturalContributionResult(
    g_tls_natural_contribution = {};
 }
 
+bool TryLoadVirtualTraitSelection(
+   uintptr_t status,
+   const StatusIdentity& identity,
+   bool from_trait_data_loop,
+   uint64_t& active_generation,
+   bool& tracks_pending_apply,
+   std::array<uint32_t, kVirtualSlotCapacity>& selection) noexcept
+{
+   try
+   {
+      active_generation = g_active_apply_generation.load(std::memory_order_acquire);
+      tracks_pending_apply =
+         from_trait_data_loop && active_generation != 0 &&
+         g_tls_apply_generation == active_generation &&
+         g_pending_refresh.load(std::memory_order_acquire) &&
+         g_native_apply_call_active.load(std::memory_order_acquire) &&
+         g_active_apply_thread_id.load(std::memory_order_acquire) == GetCurrentThreadId() &&
+         g_pending_character_hash.load(std::memory_order_acquire) == identity.character_hash &&
+         g_active_apply_status.load(std::memory_order_acquire) == status;
+      if (tracks_pending_apply)
+      {
+         for (size_t index = 0; index < selection.size(); ++index)
+            selection[index] = g_active_apply_slots[index].load(std::memory_order_acquire);
+         return true;
+      }
+
+      if (TryGetAuthorizedSelection(status, identity, selection))
+         return true;
+      if (!from_trait_data_loop)
+         return false;
+
+      selection = GetSelection(identity.character_hash);
+      return CountSelectedSlots(selection) != 0;
+   }
+   catch (...)
+   {
+      active_generation = 0;
+      tracks_pending_apply = false;
+      selection = {};
+      return false;
+   }
+}
+
+bool TryCopySelectedVirtualGem(
+   const StatusIdentity& identity,
+   const std::array<uint32_t, kVirtualSlotCapacity>& selection,
+   int virtual_index,
+   void* output,
+   uint32_t& selected_slot_id) noexcept
+{
+   selected_slot_id = 0;
+   if (virtual_index < 0 || virtual_index >= GetVirtualSlotCount() || output == nullptr)
+      return false;
+
+   selected_slot_id = selection[static_cast<size_t>(virtual_index)];
+   if (selected_slot_id == 0)
+      return false;
+
+   try
+   {
+      const uintptr_t source_address = ResolveGemAddress(selected_slot_id);
+      GemData source{};
+      return source_address != 0 && SafeReadGem(source_address, source) &&
+         source.slot_id == selected_slot_id &&
+         source.worn_by == kUnwornCharacterHash &&
+         (source.flags & kGemInvalidFlag) == 0 &&
+         (GetRequiredCharacterHash(source.gem_id) == 0 ||
+          GetRequiredCharacterHash(source.gem_id) == identity.character_hash) &&
+         SafeCopyToOutput(source, output);
+   }
+   catch (...)
+   {
+      return false;
+   }
+}
+
 uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
 {
    ActiveCallGuard active_call(g_active_getter_calls);
@@ -206,34 +282,19 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
        identity.context_mode > 2 || output == nullptr)
       return 0;
 
-   const uint64_t active_generation =
-      g_active_apply_generation.load(std::memory_order_acquire);
-   const bool tracks_pending_apply =
-      from_trait_data_loop && active_generation != 0 &&
-      g_tls_apply_generation == active_generation &&
-      g_pending_refresh.load(std::memory_order_acquire) &&
-      g_native_apply_call_active.load(std::memory_order_acquire) &&
-      g_active_apply_thread_id.load(std::memory_order_acquire) == GetCurrentThreadId() &&
-      g_pending_character_hash.load(std::memory_order_acquire) == identity.character_hash &&
-      g_active_apply_status.load(std::memory_order_acquire) ==
-         reinterpret_cast<uintptr_t>(status);
+   uint64_t active_generation = 0;
+   bool tracks_pending_apply = false;
    std::array<uint32_t, kVirtualSlotCapacity> selection{};
-   if (tracks_pending_apply)
-   {
-      for (size_t index = 0; index < selection.size(); ++index)
-         selection[index] = g_active_apply_slots[index].load(std::memory_order_acquire);
-   }
-   else if (!TryGetAuthorizedSelection(
-              reinterpret_cast<uintptr_t>(status), identity, selection))
-   {
-      if (!from_trait_data_loop)
-         return 0;
-      selection = GetSelection(identity.character_hash);
-      if (CountSelectedSlots(selection) == 0)
-         return 0;
-   }
+   if (!TryLoadVirtualTraitSelection(
+          reinterpret_cast<uintptr_t>(status),
+          identity,
+          from_trait_data_loop,
+          active_generation,
+          tracks_pending_apply,
+          selection))
+      return 0;
    const int virtual_index = slot_index - kNativeInternalSlotCount;
-   const uint32_t selected_slot_id = selection[static_cast<size_t>(virtual_index)];
+   uint32_t selected_slot_id = 0;
    if (tracks_pending_apply && from_trait_apply_loop &&
        slot_index == kNativeInternalSlotCount)
    {
@@ -249,19 +310,8 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
       BeginNaturalContributionTracking(
          reinterpret_cast<uintptr_t>(status), identity, selection);
 
-   bool copied = false;
-   if (selected_slot_id != 0)
-   {
-      const uintptr_t source_address = ResolveGemAddress(selected_slot_id);
-      GemData source{};
-      copied = source_address != 0 && SafeReadGem(source_address, source) &&
-         source.slot_id == selected_slot_id &&
-         source.worn_by == kUnwornCharacterHash &&
-         (source.flags & 0x10) == 0 &&
-         (GetRequiredCharacterHash(source.gem_id) == 0 ||
-          GetRequiredCharacterHash(source.gem_id) == identity.character_hash) &&
-         SafeCopyToOutput(source, output);
-   }
+   const bool copied = TryCopySelectedVirtualGem(
+      identity, selection, virtual_index, output, selected_slot_id);
 
    if (generation_claimed)
    {
@@ -303,9 +353,45 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
 void OnTraitFetch(safetyhook::Context& context)
 {
    ActiveCallGuard active_call(g_active_mid_calls);
-   if (context.r13 >= static_cast<uintptr_t>(kNativeInternalSlotCount) &&
-       context.r13 < static_cast<uintptr_t>(GetExpandedInternalSlotCount()))
-      context.rip = g_image_base + g_game_layout.trait_fetch_call_path_rva;
+   if (context.r13 < static_cast<uintptr_t>(kNativeInternalSlotCount) ||
+       context.r13 >= static_cast<uintptr_t>(GetExpandedInternalSlotCount()))
+      return;
+
+   bool copied = false;
+   const uintptr_t status = context.r15;
+   StatusIdentity identity{};
+   if (!g_shutting_down.load(std::memory_order_acquire) && context.r12 != 0 &&
+       SafeReadStatusIdentity(status, identity) &&
+       identity.context_mode >= 0 && identity.context_mode <= 2)
+   {
+      g_last_character_hash.store(identity.character_hash, std::memory_order_release);
+      g_last_context_mode.store(identity.context_mode, std::memory_order_release);
+
+      uint64_t active_generation = 0;
+      bool tracks_pending_apply = false;
+      std::array<uint32_t, kVirtualSlotCapacity> selection{};
+      if (TryLoadVirtualTraitSelection(
+             status,
+             identity,
+             true,
+             active_generation,
+             tracks_pending_apply,
+             selection))
+      {
+         uint32_t selected_slot_id = 0;
+         copied = TryCopySelectedVirtualGem(
+            identity,
+            selection,
+            static_cast<int>(context.r13) - kNativeInternalSlotCount,
+            reinterpret_cast<void*>(context.r12),
+            selected_slot_id);
+      }
+   }
+
+   // Resume after the native getter call so the game still performs its own
+   // invalid-flag check, gem-master lookup, category count, cap, and effect math.
+   context.rax = copied ? 1 : 0;
+   context.rip = g_image_base + g_game_layout.trait_category_getter_return_rva;
 }
 
 void OnLocalContext1BindCall(safetyhook::Context& context)
@@ -405,6 +491,7 @@ void OnStatusOwnerCharacterLoop(safetyhook::Context& context)
    for (uint32_t index = count; index < g_status_owner_character_hashes.size(); ++index)
       g_status_owner_character_hashes[index].store(0, std::memory_order_release);
    g_status_owner_character_count.store(count, std::memory_order_release);
+   ReconcileGemProtection();
 }
 
 uint64_t BuildLifecycleSignature(
@@ -500,6 +587,8 @@ namespace
 void RollbackGameplayHookInstallation() noexcept
 {
    g_hooks_ready.store(false, std::memory_order_release);
+   if (g_set_gem_protection_hook)
+      (void)g_set_gem_protection_hook.disable();
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
@@ -508,6 +597,7 @@ void RollbackGameplayHookInstallation() noexcept
       (void)g_get_gem_hook.disable();
 
    while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
+          g_active_protection_calls.load(std::memory_order_acquire) != 0 ||
           g_active_mid_calls.load(std::memory_order_acquire) != 0)
       SwitchToThread();
 
@@ -532,6 +622,7 @@ void RollbackGameplayHookInstallation() noexcept
             g_game_layout.trait_category_original_limit);
    }
 
+   g_set_gem_protection_hook.reset();
    g_status_owner_tick_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
@@ -572,6 +663,8 @@ void ShutdownHooks()
       (void)g_local_context1_bind_return_hook.disable();
    if (g_local_context1_bind_call_hook)
       (void)g_local_context1_bind_call_hook.disable();
+   if (g_set_gem_protection_hook)
+      (void)g_set_gem_protection_hook.disable();
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
@@ -580,6 +673,7 @@ void ShutdownHooks()
       (void)g_get_gem_hook.disable();
 
    while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
+          g_active_protection_calls.load(std::memory_order_acquire) != 0 ||
           g_active_mid_calls.load(std::memory_order_acquire) != 0 ||
           g_active_input_calls.load(std::memory_order_acquire) != 0)
       SwitchToThread();
@@ -607,6 +701,7 @@ void ShutdownHooks()
                g_game_layout.trait_category_loop_limit_immediate_rva,
             g_game_layout.trait_category_original_limit);
    }
+   g_set_gem_protection_hook.reset();
    g_status_owner_tick_hook.reset();
    g_local_context1_bind_return_hook.reset();
    g_local_context1_bind_call_hook.reset();
@@ -650,6 +745,23 @@ bool InstallHooks()
    {
       RollbackGameplayHookInstallation();
       SetRuntimeMessage("Failed to install the GemData getter hook.", true);
+      return false;
+   }
+
+   const uint64_t protection_hook_started =
+      BeginStartupPhase("gem-protection-hook");
+   g_set_gem_protection_hook = safetyhook::create_inline(
+      reinterpret_cast<void*>(
+         g_image_base + g_game_layout.set_gem_protection_rva),
+      reinterpret_cast<void*>(&SetGemProtectionDetour));
+   CompleteStartupPhase(
+      "gem-protection-hook",
+      protection_hook_started,
+      static_cast<bool>(g_set_gem_protection_hook));
+   if (!g_set_gem_protection_hook)
+   {
+      RollbackGameplayHookInstallation();
+      SetRuntimeMessage("Failed to install the native sigil-protection hook.", true);
       return false;
    }
 
@@ -703,6 +815,7 @@ bool InstallHooks()
    }
 
    g_hooks_ready.store(true, std::memory_order_release);
+   ScheduleGemProtectionReconcile();
    SetRuntimeMessage(
       "Native hook installation completed with " +
          std::to_string(GetVirtualSlotCount()) +

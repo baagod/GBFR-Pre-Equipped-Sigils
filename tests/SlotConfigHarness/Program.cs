@@ -52,7 +52,10 @@ RunMissingCase();
         "FutureCharacterValue=kept\r\n" +
         "\r\n" +
         "[FutureSection]\r\n" +
-        "FutureValue=kept\r\n",
+        "FutureValue=kept\r\n" +
+        "\r\n" +
+        "[Internal]\r\n" +
+        "ManagedProtectionSlots=00000001:0123456789ABCDEF\r\n",
         24,
         [1, 2]),
     ("inactive-selections-preserved",

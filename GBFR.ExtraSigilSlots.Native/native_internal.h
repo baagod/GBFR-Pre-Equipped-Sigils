@@ -34,6 +34,8 @@ struct ResolvedGameLayout
    uintptr_t trait_fetch_call_path_rva = 0;
    uintptr_t trait_category_getter_return_rva = 0;
    uintptr_t get_gem_data_by_index_rva = 0;
+   uintptr_t set_gem_protection_rva = 0;
+   uintptr_t set_gem_protection_tail_rva = 0;
    uintptr_t status_rebuild_rva = 0;
    uintptr_t status_notifier_rva = 0;
    uintptr_t status_owner_tick_rva = 0;
@@ -69,6 +71,8 @@ inline constexpr int kCurrentSettingsVersion = 2;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kLocalPlayerSlotKey = 0xDBD9A18D;
+inline constexpr uint32_t kGemProtectedFlag = 0x01;
+inline constexpr uint32_t kGemInvalidFlag = 0x10;
 
 inline constexpr std::array<uint8_t, 16> kTraitApplyLoopPreflight = {
    0xFF, 0xC7, 0x83, 0xFF, 0x0D, 0x0F, 0x84, 0xB7,
@@ -85,6 +89,12 @@ inline constexpr std::array<uint8_t, 12> kTraitCategoryGetterReturnPreflight = {
    0x84, 0xC0, 0x74, 0x8E, 0xF6, 0x45, 0xD8, 0x10, 0x75, 0x88, 0x8B, 0x55};
 inline constexpr std::array<uint8_t, 12> kGetterPreflight = {
    0x55, 0x41, 0x57, 0x41, 0x56, 0x56, 0x57, 0x53, 0x48, 0x83, 0xEC, 0x28};
+inline constexpr std::array<uint8_t, 12> kGemProtectionSetterPreflight = {
+   0x55, 0x41, 0x56, 0x56, 0x57, 0x53, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8D};
+inline constexpr std::array<uint8_t, 23> kGemProtectionSetterTailPreflight = {
+   0x8B, 0x41, 0x20, 0x48, 0x83, 0xC1, 0x20, 0x89,
+   0xC2, 0x45, 0x84, 0xF6, 0x74, 0x10, 0x83, 0xCA,
+   0x01, 0x39, 0xD0, 0x74, 0x17, 0x89, 0x11};
 inline constexpr std::array<uint8_t, 12> kStatusRebuildPreflight = {
    0x55, 0x56, 0x57, 0x48, 0x83, 0xEC, 0x50, 0x48, 0x8D, 0x6C, 0x24, 0x50};
 inline constexpr std::array<uint8_t, 12> kStatusNotifierPreflight = {
@@ -256,6 +266,7 @@ extern std::string g_runtime_message;
 extern bool g_runtime_message_is_error;
 
 extern SafetyHookInline g_get_gem_hook;
+extern SafetyHookInline g_set_gem_protection_hook;
 extern SafetyHookMid g_trait_fetch_hook;
 extern SafetyHookMid g_status_owner_tick_hook;
 extern SafetyHookMid g_local_context1_bind_call_hook;
@@ -320,6 +331,7 @@ extern std::atomic_uint32_t g_last_apply_injected_count;
 extern std::atomic_int g_apply_result;
 extern std::atomic_int g_last_consumed_apply_result;
 extern std::atomic_uint32_t g_active_getter_calls;
+extern std::atomic_uint32_t g_active_protection_calls;
 extern std::atomic_uint32_t g_active_mid_calls;
 extern std::atomic_uint32_t g_active_input_calls;
 extern thread_local uint64_t g_tls_apply_generation;
@@ -376,6 +388,10 @@ extern std::unordered_map<uint32_t, std::string> g_trait_names;
 extern bool g_names_are_english;
 extern std::mutex g_inventory_snapshot_mutex;
 extern std::vector<InventoryItem> g_inventory_snapshot;
+extern std::mutex g_gem_protection_mutex;
+extern std::mutex g_gem_protection_transition_mutex;
+extern std::unordered_map<uint32_t, uint64_t> g_mod_owned_protections;
+extern std::atomic_bool g_gem_protection_reconcile_pending;
 
 int GetVirtualSlotCount() noexcept;
 int GetExpandedInternalSlotCount() noexcept;
@@ -430,6 +446,8 @@ int RequestPendingVirtualSlotCount(int slot_count);
 int GetPendingVirtualSlotCount();
 void SaveUiSettings();
 void SaveCharacterSelection(uint32_t character_hash);
+void LoadManagedProtectionSlots();
+void SaveManagedProtectionSlots();
 bool ReloadNameTable(std::string_view language);
 bool LoadCompatibilityTable(const std::filesystem::path& path);
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash);
@@ -444,6 +462,9 @@ bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_
 bool ApplyPresetSelections(const GBFR20_PresetCharacterSelection* selections, uint32_t selection_count, GBFR20_PresetSlotResult* slot_results, uint32_t slot_result_capacity, uint32_t* slot_result_count);
 uintptr_t ResolveGemAddress(uint32_t slot_id);
 bool RefreshInventorySnapshot();
+void ScheduleGemProtectionReconcile() noexcept;
+void ReconcileGemProtection();
+void SetGemProtectionDetour(uintptr_t system_data, uint32_t slot_id, bool protected_value);
 
 void ScheduleSelectedStatusRebind();
 bool ResolveGameLayout();

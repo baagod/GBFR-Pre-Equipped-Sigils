@@ -165,6 +165,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
 
         DrawPicker(characterHash, canEdit, english, pickerTitle);
         DrawPresetManager(characterHash, canEdit, english);
+        DrawPresetTransferDialog(english);
         DrawPresetNameDialog(english);
         DrawVirtualSlotCountConfirmation(english);
         ImGui.End();

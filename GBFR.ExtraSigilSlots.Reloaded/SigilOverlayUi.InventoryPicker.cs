@@ -179,7 +179,9 @@ internal sealed unsafe partial class SigilOverlayUi
             : $"当前因子已被{owner}用于虚拟扩展槽 {sourceSlot}。");
 
         IReadOnlyList<string> presetNames =
-            _presetStore.GetPresetNamesForSlot(item.Gem.SlotId);
+            _presetStore.GetPresetNamesForSlot(
+                item.VirtualOwnerCharacterHash,
+                item.Gem.SlotId);
         if (presetNames.Count != 0)
         {
             ImGui.Text((english ? "Referenced by presets: " : "同时被以下预设引用：") +
@@ -229,11 +231,13 @@ internal sealed unsafe partial class SigilOverlayUi
         if (_pickerSlot < 0 || _pickerSlot >= ActiveVirtualSlotCount)
             return false;
         int targetSlot = _pickerSlot;
+        uint sourceCharacterHash = item.VirtualOwnerCharacterHash;
         try
         {
             IReadOnlyList<string> affectedPresets = Array.Empty<string>();
             bool success = clearPresetReferences
                 ? _presetStore.ClearSlotReferencesAndRun(
+                    sourceCharacterHash,
                     item.Gem.SlotId,
                     () => NativeCore.SetSelection(
                         characterHash,
@@ -250,6 +254,11 @@ internal sealed unsafe partial class SigilOverlayUi
             }
 
             _presetConflicts.Remove((characterHash, targetSlot));
+            if (sourceCharacterHash != 0)
+                _presetConflicts.Remove((sourceCharacterHash, item.VirtualOwnerSlot));
+            MarkPresetTemporary(characterHash);
+            if (sourceCharacterHash != 0 && sourceCharacterHash != characterHash)
+                MarkPresetTemporary(sourceCharacterHash);
             LoadSelection(characterHash);
             RefreshInventory();
             if (affectedPresets.Count != 0)
@@ -279,6 +288,7 @@ internal sealed unsafe partial class SigilOverlayUi
         if (NativeCore.SetSelection(characterHash, slot, 0))
         {
             _presetConflicts.Remove((characterHash, slot));
+            MarkPresetTemporary(characterHash);
             LoadSelection(characterHash);
             RefreshInventory();
         }
@@ -350,7 +360,10 @@ internal sealed unsafe partial class SigilOverlayUi
     private void DisposePresetUiResources()
     {
         _presetManagerSize.Dispose();
-        _presetManagerChildSize.Dispose();
+        _presetManagerCharacterListSize.Dispose();
+        _presetManagerPresetListSize.Dispose();
+        _presetTransferDialogSize.Dispose();
+        _presetTransferCharacterListSize.Dispose();
         _dialogSize.Dispose();
         _conflictColor.Dispose();
     }

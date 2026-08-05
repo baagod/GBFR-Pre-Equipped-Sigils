@@ -131,6 +131,7 @@ bool RefreshInventorySnapshot()
    std::unordered_set<uint32_t> affected_characters;
    std::unordered_map<uint32_t, VirtualOwner> virtual_owners;
    {
+      std::scoped_lock transition_lock(g_gem_protection_transition_mutex);
       std::unique_lock lock(g_selection_mutex);
       for (auto& [character_hash, slots] : g_character_selections)
       {
@@ -142,7 +143,7 @@ bool RefreshInventorySnapshot()
             const bool valid = gem_iterator != gems_by_slot_id.end() &&
                gem_iterator->second.gem_id != 0 &&
                gem_iterator->second.worn_by == kUnwornCharacterHash &&
-               (gem_iterator->second.flags & 0x10) == 0 &&
+               (gem_iterator->second.flags & kGemInvalidFlag) == 0 &&
                (GetRequiredCharacterHash(gem_iterator->second.gem_id) == 0 ||
                 GetRequiredCharacterHash(gem_iterator->second.gem_id) == character_hash);
             if (valid)
@@ -159,6 +160,7 @@ bool RefreshInventorySnapshot()
       SaveCharacterSelection(character_hash);
       ScheduleReconcileApply(character_hash);
    }
+   ScheduleGemProtectionReconcile();
 
    std::vector<InventoryItem> snapshot;
    snapshot.reserve(records.size());
@@ -167,7 +169,7 @@ bool RefreshInventorySnapshot()
    for (const RawInventoryRecord& record : records)
    {
       const GemData& gem = record.gem;
-      if (gem.gem_id == 0 || (gem.flags & 0x10) != 0)
+      if (gem.gem_id == 0 || (gem.flags & kGemInvalidFlag) != 0)
          continue;
 
       InventoryItem item{};
