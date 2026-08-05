@@ -256,6 +256,8 @@ public sealed partial class Mod : IMod, IExports
                             if (!NativeCore.SetInputCaptureDevices((uint)devices))
                                 throw new InvalidOperationException("Native input writer rejected Broker capture state.");
                         },
+                        getNativeInputCapture: () =>
+                            (OverlayInputDevices)NativeCore.GetInputCaptureDevices(),
                         forceNativeInputRelease: NativeCore.ForceReleaseInput);
                     await pendingBrokerHost.InitializeAsync(
                             hooks,

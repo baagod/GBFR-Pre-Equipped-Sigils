@@ -4,7 +4,7 @@
 > 基线日期：2026-08-01
 > 当前主线：`main`
 > 初始审计基线：`5e54035` / `v0.7.8`
-> 当前维护版本：`v0.8.1`
+> 当前维护版本：`v0.8.2`
 > 支持游戏版本：Granblue Fantasy: Relink Endless Ragnarok 2.0.2、2.0.3
 > 仓库：`cajoxorize366-oss/GBFR-Extra-Sigil-Slots`
 
@@ -21,6 +21,7 @@
 - `v0.7.10` 移除 Broker 重构时重新引入的逐帧光标释放，并确保窗口焦点／激活消息始终返回游戏，修复首次打开和游戏官方菜单的画面闪烁。
 - `v0.8.0` 将扩展槽数量设置移入 ImGui，采用重启生效与缩减确认事务；预设继续保留完整 24 槽定义，并修正全部 28 名角色的哈希名称映射。
 - `v0.8.1` 修正扩展因子的专精类别计数，保护虚拟槽中的库存因子不被出售或兑换，并将预设迁移为角色独立的 v3 格式，加入单项角色转让与安全备份。
+- `v0.8.2` 将 Overlay Broker 输入关闭改为 requested/effective 两阶段释放；按住热键或鼠标关闭窗口时，WndProc、DirectInput 和光标捕获会在原生中性屏障完成后统一放行，避免间歇性鼠标冻结或劫持。
 - 接手前仍须先检查实际 `git status`；任何后来出现的用户修改都不得用 `git reset --hard`、`git checkout --` 或类似方式删除。
 - `2026/7/18-backup` 分支保存重构前基线 `1351349`。
 - `Dear_branch_preview` 等分支是实验记录，不是应继续合并到 `main` 的实现。
@@ -55,7 +56,7 @@
 ```mermaid
 flowchart TD
     R["Reloaded-II"] --> M["GBFR.ExtraSigilSlots.Reloaded.dll"]
-    M --> A["Packed C ABI v12"]
+    M --> A["Packed C ABI v13"]
     A --> N["GBFR.ExtraSigilSlots.Native.dll"]
 
     M --> P["Overlay peer: UI / presets / IME"]
@@ -592,7 +593,7 @@ Mod 的目标是只劫持键盘和鼠标：
 
 ### 13.1 低风险：可以先做
 
-- 持续检查 ABI 文档漂移；`tests/README.md` 当前已与 ABI 12 同步。
+- 持续检查 ABI 文档漂移；`tests/README.md` 当前已与 ABI 13 同步。
 - 为 update-only 小包增加正式脚本；目前 `build-release.ps1` 只自动生成完整包，小包是额外流程。
 - 统一重复日志格式、phase message 和 error formatting，不改变调用顺序。
 - 把测试 harness 中重复的临时目录、native load、delegate lookup 抽成测试工具库。
@@ -791,7 +792,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 
 ## 19. 精炼前的不可破坏检查清单
 
-- [ ] C ABI 仍是 v12；struct sizes 仍为 0x24／100／20／276。
+- [ ] C ABI 仍是 v13；struct sizes 仍为 0x24／100／20／276。
 - [ ] 本体槽语义、内部原始 loop limit 13 和虚拟容量 24 未改变。
 - [ ] 不写 SaveData，不改 `GemData.WORN_BY`。
 - [ ] 物理 `slot_id` 仍是唯一 inventory identity。

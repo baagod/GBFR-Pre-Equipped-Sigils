@@ -33,6 +33,12 @@ MethodInfo shouldSuppressWindowMessage = brokerHostType.GetMethod(
     ?? throw new MissingMethodException(
         brokerHostType.FullName,
         "ShouldSuppressWindowMessage");
+MethodInfo resolveEffectiveInputDevices = brokerHostType.GetMethod(
+    "ResolveEffectiveInputDevices",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(
+        brokerHostType.FullName,
+        "ResolveEffectiveInputDevices");
 
 Type devicesType = shouldCapture.GetParameters()[2].ParameterType;
 object Devices(int value) => Enum.ToObject(devicesType, value);
@@ -141,6 +147,31 @@ foreach ((uint message, int devices, bool expected, string name) in brokerCases)
     }
 }
 Console.WriteLine("BROKER_FOCUS_AND_CAPTURE_FORWARDING=PASS");
+
+(int Requested, int Previous, int Native, int Effective, string Name)[] releaseCases =
+[
+    (0, 7, 3, 7, "held keyboard and mouse keep the closing drain active"),
+    (0, 7, 1, 5, "mouse release restores only mouse input"),
+    (0, 7, 2, 2, "keyboard release restores keyboard and text input"),
+    (0, 7, 0, 0, "full native release ends the closing drain"),
+    (1, 7, 3, 3, "keyboard request clears text while mouse is still draining"),
+    (4, 7, 3, 6, "text request clears key messages while mouse is still draining"),
+    (7, 0, 3, 7, "capture additions become effective immediately"),
+];
+foreach ((int requested, int previous, int native, int expected, string name) in releaseCases)
+{
+    object actualValue = resolveEffectiveInputDevices.Invoke(
+        null,
+        [Devices(requested), Devices(previous), Devices(native)])
+        ?? throw new InvalidOperationException($"Input release policy ({name}) returned null.");
+    int actual = Convert.ToInt32(actualValue);
+    if (actual != expected)
+    {
+        throw new InvalidOperationException(
+            $"Input release policy ({name}): expected effective={expected}, got {actual}.");
+    }
+}
+Console.WriteLine("BROKER_TWO_PHASE_INPUT_RELEASE=PASS");
 
 sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
 {

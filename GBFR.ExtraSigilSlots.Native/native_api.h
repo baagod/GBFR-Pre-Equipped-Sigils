@@ -10,7 +10,7 @@
 
 #define GBFR20_CALL __cdecl
 
-constexpr uint32_t GBFR20_ABI_VERSION = 12;
+constexpr uint32_t GBFR20_ABI_VERSION = 13;
 constexpr uint32_t GBFR20_VIRTUAL_SLOT_CAPACITY = 24;
 constexpr uint32_t GBFR20_OWNER_CHARACTER_CAPACITY = 4;
 constexpr uint32_t GBFR20_PRESET_CHARACTER_CAPACITY = 32;
@@ -189,6 +189,7 @@ GBFR20_API int32_t GBFR20_CALL GBFR20_GetPendingVirtualSlotCount();
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputHooksEnabled(int32_t enabled);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCapture(int32_t requested);
 GBFR20_API int32_t GBFR20_CALL GBFR20_SetInputCaptureDevices(uint32_t requested_devices);
+GBFR20_API uint32_t GBFR20_CALL GBFR20_GetInputCaptureDevices();
 GBFR20_API int32_t GBFR20_CALL GBFR20_GetInputCaptureActive();
 GBFR20_API int32_t GBFR20_CALL GBFR20_IsInventoryDirty();
 GBFR20_API int32_t GBFR20_CALL GBFR20_CanEditCharacter(uint32_t character_hash);

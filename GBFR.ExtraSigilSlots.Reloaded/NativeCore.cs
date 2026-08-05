@@ -8,7 +8,7 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 12;
+    internal const int AbiVersion = 13;
     internal const int DefaultVirtualSlotCount = 8;
     internal const int VirtualSlotCapacity = 24;
     internal const int OwnerCharacterCapacity = 4;
@@ -425,6 +425,8 @@ internal static unsafe partial class NativeCore
         NativeSetInputCaptureDevices(requestedDevices) != 0;
 
     internal static void ForceReleaseInput() => NativeSetInputCapture(-1);
+
+    internal static uint GetInputCaptureDevices() => NativeGetInputCaptureDevices();
 
     internal static bool IsInputCaptureActive() => NativeGetInputCaptureActive() != 0;
 

@@ -21,15 +21,18 @@ internal sealed class OverlayBrokerHost : IDisposable
     private readonly IOverlayBrokerHostControl _control;
     private readonly Action<string> _log;
     private readonly Action<OverlayInputDevices>? _setNativeInputCapture;
+    private readonly Func<OverlayInputDevices>? _getNativeInputCapture;
     private readonly Action? _forceNativeInputRelease;
     private readonly Action<bool>? _setNativeCursorRelease;
     private readonly object _lifecycleSync = new();
     private readonly SemaphoreSlim _initializationGate = new(1, 1);
+    private int _requestedInputDevices;
     private int _capturedInputDevices;
     private int _initialized;
     private int _disposed;
     private int _permanentFailureHandled;
     private int _wndProcFailureLogged;
+    private int _nativeInputQueryFailureLogged;
     private int _carrierUpkeepFailureLogged;
     private bool _hasSavedClipRect;
     private NativeRect _savedClipRect;
@@ -42,6 +45,7 @@ internal sealed class OverlayBrokerHost : IDisposable
         Action<string> log,
         Action? carrierUpkeep = null,
         Action<OverlayInputDevices>? setNativeInputCapture = null,
+        Func<OverlayInputDevices>? getNativeInputCapture = null,
         Action? forceNativeInputRelease = null,
         Action<bool>? setNativeCursorRelease = null)
     {
@@ -49,6 +53,7 @@ internal sealed class OverlayBrokerHost : IDisposable
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _carrierUpkeep = carrierUpkeep;
         _setNativeInputCapture = setNativeInputCapture;
+        _getNativeInputCapture = getNativeInputCapture;
         _forceNativeInputRelease = forceNativeInputRelease;
         _setNativeCursorRelease = setNativeCursorRelease;
         _control.SetInputCaptureChangedCallback(OnInputCaptureChanged);
@@ -158,7 +163,7 @@ internal sealed class OverlayBrokerHost : IDisposable
         try
         {
             _control.RenderClients();
-            var devices = (OverlayInputDevices)Volatile.Read(ref _capturedInputDevices);
+            var devices = (OverlayInputDevices)Volatile.Read(ref _requestedInputDevices);
             var mouseCaptured = (devices & OverlayInputDevices.Mouse) != 0;
             ImGui.GetIO().MouseDrawCursor = mouseCaptured;
         }
@@ -178,24 +183,81 @@ internal sealed class OverlayBrokerHost : IDisposable
             if (Interlocked.Exchange(ref _carrierUpkeepFailureLogged, 1) == 0)
                 TryLog($"Overlay Broker isolated its bootstrap upkeep callback: {exception}");
         }
+        RefreshEffectiveInputCapture();
         _control.TickClients();
     }
 
     private void OnInputCaptureChanged(OverlayInputDevices devices)
     {
-        var previous = (OverlayInputDevices)Interlocked.Exchange(
-            ref _capturedInputDevices,
+        var previousRequested = (OverlayInputDevices)Interlocked.Exchange(
+            ref _requestedInputDevices,
             (int)devices);
-        if (previous == devices)
+        if (previousRequested == devices)
             return;
-        ApplyInputCapture(devices);
+
+        var previousEffective = (OverlayInputDevices)Volatile.Read(ref _capturedInputDevices);
+        var provisionalEffective = previousEffective | devices;
+        var replacedEffective = ExchangeEffectiveInputCapture(provisionalEffective);
+        ApplyNativeInputCapture(devices);
+        ApplyEffectiveInputTransition(replacedEffective, provisionalEffective);
+        RefreshEffectiveInputCapture();
     }
 
-    private void ApplyInputCapture(OverlayInputDevices devices)
+    private void ApplyNativeInputCapture(OverlayInputDevices devices)
     {
-        var captureMouse = (devices & OverlayInputDevices.Mouse) != 0;
         try { _setNativeInputCapture?.Invoke(devices); }
         catch (Exception exception) { TryLog($"Broker native input transition was contained: {exception.Message}"); }
+    }
+
+    private void RefreshEffectiveInputCapture()
+    {
+        OverlayInputDevices nativeEffective;
+        try
+        {
+            nativeEffective = _getNativeInputCapture?.Invoke() ??
+                ProjectNativeInputDevices(
+                    (OverlayInputDevices)Volatile.Read(ref _requestedInputDevices));
+        }
+        catch (Exception exception)
+        {
+            if (Interlocked.Exchange(ref _nativeInputQueryFailureLogged, 1) == 0)
+            {
+                TryLog(
+                    $"Broker retained input capture after native state query failed: " +
+                    $"{exception.GetType().Name}: {exception.Message}");
+            }
+            return;
+        }
+
+        var requested = (OverlayInputDevices)Volatile.Read(ref _requestedInputDevices);
+        var previousEffective = (OverlayInputDevices)Volatile.Read(ref _capturedInputDevices);
+        SetEffectiveInputCapture(
+            ResolveEffectiveInputDevices(requested, previousEffective, nativeEffective));
+    }
+
+    private void SetEffectiveInputCapture(OverlayInputDevices devices)
+    {
+        var previous = ExchangeEffectiveInputCapture(devices);
+        ApplyEffectiveInputTransition(previous, devices);
+    }
+
+    private OverlayInputDevices ExchangeEffectiveInputCapture(OverlayInputDevices devices) =>
+        (OverlayInputDevices)Interlocked.Exchange(
+            ref _capturedInputDevices,
+            (int)devices);
+
+    private void ApplyEffectiveInputTransition(
+        OverlayInputDevices previous,
+        OverlayInputDevices devices)
+    {
+        if (previous == devices)
+            return;
+
+        var previousMouse = (previous & OverlayInputDevices.Mouse) != 0;
+        var captureMouse = (devices & OverlayInputDevices.Mouse) != 0;
+        if (previousMouse == captureMouse)
+            return;
+
         try { _setNativeCursorRelease?.Invoke(captureMouse); }
         catch (Exception exception) { TryLog($"Broker native cursor transition was contained: {exception.Message}"); }
 
@@ -209,6 +271,35 @@ internal sealed class OverlayBrokerHost : IDisposable
             ResetImGuiMouseState();
             RestoreMouseCapture();
         }
+    }
+
+    internal static OverlayInputDevices ResolveEffectiveInputDevices(
+        OverlayInputDevices requested,
+        OverlayInputDevices previousEffective,
+        OverlayInputDevices nativeEffective)
+    {
+        var effective = requested;
+        if ((requested & OverlayInputDevices.Mouse) == 0 &&
+            (nativeEffective & OverlayInputDevices.Mouse) != 0)
+        {
+            effective |= previousEffective & OverlayInputDevices.Mouse;
+        }
+        if ((requested & (OverlayInputDevices.Keyboard | OverlayInputDevices.Text)) == 0 &&
+            (nativeEffective & OverlayInputDevices.Keyboard) != 0)
+        {
+            effective |= previousEffective &
+                (OverlayInputDevices.Keyboard | OverlayInputDevices.Text);
+        }
+        return effective;
+    }
+
+    private static OverlayInputDevices ProjectNativeInputDevices(OverlayInputDevices devices)
+    {
+        var nativeDevices = devices &
+            (OverlayInputDevices.Keyboard | OverlayInputDevices.Mouse);
+        if ((devices & OverlayInputDevices.Text) != 0)
+            nativeDevices |= OverlayInputDevices.Keyboard;
+        return nativeDevices;
     }
 
     private void BeginReleasedMouse()
@@ -341,6 +432,7 @@ internal sealed class OverlayBrokerHost : IDisposable
 
     private void ForceReleaseInputCapture()
     {
+        Interlocked.Exchange(ref _requestedInputDevices, (int)OverlayInputDevices.None);
         Interlocked.Exchange(ref _capturedInputDevices, (int)OverlayInputDevices.None);
         try
         {

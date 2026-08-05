@@ -105,6 +105,9 @@ internal static unsafe partial class NativeCore
     private static extern int GBFR20_SetInputCaptureDevices(uint requestedDevices);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    private static extern uint GBFR20_GetInputCaptureDevices();
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     private static extern int GBFR20_GetInputCaptureActive();
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
@@ -182,6 +185,7 @@ internal static unsafe partial class NativeCore
     private static int NativeSetInputCapture(int requested) => GBFR20_SetInputCapture(requested);
     private static int NativeSetInputCaptureDevices(uint requestedDevices) =>
         GBFR20_SetInputCaptureDevices(requestedDevices);
+    private static uint NativeGetInputCaptureDevices() => GBFR20_GetInputCaptureDevices();
     private static int NativeGetInputCaptureActive() => GBFR20_GetInputCaptureActive();
     private static int NativeIsInventoryDirty() => GBFR20_IsInventoryDirty();
     private static int NativeCanEditCharacter(uint hash) => GBFR20_CanEditCharacter(hash);

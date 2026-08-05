@@ -19,8 +19,8 @@ directories are ignored by Git.
 The harnesses cover:
 
 - missing NumConfig creation, byte-for-byte preservation of valid files, exact backup plus default replacement for invalid settings/selections, pending 1–24 count-input normalization, transactional shrink/expand/no-op count changes, fail-closed in-memory handling before executable/layout verification, native startup-phase callbacks, and the absence of full-EXE hashing from the synchronous native startup path;
-- packed ABI v12 sizes and transactional preset-reference updates;
-- keyboard/mouse versus HID/controller Raw Input classification.
+- packed ABI v13 sizes and transactional preset-reference updates;
+- keyboard/mouse versus HID/controller Raw Input classification, plus two-phase input release while held keys or mouse buttons drain;
 - event-driven frontend wake-up, key-repeat suppression, and closed-frame sleeping.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.
 - deferred full-EXE SHA-256 correctness/non-blocking behavior, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.

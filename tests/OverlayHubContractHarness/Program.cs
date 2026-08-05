@@ -100,16 +100,24 @@ try
         NativeLibrary.GetExport(nativeLibrary, "GBFR20_SetInputCapture"));
     var setInputCaptureDevices = Marshal.GetDelegateForFunctionPointer<SetInputCaptureDevicesDelegate>(
         NativeLibrary.GetExport(nativeLibrary, "GBFR20_SetInputCaptureDevices"));
+    var getInputCaptureDevices = Marshal.GetDelegateForFunctionPointer<GetInputCaptureDevicesDelegate>(
+        NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetInputCaptureDevices"));
     var getInputCaptureActive = Marshal.GetDelegateForFunctionPointer<GetInputCaptureActiveDelegate>(
         NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetInputCaptureActive"));
-    Assert(getAbiVersion() == 12, "Managed/native ABI 12 was not built.");
+    Assert(getAbiVersion() == 13, "Managed/native ABI 13 was not built.");
     Assert(setInputHooksEnabled(0) != 0,
         "Guest mode must be selectable before native initialization.");
     Assert(setInputHooksEnabled(1) != 0,
         "Standalone input mode must remain selectable before native initialization.");
-    Assert(setInputCaptureDevices(1u) != 0 && getInputCaptureActive() != 0,
+    Assert(setInputCaptureDevices(1u) != 0 &&
+           getInputCaptureDevices() == 1u &&
+           getInputCaptureActive() != 0,
         "The Broker must be able to capture keyboard input without requesting mouse capture.");
-    Assert(setInputCapture(-1) != 0 && getInputCaptureActive() == 0,
+    Assert(setInputCaptureDevices(4u) != 0 && getInputCaptureDevices() == 1u,
+        "Text capture must project onto the native keyboard gate.");
+    Assert(setInputCapture(-1) != 0 &&
+           getInputCaptureDevices() == 0u &&
+           getInputCaptureActive() == 0,
         "The legacy force-release path must clear every device capture bit immediately.");
 }
 finally
@@ -135,6 +143,9 @@ delegate int SetInputCaptureDelegate(int requested);
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 delegate int SetInputCaptureDevicesDelegate(uint requestedDevices);
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+delegate uint GetInputCaptureDevicesDelegate();
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 delegate int GetInputCaptureActiveDelegate();

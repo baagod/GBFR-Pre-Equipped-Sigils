@@ -137,6 +137,8 @@ public sealed partial class Mod
                                 "Native input writer rejected Broker capture state.");
                         }
                     },
+                    getNativeInputCapture: () =>
+                        (OverlayInputDevices)NativeCore.GetInputCaptureDevices(),
                     forceNativeInputRelease: NativeCore.ForceReleaseInput);
                 claimedHost = null;
                 _ownsOverlayBroker = true;

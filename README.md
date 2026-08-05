@@ -6,7 +6,7 @@ The repository contains a C++ native hook and a C# Reloaded-II loader, but they 
 
 Reloaded-II 1.30.3 or newer is recommended. The native DLL is loaded by the managed Reloaded-II mod and is not a standalone ASI plugin. To launch through Steam with ASI injection, use Reloaded-II's `Edit Application -> Advanced Tools & Options -> Deploy ASI Loader`, then launch the normal game executable. Re-deploy the ASI Loader after moving or updating Reloaded-II, and do not rename `GBFR.ExtraSigilSlots.Native.dll` to `.asi`.
 
-The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.8.1 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, per-character named presets and preset transfer, usage filters, body-slot conflict reporting, and protected virtual-slot sigils.
+The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.8.2 supports ER 2.0.2 and 2.0.3 through one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, per-character named presets and preset transfer, usage filters, body-slot conflict reporting, and protected virtual-slot sigils. Input release is now coordinated through the native effective-device mask, so closing the overlay while a hotkey or mouse button is still held no longer leaves window messages and polling input in conflicting states.
 
 ## Virtual slot count
 
@@ -34,14 +34,14 @@ Run from the repository root:
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 ```
 
-The script defaults to `Release`, `x64`, and version `0.8.1`. These defaults can
+The script defaults to `Release`, `x64`, and version `0.8.2`. These defaults can
 be overridden explicitly, for example with `-Configuration Debug` or
-`-Version 0.8.1-test`.
+`-Version 0.8.2-test`.
 
 The installable archive is generated at:
 
 ```text
-dist\GBFR-Extra-Sigil-Slots-0.8.1.zip
+dist\GBFR-Extra-Sigil-Slots-0.8.2.zip
 ```
 
 Extract the `GBFR.ExtraSigilSlots.Reloaded` folder from the ZIP into Reloaded-II's `Mods` directory. Remove or disable the old `GBFR.ExtraSigilSlots20.Reloaded` mod so Reloaded-II cannot load both identities. Neither `GBFR-ExtraSigilSlotsNumConfig.ini` nor `GBFR-ExtraSigilSlots.presets.json` is included in an archive. Missing NumConfig is created by the native runtime; an existing valid NumConfig is preserved byte-for-byte, while an invalid NumConfig is backed up before a complete default is generated. Named presets are stored in Reloaded-II's persistent mod-config directory and automatically migrate from valid current/legacy JSON files left in an older mod directory. An invalid persistent preset file is preserved as a content-addressed `.invalid-<digest>.bak` before recovery is attempted. Settings are not copied into a missing NumConfig by the managed migrator.

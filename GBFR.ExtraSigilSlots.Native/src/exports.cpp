@@ -382,6 +382,11 @@ int32_t GBFR20_CALL GBFR20_SetInputCaptureDevices(uint32_t requested_devices)
    return 1;
 }
 
+uint32_t GBFR20_CALL GBFR20_GetInputCaptureDevices()
+{
+   return g_input_capture_effective_devices.load(std::memory_order_acquire);
+}
+
 int32_t GBFR20_CALL GBFR20_GetInputCaptureActive()
 {
    return g_input_capture_effective.load(std::memory_order_acquire) ? 1 : 0;

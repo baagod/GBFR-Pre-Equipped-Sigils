@@ -81,8 +81,8 @@ try
     IntPtr abiExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetAbiVersion");
     IntPtr applyExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_ApplyPreset");
     GetAbiVersion getAbiVersion = Marshal.GetDelegateForFunctionPointer<GetAbiVersion>(abiExport);
-    if (getAbiVersion() != 12 || applyExport == IntPtr.Zero)
-        throw new InvalidOperationException("Native ABI 12 preset exports are unavailable.");
+    if (getAbiVersion() != 13 || applyExport == IntPtr.Zero)
+        throw new InvalidOperationException("Native ABI 13 preset exports are unavailable.");
 }
 finally
 {
@@ -447,7 +447,7 @@ try
     Console.WriteLine("PRESET_HIGH_SLOT_RETENTION=PASS");
     Console.WriteLine("CHARACTER_NAME_MAP=28/28");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
-    Console.WriteLine("ABI_VERSION=12");
+    Console.WriteLine("ABI_VERSION=13");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
     Console.WriteLine("PRESET_RESULT_SIZE=20");
 }
