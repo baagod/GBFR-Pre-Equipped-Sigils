@@ -12,10 +12,6 @@ Type classifierType = assembly.GetType(
     "GBFR.OverlayHub.Runtime.OverlayWindowInputClassifier",
     throwOnError: true)!;
 
-MethodInfo alwaysCaptured = classifierType.GetMethod(
-    "IsAlwaysCaptured",
-    BindingFlags.NonPublic | BindingFlags.Static)
-    ?? throw new MissingMethodException(classifierType.FullName, "IsAlwaysCaptured");
 MethodInfo shouldCapture = classifierType.GetMethod(
     "ShouldCapture",
     BindingFlags.NonPublic | BindingFlags.Static)
@@ -24,6 +20,12 @@ MethodInfo shouldCaptureRawInputType = classifierType.GetMethod(
     "ShouldCaptureRawInputType",
     BindingFlags.NonPublic | BindingFlags.Static)
     ?? throw new MissingMethodException(classifierType.FullName, "ShouldCaptureRawInputType");
+MethodInfo shouldCaptureWithoutRawInput = classifierType.GetMethod(
+    "ShouldCaptureWithoutRawInput",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(
+        classifierType.FullName,
+        "ShouldCaptureWithoutRawInput");
 Type brokerHostType = assembly.GetType(
     "GBFR.OverlayHub.Runtime.OverlayBrokerHost",
     throwOnError: true)!;
@@ -39,6 +41,36 @@ MethodInfo resolveEffectiveInputDevices = brokerHostType.GetMethod(
     ?? throw new MissingMethodException(
         brokerHostType.FullName,
         "ResolveEffectiveInputDevices");
+MethodInfo shouldRouteWindowMessageToImGui = brokerHostType.GetMethod(
+    "ShouldRouteWindowMessageToImGui",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(
+        brokerHostType.FullName,
+        "ShouldRouteWindowMessageToImGui");
+MethodInfo requiresDefaultRawInputCleanup = brokerHostType.GetMethod(
+    "RequiresDefaultRawInputCleanup",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(
+        brokerHostType.FullName,
+        "RequiresDefaultRawInputCleanup");
+Type safeImguiHookType = assembly.GetType(
+    "GBFR.ExtraSigilSlots.Reloaded.SafeImguiHookDx11",
+    throwOnError: true)!;
+MethodInfo isFrontendWakeFrame = safeImguiHookType.GetMethod(
+    "IsFrontendWakeFrame",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(safeImguiHookType.FullName, "IsFrontendWakeFrame");
+Type inputResetGateType = assembly.GetType(
+    "GBFR.OverlayHub.Runtime.ImGuiInputResetGate",
+    throwOnError: true)!;
+MethodInfo requestInputReset = inputResetGateType.GetMethod(
+    "Request",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(inputResetGateType.FullName, "Request");
+MethodInfo consumeInputReset = inputResetGateType.GetMethod(
+    "Consume",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(inputResetGateType.FullName, "Consume");
 
 Type devicesType = shouldCapture.GetParameters()[2].ParameterType;
 object Devices(int value) => Enum.ToObject(devicesType, value);
@@ -67,49 +99,22 @@ foreach ((int type, int devices, bool expected, string name) in rawCases)
 }
 Console.WriteLine("BROKER_RAW_INPUT_CLASSIFICATION=PASS");
 
-(uint Message, bool Capture, string Name)[] windowCases =
-[
-    (0x0100, true, "WM_KEYDOWN"),
-    (0x0101, true, "WM_KEYUP"),
-    (0x0102, true, "WM_CHAR"),
-    (0x0104, true, "WM_SYSKEYDOWN"),
-    (0x0109, true, "WM_UNICHAR"),
-    (0x010F, true, "WM_IME_COMPOSITION"),
-    (0x00A1, true, "WM_NCLBUTTONDOWN"),
-    (0x00AB, true, "WM_NCXBUTTONDOWN"),
-    (0x0200, true, "WM_MOUSEMOVE"),
-    (0x0201, true, "WM_LBUTTONDOWN"),
-    (0x0207, true, "WM_MBUTTONDOWN"),
-    (0x020B, true, "WM_XBUTTONDOWN"),
-    (0x0286, true, "WM_IME_CHAR"),
-    (0x0119, false, "WM_GESTURE"),
-    (0x0240, false, "WM_TOUCH"),
-    (0x0241, false, "WM_POINTERUPDATE"),
-    (0x0312, false, "WM_HOTKEY"),
-    (0x0319, false, "WM_APPCOMMAND"),
-    (0x00FF, false, "WM_INPUT requires device classification"),
-    (0x000F, false, "WM_PAINT"),
-];
-foreach ((uint message, bool expected, string name) in windowCases)
-{
-    bool actual = (bool)(alwaysCaptured.Invoke(null, [message]) ?? false);
-    if (actual != expected)
-    {
-        throw new InvalidOperationException(
-            $"Window message 0x{message:X4} ({name}): expected capture={expected}, got {actual}.");
-    }
-    Console.WriteLine($"WINDOW_MESSAGE=0x{message:X4} NAME={name} CAPTURE={actual}");
-}
-Console.WriteLine("BROKER_WINDOW_INPUT_CLASSIFICATION=PASS");
-
 (uint Message, int Devices, bool Capture, string Name)[] deviceCases =
 [
     (0x0100, 1, true, "keyboard key"),
+    (0x0101, 1, true, "keyboard key release"),
+    (0x0104, 1, true, "system key"),
     (0x0201, 1, false, "keyboard does not capture mouse"),
+    (0x0200, 2, true, "mouse movement"),
     (0x0201, 2, true, "mouse button"),
+    (0x00AB, 2, true, "non-client XBUTTON"),
     (0x0100, 2, false, "mouse does not capture keyboard"),
     (0x0102, 4, true, "text character"),
+    (0x010F, 4, true, "IME composition"),
+    (0x0286, 4, true, "IME character"),
     (0x0100, 4, false, "text does not capture key state"),
+    (0x0240, 7, false, "touch remains outside keyboard/mouse/text capture"),
+    (0x000F, 7, false, "paint remains outside input capture"),
 ];
 foreach ((uint message, int devices, bool expected, string name) in deviceCases)
 {
@@ -121,8 +126,21 @@ foreach ((uint message, int devices, bool expected, string name) in deviceCases)
         throw new InvalidOperationException(
             $"Device policy ({name}): expected capture={expected}, got {actual}.");
     }
+    bool fallbackActual = (bool)(shouldCaptureWithoutRawInput.Invoke(
+        null,
+        [message, Devices(devices)]) ?? false);
+    if (fallbackActual != expected)
+    {
+        throw new InvalidOperationException(
+            $"Exception fallback policy ({name}): expected capture={expected}, " +
+            $"got {fallbackActual}.");
+    }
 }
-Console.WriteLine("BROKER_DEVICE_CAPTURE_POLICY=PASS");
+Assert(!(bool)(shouldCaptureWithoutRawInput.Invoke(
+        null,
+        [0x00FFu, Devices(3)]) ?? true),
+    "The exception fallback must fail open for unclassified WM_INPUT.");
+Console.WriteLine("BROKER_DEVICE_WINDOW_INPUT_CLASSIFICATION=PASS");
 
 (uint Message, int Devices, bool Suppress, string Name)[] brokerCases =
 [
@@ -172,6 +190,56 @@ foreach ((int requested, int previous, int native, int expected, string name) in
     }
 }
 Console.WriteLine("BROKER_TWO_PHASE_INPUT_RELEASE=PASS");
+
+Assert(!(bool)(shouldRouteWindowMessageToImGui.Invoke(
+        null,
+        [false, Devices(0)]) ?? true),
+    "A sleeping frontend must not enqueue closed-period messages into ImGui.");
+Assert((bool)(shouldRouteWindowMessageToImGui.Invoke(
+        null,
+        [true, Devices(0)]) ?? false),
+    "A renderable peer must continue receiving ImGui Win32 input.");
+Assert((bool)(shouldRouteWindowMessageToImGui.Invoke(
+        null,
+        [false, Devices(2)]) ?? false),
+    "An explicit input request must keep ImGui input routing active.");
+Assert((bool)(isFrontendWakeFrame.Invoke(null, [false, true]) ?? false),
+    "The first rendered frame after sleep must flush queued ImGui input.");
+Assert(!(bool)(isFrontendWakeFrame.Invoke(null, [true, true]) ?? true),
+    "Continuous rendering must not repeatedly disable ImGui input trickling.");
+Assert(!(bool)(isFrontendWakeFrame.Invoke(null, [false, false]) ?? true),
+    "A sleeping frame is not an ImGui frontend wake.");
+Console.WriteLine("BROKER_CLOSED_INPUT_QUEUE_POLICY=PASS");
+
+Assert(!(bool)(consumeInputReset.Invoke(null, null) ?? true),
+    "The frontend input reset gate must start empty.");
+requestInputReset.Invoke(null, null);
+requestInputReset.Invoke(null, null);
+Assert((bool)(consumeInputReset.Invoke(null, null) ?? false),
+    "Multiple reset requests must coalesce into one Present-thread reset.");
+Assert(!(bool)(consumeInputReset.Invoke(null, null) ?? true),
+    "Consuming a frontend input reset must clear the pending bit.");
+Console.WriteLine("BROKER_INPUT_RESET_GATE=PASS");
+
+Assert((bool)(requiresDefaultRawInputCleanup.Invoke(
+        null,
+        [0x00FFu, IntPtr.Zero]) ?? false),
+    "Foreground WM_INPUT suppression must still run DefWindowProc cleanup.");
+Assert(!(bool)(requiresDefaultRawInputCleanup.Invoke(
+        null,
+        [0x00FFu, new IntPtr(1)]) ?? true),
+    "RIM_INPUTSINK does not use the foreground WM_INPUT cleanup path.");
+Assert(!(bool)(requiresDefaultRawInputCleanup.Invoke(
+        null,
+        [0x0200u, IntPtr.Zero]) ?? true),
+    "Only WM_INPUT can require raw-input cleanup.");
+Console.WriteLine("BROKER_RAW_INPUT_CLEANUP_POLICY=PASS");
+
+static void Assert(bool condition, string message)
+{
+    if (!condition)
+        throw new InvalidOperationException(message);
+}
 
 sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
 {

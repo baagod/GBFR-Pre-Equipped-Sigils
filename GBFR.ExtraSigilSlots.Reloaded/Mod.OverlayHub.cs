@@ -12,7 +12,11 @@ public sealed partial class Mod
         nint wParam,
         nint lParam)
     {
+        bool resetImGuiMouseState =
+            MouseButtonStateTracker.RequiresPhysicalStateSynchronization(message, wParam);
         MouseButtonStateTracker.ObserveWindowMessage(message, wParam);
+        if (resetImGuiMouseState)
+            ImGuiInputResetGate.Request();
         FrontendOverlayGate.ObserveWindowMessage(message, wParam, lParam);
         if (Volatile.Read(ref _hostedInputCapture) == 0)
             return OverlayWindowMessageResult.Continue;

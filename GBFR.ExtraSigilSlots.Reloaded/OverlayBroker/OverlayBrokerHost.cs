@@ -200,6 +200,17 @@ internal sealed class OverlayBrokerHost : IDisposable
         var replacedEffective = ExchangeEffectiveInputCapture(provisionalEffective);
         ApplyNativeInputCapture(devices);
         ApplyEffectiveInputTransition(replacedEffective, provisionalEffective);
+        bool requestedMouseActivated =
+            (previousRequested & OverlayInputDevices.Mouse) == 0 &&
+            (devices & OverlayInputDevices.Mouse) != 0;
+        if (requestedMouseActivated &&
+            (replacedEffective & OverlayInputDevices.Mouse) != 0 &&
+            (provisionalEffective & OverlayInputDevices.Mouse) != 0)
+        {
+            // A quick close/reopen can retain native mouse capture during its drain.
+            // The effective bit then never transitions, but ImGui still needs a fresh state.
+            RequestImGuiMouseStateReset();
+        }
         RefreshEffectiveInputCapture();
     }
 
@@ -264,11 +275,9 @@ internal sealed class OverlayBrokerHost : IDisposable
         if (captureMouse)
         {
             BeginReleasedMouse();
-            ResetImGuiMouseState();
         }
         else
         {
-            ResetImGuiMouseState();
             RestoreMouseCapture();
         }
     }
@@ -326,23 +335,7 @@ internal sealed class OverlayBrokerHost : IDisposable
         _savedCaptureWindow = nint.Zero;
     }
 
-    private static void ResetImGuiMouseState()
-    {
-        try
-        {
-            var io = ImGui.GetIO();
-            if (io is null || io.__Instance == nint.Zero)
-                return;
-            ImGui.ImGuiIO_ClearInputKeys(io);
-            for (var button = 0; button < 5; button++)
-                ImGui.ImGuiIO_AddMouseButtonEvent(io, button, false);
-            ImGui.ClearActiveID();
-        }
-        catch
-        {
-            // The context may not exist during early startup or late teardown.
-        }
-    }
+    private static void RequestImGuiMouseStateReset() => ImGuiInputResetGate.Request();
 
     private void HandlePermanentGraphicsFailure()
     {
@@ -368,12 +361,27 @@ internal sealed class OverlayBrokerHost : IDisposable
             {
                 var peerResult = host._control.ObserveWindowMessage(hWnd, message, wParam, lParam);
                 if (peerResult.Handled)
+                {
+                    if (RequiresDefaultRawInputCleanup(message, wParam))
+                        _ = CallDefaultWindowProc(hWnd, message, wParam, lParam);
                     return peerResult.Result;
+                }
 
-                ImGui.ImplWin32_WndProcHandler((void*)hWnd, message, wParam, lParam);
+                var requestedDevices = (OverlayInputDevices)Volatile.Read(
+                    ref host._requestedInputDevices);
+                if (ShouldRouteWindowMessageToImGui(
+                        host._control.HasRenderableClients(),
+                        requestedDevices))
+                {
+                    ImGui.ImplWin32_WndProcHandler((void*)hWnd, message, wParam, lParam);
+                }
                 var devices = (OverlayInputDevices)Volatile.Read(ref host._capturedInputDevices);
                 if (ShouldSuppressWindowMessage(message, lParam, devices))
-                    return nint.Zero;
+                {
+                    return RequiresDefaultRawInputCleanup(message, wParam)
+                        ? CallDefaultWindowProc(hWnd, message, wParam, lParam)
+                        : nint.Zero;
+                }
             }
 
             var hook = WndProcHook.Instance;
@@ -399,7 +407,7 @@ internal sealed class OverlayBrokerHost : IDisposable
                 ? OverlayInputDevices.None
                 : (OverlayInputDevices)Volatile.Read(ref host._capturedInputDevices);
             if (devices != OverlayInputDevices.None &&
-                OverlayWindowInputClassifier.IsAlwaysCaptured(message))
+                OverlayWindowInputClassifier.ShouldCaptureWithoutRawInput(message, devices))
             {
                 return nint.Zero;
             }
@@ -418,6 +426,14 @@ internal sealed class OverlayBrokerHost : IDisposable
         OverlayInputDevices devices) =>
         devices != OverlayInputDevices.None &&
         OverlayWindowInputClassifier.ShouldCapture(message, lParam, devices);
+
+    internal static bool ShouldRouteWindowMessageToImGui(
+        bool hasRenderableClients,
+        OverlayInputDevices requestedDevices) =>
+        hasRenderableClients || requestedDevices != OverlayInputDevices.None;
+
+    internal static bool RequiresDefaultRawInputCleanup(uint message, nint wParam) =>
+        message == 0x00FF && (unchecked((uint)(nuint)wParam) & 0xFFu) == 0;
 
     private void LogWndProcFailure(Exception exception)
     {
@@ -447,7 +463,6 @@ internal sealed class OverlayBrokerHost : IDisposable
         }
         try { _setNativeCursorRelease?.Invoke(false); }
         catch (Exception exception) { TryLog($"Broker native cursor force-release was contained: {exception.Message}"); }
-        ResetImGuiMouseState();
         RestoreMouseCapture();
     }
 

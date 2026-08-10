@@ -20,6 +20,7 @@
 // SOFTWARE.
 
 using DearImguiSharp;
+using GBFR.OverlayHub.Runtime;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
@@ -74,6 +75,7 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
     private long _originalPresentAddress;
     private long _initializedDevicePointer;
     private bool _initialized;
+    private bool _frontendRenderedLastPresent;
     private int _presentFailureCount;
     private int _nativePresentFailureHandled;
     private int _presentStopping;
@@ -186,12 +188,16 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
                     // Keep the game/native hook work on its established game-
                     // window Present cadence. Only the frontend below sleeps.
                     _presentTick();
+                    bool shouldRenderFrontend = _shouldRenderFrontend();
 
                     // Initialize the Win32/DX11 backend once so WndProc can wake
                     // the overlay. After that, a closed frontend exits before
                     // device acquisition and every ImGui frame/render call.
-                    if (_initialized && !_shouldRenderFrontend())
+                    if (_initialized && !shouldRenderFrontend)
+                    {
+                        _frontendRenderedLastPresent = false;
                         return InvokeOriginalPresent(swapChainPointer, syncInterval, flags);
+                    }
 
                     using var device = swapChain.GetDevice<Device>();
                     long devicePointer = device.NativePointer.ToInt64();
@@ -206,6 +212,16 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
                     if (!_initialized)
                     {
                         ImguiHook.InitializeWithHandle(windowHandle);
+                        WndProcHook? wndProcHook = WndProcHook.Instance;
+                        if (wndProcHook is null || wndProcHook.WindowHandle != windowHandle)
+                        {
+                            throw new InvalidOperationException(
+                                "Reloaded.Imgui.Hook did not provide a WndProc hook for the active game window.");
+                        }
+
+                        // Reloaded.Imgui.Hook 4.1.0 keeps WndProcHook.Instance after
+                        // Destroy(), so a recovered host can otherwise reuse it disabled.
+                        wndProcHook.Enable();
                         ImGui.ImGuiImplDX11Init(
                             (void*)device.NativePointer,
                             (void*)device.ImmediateContext.NativePointer);
@@ -213,11 +229,38 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
                         Volatile.Write(ref _initializedDevicePointer, devicePointer);
                     }
 
-                    if (!_shouldRenderFrontend())
+                    if (!shouldRenderFrontend)
+                    {
+                        _frontendRenderedLastPresent = false;
                         return InvokeOriginalPresent(swapChainPointer, syncInterval, flags);
+                    }
 
+                    bool frontendWakeFrame = IsFrontendWakeFrame(
+                        _frontendRenderedLastPresent,
+                        shouldRenderFrontend);
                     ImGui.ImGuiImplDX11NewFrame();
-                    ImguiHook.NewFrame();
+                    var io = ImGui.GetIO();
+                    bool previousInputTrickle = io.ConfigInputTrickleEventQueue;
+                    bool mouseResetRequested = ImGuiInputResetGate.Consume();
+                    bool resetFrontendInput = frontendWakeFrame || mouseResetRequested;
+                    if (resetFrontendInput)
+                    {
+                        io.ConfigInputTrickleEventQueue = false;
+                        if (frontendWakeFrame)
+                            PrepareImGuiInputForFrontendWake(io, windowHandle);
+                        else
+                            PrepareImGuiMouseInputReset(io, windowHandle);
+                    }
+                    try
+                    {
+                        ImguiHook.NewFrame();
+                        _frontendRenderedLastPresent = true;
+                    }
+                    finally
+                    {
+                        if (resetFrontendInput)
+                            io.ConfigInputTrickleEventQueue = previousInputTrickle;
+                    }
                     using var drawData = ImGui.GetDrawData();
                     if (drawData.CmdListsCount > 0 && drawData.TotalVtxCount > 0)
                         RenderFrame(swapChain, device, drawData);
@@ -284,6 +327,34 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
                 previousDepthStencil?.Dispose();
             }
         }
+    }
+
+    internal static bool IsFrontendWakeFrame(
+        bool renderedLastPresent,
+        bool shouldRenderFrontend) =>
+        shouldRenderFrontend && !renderedLastPresent;
+
+    private static void PrepareImGuiInputForFrontendWake(ImGuiIO io, nint windowHandle)
+    {
+        PrepareImGuiMouseInputReset(io, windowHandle);
+        ImGui.ImGuiIO_ClearInputKeys(io);
+        if (windowHandle != nint.Zero &&
+            GetCursorPos(out NativePoint cursorPosition) &&
+            ScreenToClient(windowHandle, ref cursorPosition))
+        {
+            ImGui.ImGuiIO_AddMousePosEvent(
+                io,
+                cursorPosition.X,
+                cursorPosition.Y);
+        }
+        ImGui.ClearActiveID();
+    }
+
+    private static void PrepareImGuiMouseInputReset(ImGuiIO io, nint windowHandle)
+    {
+        ImGuiInputResetGate.ResetWin32MouseButtons(windowHandle);
+        for (int button = 0; button < 5; ++button)
+            ImGui.ImGuiIO_AddMouseButtonEvent(io, button, false);
     }
 
     private IntPtr InvokeOriginalPresent(
@@ -495,4 +566,17 @@ internal sealed unsafe class SafeImguiHookDx11 : IImguiHook
             return FailureResult;
         }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        internal int X;
+        internal int Y;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out NativePoint point);
+
+    [DllImport("user32.dll")]
+    private static extern bool ScreenToClient(nint window, ref NativePoint point);
 }

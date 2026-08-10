@@ -20,8 +20,14 @@ The harnesses cover:
 
 - missing NumConfig creation, byte-for-byte preservation of valid files, exact backup plus default replacement for invalid settings/selections, pending 1–24 count-input normalization, transactional shrink/expand/no-op count changes, fail-closed in-memory handling before executable/layout verification, native startup-phase callbacks, and the absence of full-EXE hashing from the synchronous native startup path;
 - packed ABI v13 sizes and transactional preset-reference updates;
-- keyboard/mouse versus HID/controller Raw Input classification, plus two-phase input release while held keys or mouse buttons drain;
-- event-driven frontend wake-up, key-repeat suppression, and closed-frame sleeping.
+- keyboard/mouse versus HID/controller Raw Input classification, device-specific Win32 capture policy, foreground Raw Input cleanup policy, Present-thread input-reset coalescing, plus two-phase input release while held keys or mouse buttons drain;
+- event-driven frontend wake-up, key-repeat suppression, held-key latching, cancellation of an unconsumed background-open request, closed-frame sleeping, focus/capture mouse resynchronization, deterministic physical-button mask mapping, and first-interaction gating.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.
 - deferred full-EXE SHA-256 correctness/non-blocking behavior, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.
 - recoverable Overlay Broker leases, host-generation fencing, surviving-peer rebinding, and stale-writer rejection.
+
+These harnesses do not execute the real ImGui Win32 backend or decode a real
+`HRAWINPUT`. In particular, they do not prove the five synthetic mouse-button
+release messages, cursor coordinate resynchronization, `DefWindowProc` cleanup,
+Present/WndProc thread relationship, or replacement of one live cimgui context
+with another after host recovery. Those paths still require in-game validation.

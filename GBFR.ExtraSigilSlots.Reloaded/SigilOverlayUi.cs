@@ -1,4 +1,5 @@
 using DearImguiSharp;
+using GBFR.OverlayHub.Runtime;
 using Reloaded.Imgui.Hook;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -37,6 +38,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
     private bool _windowOpen;
     private int _pickerSlot = -1;
     private bool _pickerOpen = true;
+    private bool _openPickerNextFrame;
     private bool _hasSavedClipRect;
     private NativeRect _savedClipRect;
     private IntPtr _savedCaptureWindow;
@@ -71,9 +73,13 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         if (!_windowOpen)
             return;
 
-        _mouseInteractionGate.Observe(
-            MouseButtonStateTracker.PressedButtons,
-            MouseButtonStateTracker.ButtonEventSequence);
+        bool openPickerThisFrame = _openPickerNextFrame;
+        _openPickerNextFrame = false;
+
+        MouseButtonStateTracker.ReadSnapshot(
+            out uint pressedMouseButtons,
+            out long mouseButtonEventSequence);
+        _mouseInteractionGate.Observe(pressedMouseButtons, mouseButtonEventSequence);
 
         if (!NativeCore.TryGetState(out _state))
         {
@@ -155,12 +161,13 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         DrawPresetBar(characterHash, canEdit, english);
 
         ImGui.Separator();
-        bool requestPickerPopup = DrawVirtualSlots(characterHash, canEdit, english);
+        if (DrawVirtualSlots(characterHash, canEdit, english))
+            _openPickerNextFrame = true;
         ImGui.EndDisabled();
         string pickerTitle = english
             ? "Select an inventory sigil##Reloaded"
             : "选择库存因子##Reloaded";
-        if (requestPickerPopup)
+        if (openPickerThisFrame)
             ImGui.OpenPopupStr(pickerTitle, 0);
 
         DrawPicker(characterHash, canEdit, english, pickerTitle);
@@ -201,6 +208,11 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
             return;
         }
 
+        bool openBodyDialogThisFrame = _requestBodyDialogOpen;
+        bool openTransferDialogThisFrame = _requestTransferDialogOpen;
+        _requestBodyDialogOpen = false;
+        _requestTransferDialogOpen = false;
+
         ImGui.BeginDisabled(!_mouseInteractionGate.IsArmed);
         ImGui.Text(
             english
@@ -240,6 +252,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
                 : $"匹配的因子：{_filteredIndices.Count}"
         );
         ImGui.BeginChildStr("SigilInventory##Reloaded", _childSize, true, 0);
+        bool inventoryItemHandled = false;
         using (var clipper = new ImGuiListClipper())
         {
             ImGui.ImGuiListClipperBegin(clipper, _filteredIndices.Count, -1.0f);
@@ -252,15 +265,30 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
                         $"{BuildInventoryDisplayLabel(item, characterHash, english)}" +
                         $"##inventory_{item.Gem.SlotId}";
                     if (ImGui.SelectableBool(label, false, 0, _zeroSize))
+                    {
                         HandleInventoryItemClick(item, characterHash, english);
+                        inventoryItemHandled = true;
+                        break;
+                    }
                 }
+                if (inventoryItemHandled)
+                    break;
             }
             ImGui.ImGuiListClipperEnd(clipper);
         }
         ImGui.EndChild();
         ImGui.EndDisabled();
 
-        OpenRequestedInventoryConflictDialogs(english);
+        if (inventoryItemHandled && _pickerSlot < 0)
+        {
+            ImGui.EndPopup();
+            return;
+        }
+
+        OpenRequestedInventoryConflictDialogs(
+            english,
+            openBodyDialogThisFrame,
+            openTransferDialogThisFrame);
         if (DrawInventoryConflictDialogs(characterHash, english))
             ClosePickerPopup();
 
@@ -455,24 +483,29 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
 
     private void SetWindowOpen(bool open)
     {
-        FrontendOverlayGate.SetOpen(open);
         bool changed = _windowOpen != open;
         if (!changed)
+        {
+            FrontendOverlayGate.SetOpen(open);
             return;
+        }
 
         _windowOpen = open;
-        _setInputCapture(open);
         if (open)
         {
-            _mouseInteractionGate.Open(MouseButtonStateTracker.ButtonEventSequence);
+            FrontendOverlayGate.SetOpen(true);
+            _setInputCapture(true);
             if (!_brokerOwnsMouseCapture)
             {
-                ResetImGuiMouseState();
                 BeginReleasedMouse();
+                ImGuiInputResetGate.Request();
             }
+            ResetMouseInteractionBoundary();
         }
         else
         {
+            _setInputCapture(false);
+            FrontendOverlayGate.SetOpen(false);
             _mouseInteractionGate.Close();
             if (!_brokerOwnsMouseCapture)
                 RestoreMouseCapture();
@@ -480,6 +513,7 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         if (!open)
         {
             _pickerSlot = -1;
+            _openPickerNextFrame = false;
             _pendingBodyItem = null;
             _pendingTransferItem = null;
             _requestBodyDialogOpen = false;
@@ -490,6 +524,11 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         }
     }
 
+    private void ResetMouseInteractionBoundary()
+    {
+        _mouseInteractionGate.Open(MouseButtonStateTracker.SynchronizePhysicalState());
+    }
+
     private void BeginReleasedMouse()
     {
         _hasSavedClipRect = GetClipCursor(out _savedClipRect);
@@ -497,15 +536,6 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         if (_savedCaptureWindow != IntPtr.Zero)
             ReleaseCapture();
         ClipCursor(IntPtr.Zero);
-    }
-
-    private static void ResetImGuiMouseState()
-    {
-        var io = ImGui.GetIO();
-        ImGui.ImGuiIO_ClearInputKeys(io);
-        for (int button = 0; button < 5; ++button)
-            ImGui.ImGuiIO_AddMouseButtonEvent(io, button, false);
-        ImGui.ClearActiveID();
     }
 
     private void RestoreMouseCapture()

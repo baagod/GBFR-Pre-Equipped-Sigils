@@ -9,14 +9,19 @@ namespace GBFR.OverlayHub.Runtime;
 /// </summary>
 internal static class OverlayWindowInputClassifier
 {
-    internal static bool IsAlwaysCaptured(uint message) =>
-        message is >= 0x00A0 and <= 0x00AD ||
-        message is >= 0x0100 and <= 0x0109 ||
-        message is 0x010D or 0x010E or 0x010F ||
-        message is >= 0x0200 and <= 0x020E ||
-        message == 0x0286;
-
     internal static bool ShouldCapture(uint message, nint lParam, OverlayInputDevices devices)
+    {
+        if (ShouldCaptureWithoutRawInput(message, devices))
+            return true;
+        if (message != 0x00FF)
+            return false;
+
+        return ShouldCaptureRawInputType(GetRawInputType(lParam), devices);
+    }
+
+    internal static bool ShouldCaptureWithoutRawInput(
+        uint message,
+        OverlayInputDevices devices)
     {
         if ((devices & OverlayInputDevices.Mouse) != 0 &&
             (message is >= 0x00A0 and <= 0x00AD || message is >= 0x0200 and <= 0x020E))
@@ -33,10 +38,7 @@ internal static class OverlayWindowInputClassifier
         {
             return true;
         }
-        if (message != 0x00FF)
-            return false;
-
-        return ShouldCaptureRawInputType(GetRawInputType(lParam), devices);
+        return false;
     }
 
     internal static bool ShouldCaptureRawInputType(int type, OverlayInputDevices devices) =>

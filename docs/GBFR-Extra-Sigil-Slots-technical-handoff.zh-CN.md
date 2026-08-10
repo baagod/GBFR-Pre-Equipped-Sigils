@@ -1,11 +1,11 @@
 # GBFR Extra Sigil Slots 技术交接、问题复盘与代码精炼边界
 
 > 面向对象：准备继续维护、审计或精炼本项目的模型／开发者
-> 基线日期：2026-08-01
+> 基线日期：2026-08-10
 > 当前主线：`main`
 > 初始审计基线：`5e54035` / `v0.7.8`
-> 当前维护版本：`v0.8.2`
-> 支持游戏版本：Granblue Fantasy: Relink Endless Ragnarok 2.0.2、2.0.3
+> 当前维护版本：`v0.8.3`
+> 支持游戏版本：Granblue Fantasy: Relink Endless Ragnarok 2.0.2、2.0.3、2.0.4
 > 仓库：`cajoxorize366-oss/GBFR-Extra-Sigil-Slots`
 
 本文不是普通用户说明，而是一份“接手前必须读完”的工程交接。它说明这个 Mod 为什么会形成今天的结构、哪些问题已经踩过、GBFR Hook 和 ImGui 前端分别怎样工作、哪些看似冗余的代码其实是安全边界，以及后续模型可以在哪些范围内精炼代码。
@@ -22,6 +22,7 @@
 - `v0.8.0` 将扩展槽数量设置移入 ImGui，采用重启生效与缩减确认事务；预设继续保留完整 24 槽定义，并修正全部 28 名角色的哈希名称映射。
 - `v0.8.1` 修正扩展因子的专精类别计数，保护虚拟槽中的库存因子不被出售或兑换，并将预设迁移为角色独立的 v3 格式，加入单项角色转让与安全备份。
 - `v0.8.2` 将 Overlay Broker 输入关闭改为 requested/effective 两阶段释放；按住热键或鼠标关闭窗口时，WndProc、DirectInput 和光标捕获会在原生中性屏障完成后统一放行，避免间歇性鼠标冻结或劫持。
+- `v0.8.3` 加入 ER 2.0.4 诊断哈希与支持声明，并包含首次打开输入队列修复：闭窗时不再继续把消息送入休眠中的 ImGui；首次唤醒在 Present 线程一次性清理残留队列、Win32 backend 私有鼠标状态并校准当前光标位置。
 - 接手前仍须先检查实际 `git status`；任何后来出现的用户修改都不得用 `git reset --hard`、`git checkout --` 或类似方式删除。
 - `2026/7/18-backup` 分支保存重构前基线 `1351349`。
 - `Dear_branch_preview` 等分支是实验记录，不是应继续合并到 `main` 的实现。
@@ -72,7 +73,7 @@ flowchart TD
     S --> G
 ```
 
-原生与托管之间唯一正式边界是 `GBFR.ExtraSigilSlots.Native/native_api.h`。当前 ABI 版本为 12，使用 `__cdecl` 和 `#pragma pack(push, 1)`；结构字段顺序、尺寸、返回码和导出名不得静默变化。参见：
+原生与托管之间唯一正式边界是 `GBFR.ExtraSigilSlots.Native/native_api.h`。当前 ABI 版本为 13，使用 `__cdecl` 和 `#pragma pack(push, 1)`；结构字段顺序、尺寸、返回码和导出名不得静默变化。参见：
 
 - `native_api.h:13-27`：ABI、容量和预设结果码。
 - `native_api.h:31-132`：packed structs 与静态尺寸断言。
@@ -105,6 +106,9 @@ flowchart TD
 | 首次输入与预设持久化 | `v0.7.9` | 热键需抬起后才能再次触发；鼠标完整事件序列参与首次交互门控；首次库存只刷新一次；命名预设迁入 Reloaded-II 持久配置目录，损坏 JSON 按内容哈希备份后恢复。 |
 | 光标与焦点回归修复 | `v0.7.10` | Broker 只在输入捕获状态切换时释放／恢复光标，不再逐帧调用 `ClipCursor(NULL)`；焦点、激活和 capture-change 消息继续传给游戏原始 WndProc。 |
 | 运行时槽位配置 | `v0.8.0` | ImGui 支持输入 1–24 个扩展槽并在重启时事务生效；缩减会清理当前高位槽但保留预设的 24 槽定义；校正全部角色哈希名称映射。 |
+| 专精计数与预设保护 | `v0.8.1` | 修正扩展因子的专精类别计数，保护虚拟槽库存因子，预设升级为角色独立 v3。 |
+| 两阶段输入释放 | `v0.8.2` | 统一 requested/effective 键鼠释放、WndProc、DirectInput 和光标所有权。 |
+| ER 2.0.4 与首次唤醒输入 | `v0.8.3` | 纳入 2.0.4 诊断与发布声明；休眠期间停止 ImGui 输入排队，首次唤醒重置残留输入、后端鼠标状态和光标位置。 |
 
 ### 4.1 已放弃或只保留作研究的路线
 
@@ -119,7 +123,7 @@ flowchart TD
 
 1. Reloaded-II 根据 `ModConfig.json` 加载托管 DLL。
 2. 托管层定位并加载 `GBFR.ExtraSigilSlots.Native.dll`。
-3. `NativeCore.Initialize` 校验 ABI 版本 12；不匹配直接抛出错误，不允许带着错位结构继续运行。
+3. `NativeCore.Initialize` 校验 ABI 版本 13；不匹配直接抛出错误，不允许带着错位结构继续运行。
 4. 托管层注册 Reloaded-II 热键配置，默认 F8；热键变化通过 C ABI 同步给原生和前端 gate。
 5. 托管层作为普通 peer 注册到进程内 Overlay Broker；如果没有可用 carrier，则参与选举。
 6. 完成原生初始化后，托管层才启动后台 EXE SHA-256 诊断。该诊断不参与 Hook 安装决策。
@@ -168,11 +172,14 @@ sequenceDiagram
 3. 菜单打开时，Broker 聚合所有 peer 的键盘、鼠标和文本捕获需求。
 4. WndProc 顺序固定为：
    - peer 先观察消息；
-   - ImGui Win32 handler 处理；
+   - 只有存在可渲染 peer 或显式输入请求时，ImGui Win32 handler 才处理；
    - 按设备类型判断是否吞掉；
+   - 被吞掉的前台 `WM_INPUT/RIM_INPUT` 仍调用 `DefWindowProc` 完成系统清理；
    - 未捕获消息转给原始 WndProc。
 5. 键盘、鼠标、IME 文本可被捕获；Raw HID、XInput、DirectInput gamepad 和未知设备放行。
-6. 菜单关闭时立即释放 `SetCapture`／`ClipCursor` 状态，清理 ImGui 鼠标键和陈旧点击，不再让无边框窗口被 Mod 持续占用。
+6. 菜单关闭时先撤销输入请求，再把 frontend 标记为休眠，避免“已经不渲染但仍继续向 ImGui 排队”的短窗口。
+7. 第一次从休眠唤醒时临时关闭 input trickle，在 Present 线程一次性排空旧队列，向 Win32 backend 注入五个鼠标键的 UP，清理公开 IO 键鼠状态，并把鼠标位置校准为当前窗口客户区坐标。
+8. UI 在输入 capture transition 完成后重新读取物理鼠标状态；只有连续两个无新按钮事件且所有按钮都抬起的 frame 才允许点击。
 
 “关闭时不渲染”并不等于卸载 Present Hook。Present carrier 仍需维持 Broker 和必要 tick；当没有 peer 请求渲染时，后端跳过完整 ImGui frame，减少后台开销。
 
@@ -345,6 +352,8 @@ flowchart LR
 
 peer 渲染前必须通过 `HostedImguiBinding.EnsureCurrentContext` 确保使用 host 的 exact context。绑定失败时 fail closed，不允许拿空 context 继续调用 ImGui。
 
+当前仍有一个独立的 Broker 恢复限制：`HostedImguiBinding.TryBind` 在首次成功后只接受相同 native module handle 和 context pointer。若旧 host 完整销毁 context A、surviving peer 新建 context B，旧 peer 会拒绝替换绑定。现有 `OverlayBrokerRecoveryHarness` 验证 generation/lease/rebind 状态机，但不创建并替换真实 cimgui context；正式解决需要单独设计 context 解绑、替换和跨 ALC 生命周期，不能把该 harness 的 PASS 解读为已覆盖真实 context replacement。
+
 ### 7.4 Present-only 后端
 
 `SafeImguiHookDx11.cs` 采用 Present-only 思路：
@@ -353,6 +362,7 @@ peer 渲染前必须通过 `HostedImguiBinding.EnsureCurrentContext` 确保使�
 - 每帧按需要创建 RenderTargetView；
 - 渲染后恢复 D3D11 Output Merger 状态；
 - 原始 Present 调用经过 native boundary 和跳转链解析；
+- 初始化后校验 `WndProcHook.Instance` 属于当前游戏窗口并显式 `Enable()`；这是针对 Reloaded.Imgui.Hook 4.1.0 在 `Destroy()` 后保留 disabled static instance 的 host 恢复保护；
 - 目标是与 RTSS、MSI Afterburner、ReShade 等已有 Present hook 共存。
 
 它不能保证兼容所有任意第三方 DLL，但应在发现已有不兼容 writer 或无效链时失败关闭，而不是继续叠加未知 Hook。
@@ -368,7 +378,7 @@ peer 渲染前必须通过 `HostedImguiBinding.EnsureCurrentContext` 确保使�
 - 鼠标移动、左右／中／X 按键、滚轮和非客户区鼠标消息；
 - RawInput 中明确识别为键盘或鼠标的设备。
 
-WndProc 的处理顺序、always-captured 消息和异常路径不可随意交换，否则会重新出现“搜索栏输入时游戏角色也操作”或“鼠标点击仍穿透”。
+WndProc 的处理顺序、按设备分类的捕获策略和异常路径不可随意交换，否则会重新出现“搜索栏输入时游戏角色也操作”或“鼠标点击仍穿透”。
 
 ### 8.2 手柄直通
 
@@ -379,7 +389,19 @@ Mod 的目标是只劫持键盘和鼠标：
 - 不应靠“拦所有 DirectInput 再猜是不是手柄”。
 - Steam Input 可能把 PS 手柄转换成不同输入来源，因此 RawInput／DirectInput 分类必须保守；无法确认是键鼠时默认放行。
 
-### 8.3 中文输入
+### 8.3 首次打开输入队列
+
+`0694c91` 引入闭窗休眠后，Present 后端在菜单关闭时跳过 `ImguiHook.NewFrame()`，但旧 WndProc 仍持续调用 `ImGui_ImplWin32_WndProcHandler`。Dear ImGui 1.88 会把移动、按键和滚轮事件追加到 `InputEventsQueue`；没有 `NewFrame` 就不会消费。第一次按热键打开时，积累的移动和点击在 UI 开始渲染前被集中回放；`ConfigInputTrickleEventQueue` 还可能让它们跨多个可见 frame 继续释放。因此典型症状是“第一次打开鼠标乱晃并自动换因子，关闭后第二次打开正常”。
+
+当前修复分三层：
+
+- frontend 休眠且没有显式输入请求时，WndProc 不再向 ImGui 排队；peer 观察器仍先运行，游戏原始 WndProc 仍接收未捕获消息。
+- 首次唤醒在 Present 线程执行完整 reset；跨线程的 broker/capture 路径只设置原子 pending bit，不直接修改共享 ImGui context。
+- 快速关开且原生鼠标仍处于两阶段 drain 时，只排队一次鼠标专用 reset；它清 backend 私有按钮掩码，但不清其他 peer 的键盘焦点或 `ActiveID`。
+
+`MouseButtonStateTracker` 在 `WM_SETFOCUS`、active/inactive `WM_ACTIVATE/WM_ACTIVATEAPP`、`WM_KILLFOCUS`、`WM_CANCELMODE` 和 `WM_CAPTURECHANGED` 上重新读取 `GetAsyncKeyState`，而不是把按住状态盲目清零。每个边界还会原子请求下一次 Present 清理 ImGui Win32 backend 的私有鼠标按钮状态，这样在其他窗口中松开的按钮也会在返回游戏时被纠正。`FrontendOverlayGate.SetToggleKey` 只有在热键实际变化时才释放 held latch，避免每帧配置刷新把同一次按键误当成新的 toggle；关闭状态下若在 Present 消费前失焦，尚未执行的打开请求会被取消，避免菜单在后台唤醒。
+
+### 8.4 中文输入
 
 早期直接处理按键字符导致中文输入出现 `ÔÚ` 等 GBK／ANSI 乱码，而复制粘贴正常。当前路径使用 Win32 IME：
 
@@ -525,7 +547,7 @@ Mod 的目标是只劫持键盘和鼠标：
 | 搜索输入时游戏也响应键鼠 | 一次“放行手柄”的修改把键盘／鼠标也放行 | 输入策略改为明确设备 mask，只放行 controller/HID。 |
 | 鼠标移动不乱但点击仍穿透 | 只拦移动／键盘，没有完整覆盖 mouse button 和非客户区消息 | 完整 WndProc mouse 分类、RawInput 分类和 native mouse capture transition。 |
 | 无边框窗口无法拖动 | Overlay 隐藏后仍持有 capture／clip 或仍拦截非客户区鼠标 | 关闭时强制释放并恢复原窗口状态。 |
-| 打开菜单时鼠标短暂冻结或随机换因子 | 打开瞬间沿用了上一个 frame 的按钮状态；两帧之间完整发生的按下／抬起会被“当前未按住”判断遗漏 | 热键增加 key-up latch；鼠标门控同时追踪完整按钮事件序列，最后一次事件后经过干净帧才允许交互。 |
+| 第一次打开菜单鼠标乱晃、连续点击或自动换因子，第二次正常 | 闭窗休眠跳过 `NewFrame`，但 WndProc 仍向 ImGui `InputEventsQueue` 追加移动和点击；首次唤醒集中回放旧队列。另有 capture-change 把真实 held 状态清零、Win32 backend 私有按钮掩码残留等边界 | 闭窗停止 ImGui 路由；唤醒 frame 关闭 trickle 后一次排空并校准位置；backend 五键 UP；capture/focus 边界重采样物理状态；两帧无事件门控；库存点击后立即终止当前列表遍历。 |
 | 首次打开或战斗中打开官方菜单时画面闪烁 | Hub 重构重新引入逐帧 `ClipCursor(NULL)`，并在捕获期间吞掉窗口失焦／激活消息，游戏与 Overlay 反复争夺窗口状态 | Broker 只在输入状态切换时操作光标；焦点、激活、取消模式和 capture-change 消息全部转回游戏原始 WndProc。 |
 | 两个 ImGui Mod 一个能开、另一个空 context | host／guest 在各自 ALC 加载了不同 cimgui context；固定 host 退出后 guest 无法恢复 | P2P peer + 中立 Broker + exact graphics binding + generation recovery。 |
 | Steam 启动／ASI 模式首次加载卡死或闪退 | 注入顺序与 DirectInput／ReShade／Reloaded bootstrapper 顺序变化；粗暴异步安装又会制造新竞态 | 保持 Hook 同步，输入事务独立回滚；记录启动 phase；只识别官方 bootstrapper 模块和 `InitializeASI`。native DLL 本身不是 `.asi`。 |
@@ -702,9 +724,11 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 3. `PresetStoreHarness`
    - packed ABI、预设引用事务、迁移策略。
 4. `InputPassThroughHarness`
-   - 键鼠／文本捕获和 HID/controller 放行。
+   - 键鼠／文本捕获和 HID/controller 放行；
+   - 闭窗 ImGui 路由、前台 `WM_INPUT` 清理策略、异常回退设备分类和 Present-thread input reset gate。
 5. `FrontendGateHarness`
-   - 事件唤醒、key repeat、闭窗休眠、鼠标交互生命周期。
+   - 事件唤醒、key repeat、热键 held latch、后台打开请求取消和闭窗休眠；
+   - NC XBUTTON、focus/activate/cancel/capture 物理同步、虚拟按键到按钮 mask 的确定性映射和鼠标交互生命周期。
 6. `HotkeyConfigHarness`
    - 默认、持久化、动态更新和非法热键规范化。
 7. `StartupDiagnosticsHarness`
@@ -727,6 +751,9 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 - ReShade、RTSS、Steam Overlay、GBFRelinkFix 等所有加载顺序组合都兼容；
 - Win10／Win11、窗口／无边框／全屏、HDR／非 HDR、DLSS 的全部组合都稳定；
 - Steam Input 下所有 PS／Xbox 控制器映射都能保持直通。
+- 真实 `HRAWINPUT` 的 `GetRawInputData` 解码、前台 `DefWindowProc` 清理调用和 Windows 11 消息顺序实际执行正确；harness 只覆盖设备类型与清理策略的纯逻辑。
+- Dear ImGui Win32 backend 的真实私有 `MouseButtonsDown`、五个合成 UP、当前光标客户区坐标和 `InputEventsQueue` 在唤醒帧被完整纠正；harness 只覆盖 pending gate 和 wake/reset policy。
+- Present 与 WndProc 的实际线程关系、capture API 线程归属，以及 host context A 被 context B 替换后的跨 ALC 重新绑定。
 
 所以图形、输入、resolver 或 trait hook 的高风险改动必须补真实游戏矩阵，不能只凭 `ALL_SMOKE_TESTS=PASS` 发布。
 
@@ -742,7 +769,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 | 图形注入 | 无第三方、ReShade、RTSS/MSI Afterburner、Steam Overlay |
 | 显示模式 | 窗口、无边框、全屏；有条件再测 HDR/DLSS |
 | 输入 | 键鼠、Xbox/XInput、PS + Steam Input enabled/disabled |
-| UI | 中文 IME、英文、预设名、搜索、鼠标快速开关和点击 |
+| UI | 中文 IME、英文、预设名、搜索；启动后第一次打开、第二次打开、鼠标快速开关、按住鼠标开菜单、手柄操作后按热键 |
 | gameplay | 不同角色、普通任务、训练模式、在线／离线、状态重进 |
 | 配置 | NumConfig 缺失、合法、非法；有旧预设和多角色 ownership |
 

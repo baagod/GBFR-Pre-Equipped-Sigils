@@ -103,6 +103,7 @@ internal sealed unsafe partial class SigilOverlayUi
         _requestTransferDialogOpen = false;
         Array.Clear(_searchBuffer);
         RefreshInventory();
+        ResetMouseInteractionBoundary();
         return true;
     }
 

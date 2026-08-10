@@ -14,8 +14,10 @@ internal static class FrontendOverlayGate
     private const uint WmKeyUp = 0x0101;
     private const uint WmSysKeyDown = 0x0104;
     private const uint WmSysKeyUp = 0x0105;
+    private const uint WmActivate = 0x0006;
     private const uint WmKillFocus = 0x0008;
     private const uint WmActivateApp = 0x001C;
+    private const uint WmCancelMode = 0x001F;
     private const long PreviousKeyStateMask = 1L << 30;
 
     private static int s_windowOpen;
@@ -33,10 +35,12 @@ internal static class FrontendOverlayGate
 
     internal static void SetToggleKey(int virtualKey)
     {
-        Volatile.Write(ref s_toggleKeyHeld, 0);
-        Volatile.Write(
-            ref s_toggleKey,
-            virtualKey is >= 1 and <= 255 ? virtualKey : DefaultToggleKey);
+        int normalizedKey = virtualKey is >= 1 and <= 255
+            ? virtualKey
+            : DefaultToggleKey;
+        int previousKey = Interlocked.Exchange(ref s_toggleKey, normalizedKey);
+        if (previousKey != normalizedKey)
+            Volatile.Write(ref s_toggleKeyHeld, 0);
     }
 
     internal static void SetOpen(bool open) =>
@@ -48,9 +52,13 @@ internal static class FrontendOverlayGate
         IntPtr lParam)
     {
         if (message == WmKillFocus ||
-            (message == WmActivateApp && wParam == IntPtr.Zero))
+            message == WmCancelMode ||
+            message == WmActivateApp && wParam == IntPtr.Zero ||
+            message == WmActivate && IsInactiveWindowActivation(wParam))
         {
             Volatile.Write(ref s_toggleKeyHeld, 0);
+            if (Volatile.Read(ref s_windowOpen) == 0)
+                Interlocked.Exchange(ref s_pendingToggleCount, 0);
             return false;
         }
 
@@ -74,6 +82,9 @@ internal static class FrontendOverlayGate
 
     internal static bool ConsumeToggleRequest() =>
         (Interlocked.Exchange(ref s_pendingToggleCount, 0) & 1) != 0;
+
+    private static bool IsInactiveWindowActivation(IntPtr wParam) =>
+        (unchecked((nuint)wParam) & (nuint)0xFFFF) == 0;
 
     internal static void ForceClosed()
     {

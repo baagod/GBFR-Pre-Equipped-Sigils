@@ -29,8 +29,9 @@ Assert(!ReadBool(isOpen), "The frontend must start closed.");
 bool queued = (bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false);
 Assert(queued, "The first F8 keydown must queue a toggle.");
 Assert(ReadBool(shouldRender), "A pending toggle must wake one frontend frame.");
+setToggleKey.Invoke(null, [0x77]);
 Assert(!(bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? true),
-    "A duplicate keydown without key-up must not queue another toggle.");
+    "Refreshing the same configured key must not release its held latch.");
 
 bool repeated = (bool)(observe.Invoke(
     null,
@@ -64,6 +65,47 @@ Assert((bool)(consume.Invoke(null, null) ?? false),
 forceClosed.Invoke(null, null);
 setToggleKey.Invoke(null, [0x77]);
 
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "A keydown before an inactive WM_ACTIVATE must queue normally.");
+Assert((bool)(consume.Invoke(null, null) ?? false),
+    "The pre-activation toggle must be consumed.");
+observe.Invoke(null, [0x0006u, IntPtr.Zero, IntPtr.Zero]);
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "Inactive WM_ACTIVATE must release the toggle-key latch.");
+Assert((bool)(consume.Invoke(null, null) ?? false),
+    "The post-activation toggle must be consumed.");
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
+
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "A keydown before WM_CANCELMODE must queue normally.");
+Assert((bool)(consume.Invoke(null, null) ?? false),
+    "The pre-cancel toggle must be consumed.");
+observe.Invoke(null, [0x001Fu, IntPtr.Zero, IntPtr.Zero]);
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "WM_CANCELMODE must release the toggle-key latch.");
+Assert((bool)(consume.Invoke(null, null) ?? false),
+    "The post-cancel toggle must be consumed.");
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
+
+forceClosed.Invoke(null, null);
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "A closed frontend must queue a foreground toggle.");
+observe.Invoke(null, [0x0008u, IntPtr.Zero, IntPtr.Zero]);
+Assert(!(bool)(consume.Invoke(null, null) ?? true),
+    "Losing focus while closed must cancel an unconsumed background-open toggle.");
+Assert(!ReadBool(shouldRender),
+    "A canceled background-open toggle must return the frontend to sleep.");
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
+
+setOpen.Invoke(null, [true]);
+Assert((bool)(observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]) ?? false),
+    "An open frontend must queue its close toggle.");
+observe.Invoke(null, [0x0008u, IntPtr.Zero, IntPtr.Zero]);
+Assert((bool)(consume.Invoke(null, null) ?? false),
+    "Losing focus while open must preserve an already queued close toggle.");
+setOpen.Invoke(null, [false]);
+observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
+
 observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]);
 observe.Invoke(null, [0x0101u, new IntPtr(0x77), IntPtr.Zero]);
 observe.Invoke(null, [0x0100u, new IntPtr(0x77), IntPtr.Zero]);
@@ -77,10 +119,36 @@ Type buttonTrackerType = assembly.GetType(
     "GBFR.ExtraSigilSlots.Reloaded.MouseButtonStateTracker",
     throwOnError: true)!;
 MethodInfo resetButtons = GetStaticMethod(buttonTrackerType, "Reset");
+MethodInfo synchronizePhysicalState = GetStaticMethod(
+    buttonTrackerType,
+    "SynchronizePhysicalState");
+MethodInfo buildPressedButtons = GetStaticMethod(buttonTrackerType, "BuildPressedButtons");
+MethodInfo synchronizeState = GetStaticMethod(buttonTrackerType, "SynchronizeState");
+MethodInfo requiresPhysicalStateSynchronization = GetStaticMethod(
+    buttonTrackerType,
+    "RequiresPhysicalStateSynchronization");
 MethodInfo observeMouseMessage = GetStaticMethod(buttonTrackerType, "ObserveWindowMessage");
 PropertyInfo pressedButtons = GetStaticProperty(buttonTrackerType, "PressedButtons");
 PropertyInfo buttonEventSequence = GetStaticProperty(buttonTrackerType, "ButtonEventSequence");
 
+resetButtons.Invoke(null, null);
+long sequenceBeforeSynchronization = ReadLong(buttonEventSequence);
+long synchronizedSequence = (long)(synchronizePhysicalState.Invoke(null, null) ?? 0L);
+Assert(synchronizedSequence == sequenceBeforeSynchronization + 1,
+    "Physical mouse synchronization must return its exact new event boundary.");
+Assert(synchronizedSequence == ReadLong(buttonEventSequence),
+    "The returned physical mouse boundary must match the published sequence.");
+Func<int, bool> simulatedPhysicalState = virtualKey => virtualKey is 0x01 or 0x05;
+uint builtPressedButtons = (uint)(buildPressedButtons.Invoke(
+    null,
+    [simulatedPhysicalState]) ?? 0u);
+Assert(builtPressedButtons == 9u,
+    "Physical-state sampling must map left button and XBUTTON1 to the tracker mask.");
+long knownStateSequence = (long)(synchronizeState.Invoke(null, [9u]) ?? 0L);
+Assert(ReadUInt(pressedButtons) == 9u,
+    "Known mouse synchronization must preserve held left and XBUTTON1 state.");
+Assert(knownStateSequence == ReadLong(buttonEventSequence),
+    "Known mouse synchronization must publish one atomic event boundary.");
 resetButtons.Invoke(null, null);
 observeMouseMessage.Invoke(null, [0x0201u, IntPtr.Zero]);
 Assert(ReadUInt(pressedButtons) == 1u, "Left-button down must be tracked.");
@@ -94,6 +162,51 @@ observeMouseMessage.Invoke(null, [0x020Bu, new IntPtr(1L << 16)]);
 Assert(ReadUInt(pressedButtons) == 8u, "XBUTTON1 down must be tracked.");
 observeMouseMessage.Invoke(null, [0x020Cu, new IntPtr(1L << 16)]);
 Assert(ReadUInt(pressedButtons) == 0u, "XBUTTON1 up must be tracked.");
+observeMouseMessage.Invoke(null, [0x00ABu, new IntPtr(1L << 16)]);
+Assert(ReadUInt(pressedButtons) == 8u, "Non-client XBUTTON1 down must be tracked.");
+observeMouseMessage.Invoke(null, [0x00ACu, new IntPtr(1L << 16)]);
+Assert(ReadUInt(pressedButtons) == 0u, "Non-client XBUTTON1 up must be tracked.");
+observeMouseMessage.Invoke(null, [0x00ADu, new IntPtr(1L << 16)]);
+Assert(ReadUInt(pressedButtons) == 8u, "Non-client XBUTTON1 double-click must be tracked.");
+observeMouseMessage.Invoke(null, [0x00ACu, new IntPtr(1L << 16)]);
+Assert(ReadUInt(pressedButtons) == 0u,
+    "Non-client XBUTTON1 up must release a tracked double-click.");
+long sequenceBeforeDoubleClick = ReadLong(buttonEventSequence);
+observeMouseMessage.Invoke(null, [0x0203u, IntPtr.Zero]);
+Assert(ReadUInt(pressedButtons) == 1u, "Left-button double-click must be tracked as held.");
+Assert(ReadLong(buttonEventSequence) == sequenceBeforeDoubleClick + 1,
+    "A double-click message must advance the mouse event boundary.");
+observeMouseMessage.Invoke(null, [0x0202u, IntPtr.Zero]);
+Assert(ReadUInt(pressedButtons) == 0u, "Left-button up must release a tracked double-click.");
+
+(uint Message, IntPtr WParam, string Name)[] synchronizationBoundaries =
+[
+    (0x0006u, new IntPtr(1), "active WM_ACTIVATE"),
+    (0x0007u, IntPtr.Zero, "WM_SETFOCUS"),
+    (0x0008u, IntPtr.Zero, "WM_KILLFOCUS"),
+    (0x001Cu, new IntPtr(1), "active WM_ACTIVATEAPP"),
+    (0x001Cu, IntPtr.Zero, "inactive WM_ACTIVATEAPP"),
+    (0x001Fu, IntPtr.Zero, "WM_CANCELMODE"),
+    (0x0006u, IntPtr.Zero, "inactive WM_ACTIVATE"),
+    (0x0215u, IntPtr.Zero, "WM_CAPTURECHANGED"),
+];
+foreach ((uint message, IntPtr wParam, string name) in synchronizationBoundaries)
+{
+    Assert((bool)(requiresPhysicalStateSynchronization.Invoke(
+            null,
+            [message, wParam]) ?? false),
+        $"{name} must be a physical mouse synchronization boundary.");
+    synchronizeState.Invoke(null, [1u]);
+    long sequenceBeforeBoundary = ReadLong(buttonEventSequence);
+    observeMouseMessage.Invoke(null, [message, wParam]);
+    Assert(ReadLong(buttonEventSequence) == sequenceBeforeBoundary + 1,
+        $"{name} must publish a fresh physical mouse snapshot.");
+}
+Assert(!(bool)(requiresPhysicalStateSynchronization.Invoke(
+        null,
+        [0x000Fu, IntPtr.Zero]) ?? true),
+    "Unrelated window messages must not reset the mouse boundary.");
+resetButtons.Invoke(null, null);
 
 Type mouseGateType = assembly.GetType(
     "GBFR.ExtraSigilSlots.Reloaded.MouseInteractionGate",
@@ -123,6 +236,13 @@ Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
 observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
 Assert(ReadInstanceBool(mouseGate, mouseGateArmed),
     "Two clean released frames must arm pointer interaction.");
+openMouseGate.Invoke(mouseGate, [ReadLong(buttonEventSequence)]);
+Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
+    "A popup boundary must be able to rearm an already-open interaction gate.");
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
+observeButtons.Invoke(mouseGate, [0u, ReadLong(buttonEventSequence)]);
+Assert(ReadInstanceBool(mouseGate, mouseGateArmed),
+    "Two clean frames after a popup boundary must rearm pointer interaction.");
 closeMouseGate.Invoke(mouseGate, null);
 Assert(!ReadInstanceBool(mouseGate, mouseGateArmed),
     "Closing must disarm and reset pointer interaction.");

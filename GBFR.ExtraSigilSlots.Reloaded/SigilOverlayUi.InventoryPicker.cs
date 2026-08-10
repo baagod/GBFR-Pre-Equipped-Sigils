@@ -79,6 +79,7 @@ internal sealed unsafe partial class SigilOverlayUi
             _pendingBodyItem = item;
             _bodyDialogOpen = true;
             _requestBodyDialogOpen = true;
+            ResetMouseInteractionBoundary();
             return;
         }
 
@@ -94,6 +95,7 @@ internal sealed unsafe partial class SigilOverlayUi
             _pendingTransferItem = item;
             _transferDialogOpen = true;
             _requestTransferDialogOpen = true;
+            ResetMouseInteractionBoundary();
             return;
         }
 
@@ -108,18 +110,15 @@ internal sealed unsafe partial class SigilOverlayUi
         return DrawTransferDialog(characterHash, english);
     }
 
-    private void OpenRequestedInventoryConflictDialogs(bool english)
+    private static void OpenRequestedInventoryConflictDialogs(
+        bool english,
+        bool openBodyDialog,
+        bool openTransferDialog)
     {
-        if (_requestBodyDialogOpen)
-        {
-            _requestBodyDialogOpen = false;
+        if (openBodyDialog)
             ImGui.OpenPopupStr(BodyBlockedTitle(english), 0);
-        }
-        if (_requestTransferDialogOpen)
-        {
-            _requestTransferDialogOpen = false;
+        if (openTransferDialog)
             ImGui.OpenPopupStr(TransferTitle(english), 0);
-        }
     }
 
     private void DrawBodyBlockedDialog(bool english)
@@ -296,6 +295,7 @@ internal sealed unsafe partial class SigilOverlayUi
 
     private void ClosePickerPopup()
     {
+        ResetMouseInteractionBoundary();
         _pickerOpen = false;
         _pickerSlot = -1;
         _pendingBodyItem = null;
