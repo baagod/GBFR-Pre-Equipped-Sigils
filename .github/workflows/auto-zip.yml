@@ -26,11 +26,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout ChatOverlay main for OverlayHub sync gate
-        uses: actions/checkout@v4
-        with:
-          repository: cajoxorize366-oss/GBFR.ChatOverlay
-          ref: main
-          path: sibling/ChatOverlay
+        id: sibling
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runnerTemp = $env:RUNNER_TEMP
+          if ([string]::IsNullOrWhiteSpace($runnerTemp)) {
+            throw 'RUNNER_TEMP is not set'
+          }
+          $syncRoot = Join-Path $runnerTemp 'gbfr-overlayhub-sync-chat-overlay'
+          $siblingPath = Join-Path $syncRoot 'ChatOverlay'
+          $resolvedTemp = [System.IO.Path]::GetFullPath($runnerTemp)
+          $resolvedSibling = [System.IO.Path]::GetFullPath($siblingPath)
+          $tempPrefix = $resolvedTemp.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+          if (-not $resolvedSibling.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to clean outside RUNNER_TEMP: $resolvedSibling"
+          }
+          if (Test-Path -LiteralPath $siblingPath) {
+            Remove-Item -LiteralPath $siblingPath -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $syncRoot -Force | Out-Null
+          git clone --depth 1 --branch main --single-branch "https://github.com/cajoxorize366-oss/GBFR.ChatOverlay.git" $siblingPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "git clone failed with exit code $LASTEXITCODE"
+          }
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "path=$siblingPath"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -64,7 +84,7 @@ jobs:
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE/VerifyOverlayBrokerSync.ps1" `
-            -OtherRepository "$env:GITHUB_WORKSPACE/sibling/ChatOverlay"
+            -OtherRepository "${{ steps.sibling.outputs.path }}"
 
       - name: Build Reloaded ZIP
         shell: pwsh

@@ -5,6 +5,12 @@ param(
 
 $repositoryRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $otherRoot = [System.IO.Path]::GetFullPath($OtherRepository)
+
+function Read-NormalizedSource([string]$Path) {
+    # Source parity should not depend on the checkout line-ending policy.
+    return [System.IO.File]::ReadAllText($Path).Replace("`r`n", "`n").Replace("`r", "`n")
+}
+
 $sharedFiles = @(
     [pscustomobject]@{ Path = 'GBFR.OverlayHub.Contracts/OverlayBroker.cs'; Other = @('GBFR.OverlayHub.Contracts/OverlayBroker.cs') },
     [pscustomobject]@{ Path = 'GBFR.OverlayHub.Contracts/OverlayBrokerCapabilities.cs'; Other = @('GBFR.OverlayHub.Contracts/OverlayBrokerCapabilities.cs') },
@@ -28,9 +34,9 @@ foreach ($entry in $sharedFiles) {
         continue
     }
 
-    $localHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $localPath).Hash
-    $otherHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $otherPath).Hash
-    if ($localHash -ne $otherHash) {
+    $localSource = Read-NormalizedSource $localPath
+    $otherSource = Read-NormalizedSource $otherPath
+    if ($localSource -cne $otherSource) {
         $differences += "$($entry.Path) (different)"
     }
 }
