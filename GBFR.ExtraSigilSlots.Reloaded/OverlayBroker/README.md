@@ -8,6 +8,7 @@ This directory contains the process-local runtime shared by compatible GBFR over
 - `OverlayBrokerHost.cs` — owns the only ImGui frame, Present hook, WndProc, cursor and native-input transition path.
 - `SharedImguiGraphicsBinding.cs` — publishes the carrier's exact cimgui module and context.
 - `OverlayWindowInputClassifier.cs` — applies the aggregate keyboard, mouse and text capture policy.
+- `ImGuiInputResetGate.cs` — transfers coalesced input reset requests to the Present thread.
 
 The public peer API and the neutral peer registry live in the sibling
 `GBFR.OverlayHub.Contracts` project.

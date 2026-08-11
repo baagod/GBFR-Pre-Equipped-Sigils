@@ -12,7 +12,8 @@ $sharedFiles = @(
     [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayBrokerElection.cs'; Other = @('OverlayBroker/OverlayBrokerElection.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayBrokerElection.cs') },
     [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayBrokerHost.cs'; Other = @('OverlayBroker/OverlayBrokerHost.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayBrokerHost.cs') },
     [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayWindowInputClassifier.cs'; Other = @('OverlayBroker/OverlayWindowInputClassifier.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/OverlayWindowInputClassifier.cs') },
-    [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/SharedImguiGraphicsBinding.cs'; Other = @('OverlayBroker/SharedImguiGraphicsBinding.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/SharedImguiGraphicsBinding.cs') }
+    [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/SharedImguiGraphicsBinding.cs'; Other = @('OverlayBroker/SharedImguiGraphicsBinding.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/SharedImguiGraphicsBinding.cs') },
+    [pscustomobject]@{ Path = 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/ImGuiInputResetGate.cs'; Other = @('OverlayBroker/ImGuiInputResetGate.cs', 'GBFR.ExtraSigilSlots.Reloaded/OverlayBroker/ImGuiInputResetGate.cs') }
 )
 
 $differences = @()
