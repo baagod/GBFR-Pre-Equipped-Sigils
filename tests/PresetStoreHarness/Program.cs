@@ -109,6 +109,14 @@ MethodInfo aggregateReferencesMethod = storeType.GetMethods(instanceFlags).Singl
 MethodInfo clearReferencesMethod = storeType.GetMethod(
     "ClearSlotReferencesAndRun",
     instanceFlags)!;
+MethodInfo deleteMethod = storeType.GetMethod("Delete", instanceFlags)!;
+MethodInfo renameMethod = storeType.GetMethod("Rename", instanceFlags)!;
+MethodInfo resolveSelectedPresetMethod = storeType.GetMethod(
+    "ResolveSelectedPreset",
+    instanceFlags)!;
+MethodInfo selectPresetMethod = storeType.GetMethod("SelectPreset", instanceFlags)!;
+MethodInfo markTemporaryMethod = storeType.GetMethod("MarkTemporary", instanceFlags)!;
+MethodInfo isSelectedPresetMethod = storeType.GetMethod("IsSelectedPreset", instanceFlags)!;
 PropertyInfo presetIdProperty = assembly.GetType(
     "GBFR.ExtraSigilSlots.Reloaded.SigilPreset",
     throwOnError: true)!.GetProperty("Id")!;
@@ -220,10 +228,10 @@ try
 
     byte[] originalV1Bytes = File.ReadAllBytes(jsonPath);
     object store = CreateStore(configDirectory);
-    AssertV3Document(jsonPath, expectedPresetCount: 6);
+    AssertV4Document(jsonPath, expectedPresetCount: 6);
     string[] v1Backups = Directory.GetFiles(
         configDirectory,
-        "GBFR-ExtraSigilSlots.presets.json.pre-v3-*.bak");
+        "GBFR-ExtraSigilSlots.presets.json.pre-v4-*.bak");
     if (v1Backups.Length != 1 ||
         !File.ReadAllBytes(v1Backups[0]).SequenceEqual(originalV1Bytes))
     {
@@ -242,7 +250,7 @@ try
     object reloadedWithoutMigration = CreateStore(configDirectory);
     if (Directory.GetFiles(
             configDirectory,
-            "GBFR-ExtraSigilSlots.presets.json.pre-v3-*.bak").Length != 1 ||
+            "GBFR-ExtraSigilSlots.presets.json.pre-v4-*.bak").Length != 1 ||
         PresetsFor(reloadedWithoutMigration, sourceCharacterHash).Count != 3)
     {
         throw new InvalidOperationException("A v3 reload repeated migration or lost presets.");
@@ -386,10 +394,10 @@ try
         """,
         new UTF8Encoding(false));
     object v2Store = CreateStore(v2Directory);
-    AssertV3Document(v2Path, expectedPresetCount: 2);
+    AssertV4Document(v2Path, expectedPresetCount: 2);
     if (Slots(PresetNamed(v2Store, sourceCharacterHash, "V2"))[0] != 9001 ||
         Slots(PresetNamed(v2Store, targetCharacterHash, "V2 Empty")).Any(slotId => slotId != 0) ||
-        Directory.GetFiles(v2Directory, "*.pre-v3-*.bak").Length != 1)
+        Directory.GetFiles(v2Directory, "*.pre-v4-*.bak").Length != 1)
     {
         throw new InvalidOperationException("V2 presets were not migrated with a backup.");
     }
@@ -427,7 +435,7 @@ try
     uint[] normalizedDuplicateSlots = Slots(duplicatePresets[0]);
     string[] normalizationBackups = Directory.GetFiles(
         duplicateDirectory,
-        "*.pre-normalize-v3-*.bak");
+        "*.pre-v4-*.bak");
     if (normalizedDuplicateSlots[0] != 42 || normalizedDuplicateSlots[1] != 0 ||
         normalizationBackups.Length != 1 ||
         !File.ReadAllBytes(normalizationBackups[0]).SequenceEqual(duplicateOriginalBytes))
@@ -435,8 +443,384 @@ try
         throw new InvalidOperationException("Malformed v3 duplicate slots were not safely normalized.");
     }
 
-    Console.WriteLine("PRESET_STORE_TEST=PASS");
-    Console.WriteLine("PRESET_SCHEMA=3");
+    string selectionDirectory = Path.Combine(testRoot, "SelectionConfig");
+    Directory.CreateDirectory(selectionDirectory);
+    object selectionStore = CreateStore(selectionDirectory);
+    object persistedPresetA = createMethod.Invoke(selectionStore, [sourceCharacterHash, "PersistA"])!;
+    if (!IsSelectedPreset(selectionStore, persistedPresetA))
+        throw new InvalidOperationException("Create did not persist the new preset as selected.");
+
+    object selectionReloaded = CreateStore(selectionDirectory);
+    object? selectedAfterReload = ResolveSelectedPreset(
+        selectionReloaded,
+        sourceCharacterHash,
+        Slots(persistedPresetA));
+    if (selectedAfterReload is null || Id(selectedAfterReload) != Id(persistedPresetA))
+        throw new InvalidOperationException("Created preset selection was not restored after reload.");
+    Dictionary<uint, string?> persistedSelection =
+        ReadSelectedPresetIds(Path.Combine(selectionDirectory, "GBFR-ExtraSigilSlots.presets.json"));
+    if (!persistedSelection.TryGetValue(sourceCharacterHash, out string? persistedSelectedId) ||
+        persistedSelectedId != Id(persistedPresetA))
+    {
+        throw new InvalidOperationException("Created preset selection was not written to the preset file.");
+    }
+
+    object persistedPresetB = createMethod.Invoke(selectionReloaded, [sourceCharacterHash, "PersistB"])!;
+    object selectionReloadedB = CreateStore(selectionDirectory);
+    selectedAfterReload = ResolveSelectedPreset(
+        selectionReloadedB,
+        sourceCharacterHash,
+        Slots(persistedPresetB));
+    if (selectedAfterReload is null || Id(selectedAfterReload) != Id(persistedPresetB))
+        throw new InvalidOperationException("A later selection was not restored after reload.");
+
+    MarkTemporary(selectionReloadedB, sourceCharacterHash);
+    object selectionReloadedTemporary = CreateStore(selectionDirectory);
+    selectedAfterReload = ResolveSelectedPreset(
+        selectionReloadedTemporary,
+        sourceCharacterHash,
+        Slots(persistedPresetB));
+    if (selectedAfterReload is not null)
+        throw new InvalidOperationException("Explicit temporary selection was not restored after reload.");
+    persistedSelection = ReadSelectedPresetIds(Path.Combine(selectionDirectory, "GBFR-ExtraSigilSlots.presets.json"));
+    if (!persistedSelection.TryGetValue(sourceCharacterHash, out string? explicitTemporary) ||
+        explicitTemporary is not null)
+    {
+        throw new InvalidOperationException("Explicit temporary was not persisted as null.");
+    }
+    MarkTemporary(selectionReloadedTemporary, 0);
+    Console.WriteLine("PRESET_SELECTION_PERSISTENCE=PASS");
+
+    string activeTransferDirectory = Path.Combine(testRoot, "ActiveTransferConfig");
+    Directory.CreateDirectory(activeTransferDirectory);
+    object activeTransferStore = CreateStore(activeTransferDirectory);
+    object targetActivePreset = createMethod.Invoke(activeTransferStore, [targetCharacterHash, "TargetActive"])!;
+    object sourceActivePreset = createMethod.Invoke(activeTransferStore, [sourceCharacterHash, "SourceActive"])!;
+    if (!IsSelectedPreset(activeTransferStore, sourceActivePreset))
+        throw new InvalidOperationException("Create did not mark the active transfer source preset selected.");
+    transferPresetMethod.Invoke(activeTransferStore, [sourceActivePreset, targetCharacterHash]);
+    object activeTransferReloaded = CreateStore(activeTransferDirectory);
+    object? sourceAfterActiveTransfer = ResolveSelectedPreset(
+        activeTransferReloaded,
+        sourceCharacterHash,
+        Slots(sourceActivePreset));
+    if (sourceAfterActiveTransfer is not null)
+        throw new InvalidOperationException("Transferring the active preset did not make the source explicitly temporary.");
+    object? targetAfterActiveTransfer = ResolveSelectedPreset(
+        activeTransferReloaded,
+        targetCharacterHash,
+        Slots(targetActivePreset));
+    if (targetAfterActiveTransfer is null || Id(targetAfterActiveTransfer) != Id(targetActivePreset))
+        throw new InvalidOperationException("Transferring an active preset changed the target selection.");
+    Dictionary<uint, string?> activeTransferSelection =
+        ReadSelectedPresetIds(Path.Combine(activeTransferDirectory, "GBFR-ExtraSigilSlots.presets.json"));
+    if (!activeTransferSelection.TryGetValue(sourceCharacterHash, out string? activeSourceState) ||
+        activeSourceState is not null)
+    {
+        throw new InvalidOperationException("Active transfer source state was not persisted as explicit temporary.");
+    }
+    Console.WriteLine("PRESET_ACTIVE_TRANSFER_TEMPORARY=PASS");
+
+    string inactiveTransferDirectory = Path.Combine(testRoot, "InactiveTransferConfig");
+    Directory.CreateDirectory(inactiveTransferDirectory);
+    object inactiveTransferStore = CreateStore(inactiveTransferDirectory);
+    object targetInactivePreset = createMethod.Invoke(inactiveTransferStore, [targetCharacterHash, "TargetInactive"])!;
+    object sourceInactiveActivePreset = createMethod.Invoke(inactiveTransferStore, [sourceCharacterHash, "SourceActiveInactive"])!;
+    object sourceInactivePreset = createMethod.Invoke(inactiveTransferStore, [sourceCharacterHash, "SourceInactive"])!;
+    SelectPreset(inactiveTransferStore, sourceInactiveActivePreset);
+    transferPresetMethod.Invoke(inactiveTransferStore, [sourceInactivePreset, targetCharacterHash]);
+    object inactiveTransferReloaded = CreateStore(inactiveTransferDirectory);
+    object? sourceAfterInactiveTransfer = ResolveSelectedPreset(
+        inactiveTransferReloaded,
+        sourceCharacterHash,
+        Slots(sourceInactiveActivePreset));
+    if (sourceAfterInactiveTransfer is null || Id(sourceAfterInactiveTransfer) != Id(sourceInactiveActivePreset))
+        throw new InvalidOperationException("Transferring a non-active preset changed the source selection.");
+    object? targetAfterInactiveTransfer = ResolveSelectedPreset(
+        inactiveTransferReloaded,
+        targetCharacterHash,
+        Slots(targetInactivePreset));
+    if (targetAfterInactiveTransfer is null || Id(targetAfterInactiveTransfer) != Id(targetInactivePreset))
+        throw new InvalidOperationException("Transferring a non-active preset changed the target selection.");
+    Console.WriteLine("PRESET_INACTIVE_TRANSFER_PRESERVED=PASS");
+
+    string legacyRecoveryDirectory = Path.Combine(testRoot, "LegacyRecoveryConfig");
+    Directory.CreateDirectory(legacyRecoveryDirectory);
+    string legacyRecoveryPath = Path.Combine(legacyRecoveryDirectory, "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(
+        legacyRecoveryPath,
+        $$"""
+        {
+          "Version": 3,
+          "Presets": [
+            {
+              "Id": "legacy-first",
+              "Name": "Legacy First",
+              "CharacterHash": {{sourceCharacterHash}},
+              "Slots": [11, 22]
+            },
+            {
+              "Id": "legacy-duplicate",
+              "Name": "Legacy Duplicate",
+              "CharacterHash": {{sourceCharacterHash}},
+              "Slots": [11, 22]
+            }
+          ]
+        }
+        """,
+        new UTF8Encoding(false));
+    object legacyRecoveryStore = CreateStore(legacyRecoveryDirectory);
+    AssertV4Document(legacyRecoveryPath, expectedPresetCount: 2);
+    if (ReadSelectedPresetIds(legacyRecoveryPath).Count != 0)
+        throw new InvalidOperationException("Legacy migration seeded a selection map.");
+    object? recoveredLegacyPreset = ResolveSelectedPreset(
+        legacyRecoveryStore,
+        sourceCharacterHash,
+        [11, 22]);
+    if (recoveredLegacyPreset is null || Id(recoveredLegacyPreset) != "legacy-first")
+        throw new InvalidOperationException("Legacy unresolved selection did not choose the first matching preset.");
+    Dictionary<uint, string?> legacySelection = ReadSelectedPresetIds(legacyRecoveryPath);
+    if (!legacySelection.TryGetValue(sourceCharacterHash, out string? recoveredId) ||
+        recoveredId != "legacy-first")
+    {
+        throw new InvalidOperationException("Legacy selection recovery was not persisted.");
+    }
+    object legacyRecoveryReloaded = CreateStore(legacyRecoveryDirectory);
+    object? recoveredAfterReload = ResolveSelectedPreset(
+        legacyRecoveryReloaded,
+        sourceCharacterHash,
+        [11, 22]);
+    if (recoveredAfterReload is null || Id(recoveredAfterReload) != "legacy-first")
+        throw new InvalidOperationException("Legacy selection recovery was not stable after reload.");
+    if (Directory.GetFiles(legacyRecoveryDirectory, "*.pre-v4-*.bak").Length != 1)
+        throw new InvalidOperationException("Legacy v3 recovery did not create a v4 migration backup.");
+    Console.WriteLine("PRESET_SELECTION_LEGACY_RECOVERY=PASS");
+
+    string legacyActiveTransferDirectory = Path.Combine(testRoot, "LegacyActiveTransferConfig");
+    Directory.CreateDirectory(legacyActiveTransferDirectory);
+    string legacyActiveTransferPath = Path.Combine(
+        legacyActiveTransferDirectory,
+        "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(
+        legacyActiveTransferPath,
+        $$"""
+        {
+          "Version": 3,
+          "Presets": [
+            {
+              "Id": "legacy-active-transfer",
+              "Name": "Legacy Active Transfer",
+              "CharacterHash": {{sourceCharacterHash}},
+              "Slots": [91, 92]
+            }
+          ]
+        }
+        """,
+        new UTF8Encoding(false));
+    object legacyActiveTransferStore = CreateStore(legacyActiveTransferDirectory);
+    object? legacyActiveTransferPreset = ResolveSelectedPreset(
+        legacyActiveTransferStore,
+        sourceCharacterHash,
+        [91, 92]);
+    if (legacyActiveTransferPreset is null ||
+        Id(legacyActiveTransferPreset) != "legacy-active-transfer")
+    {
+        throw new InvalidOperationException(
+            "Legacy active preset was not resolved before transfer.");
+    }
+    transferPresetMethod.Invoke(
+        legacyActiveTransferStore,
+        [legacyActiveTransferPreset, targetCharacterHash]);
+    object legacyActiveTransferReloaded = CreateStore(legacyActiveTransferDirectory);
+    object? legacySourceAfterTransfer = ResolveSelectedPreset(
+        legacyActiveTransferReloaded,
+        sourceCharacterHash,
+        [91, 92]);
+    if (legacySourceAfterTransfer is not null)
+    {
+        throw new InvalidOperationException(
+            "Resolved legacy active transfer did not leave the source explicitly temporary.");
+    }
+    Dictionary<uint, string?> legacyActiveTransferSelection =
+        ReadSelectedPresetIds(legacyActiveTransferPath);
+    if (!legacyActiveTransferSelection.TryGetValue(
+            sourceCharacterHash,
+            out string? legacyActiveTransferState) ||
+        legacyActiveTransferState is not null)
+    {
+        throw new InvalidOperationException(
+            "Resolved legacy active transfer did not persist explicit temporary state.");
+    }
+    Console.WriteLine("PRESET_SELECTION_LEGACY_ACTIVE_TRANSFER=PASS");
+
+    string legacyActiveDeleteDirectory = Path.Combine(testRoot, "LegacyActiveDeleteConfig");
+    Directory.CreateDirectory(legacyActiveDeleteDirectory);
+    string legacyActiveDeletePath = Path.Combine(
+        legacyActiveDeleteDirectory,
+        "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(
+        legacyActiveDeletePath,
+        $$"""
+        {
+          "Version": 3,
+          "Presets": [
+            {
+              "Id": "legacy-active-delete",
+              "Name": "Legacy Active Delete",
+              "CharacterHash": {{sourceCharacterHash}},
+              "Slots": [93, 94]
+            }
+          ]
+        }
+        """,
+        new UTF8Encoding(false));
+    object legacyActiveDeleteStore = CreateStore(legacyActiveDeleteDirectory);
+    object? legacyActiveDeletePreset = ResolveSelectedPreset(
+        legacyActiveDeleteStore,
+        sourceCharacterHash,
+        [93, 94]);
+    if (legacyActiveDeletePreset is null ||
+        Id(legacyActiveDeletePreset) != "legacy-active-delete")
+    {
+        throw new InvalidOperationException(
+            "Legacy active preset was not resolved before deletion.");
+    }
+    deleteMethod.Invoke(legacyActiveDeleteStore, [legacyActiveDeletePreset]);
+    object legacyActiveDeleteReloaded = CreateStore(legacyActiveDeleteDirectory);
+    object? legacySourceAfterDelete = ResolveSelectedPreset(
+        legacyActiveDeleteReloaded,
+        sourceCharacterHash,
+        [93, 94]);
+    if (legacySourceAfterDelete is not null)
+    {
+        throw new InvalidOperationException(
+            "Resolved legacy active deletion did not leave the source explicitly temporary.");
+    }
+    Dictionary<uint, string?> legacyActiveDeleteSelection =
+        ReadSelectedPresetIds(legacyActiveDeletePath);
+    if (!legacyActiveDeleteSelection.TryGetValue(
+            sourceCharacterHash,
+            out string? legacyActiveDeleteState) ||
+        legacyActiveDeleteState is not null)
+    {
+        throw new InvalidOperationException(
+            "Resolved legacy active deletion did not persist explicit temporary state.");
+    }
+    Console.WriteLine("PRESET_SELECTION_LEGACY_ACTIVE_DELETE=PASS");
+
+    string legacyTemporaryDirectory = Path.Combine(testRoot, "LegacyTemporaryConfig");
+    Directory.CreateDirectory(legacyTemporaryDirectory);
+    string legacyTemporaryPath = Path.Combine(legacyTemporaryDirectory, "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(
+        legacyTemporaryPath,
+        $$"""
+        {
+          "Version": 3,
+          "Presets": [
+            {
+              "Id": "legacy-no-match",
+              "Name": "Legacy No Match",
+              "CharacterHash": {{sourceCharacterHash}},
+              "Slots": [11, 22]
+            }
+          ]
+        }
+        """,
+        new UTF8Encoding(false));
+    object legacyTemporaryStore = CreateStore(legacyTemporaryDirectory);
+    object? noMatchLegacyPreset = ResolveSelectedPreset(legacyTemporaryStore, sourceCharacterHash, [77]);
+    if (noMatchLegacyPreset is not null)
+        throw new InvalidOperationException("Legacy unresolved selection with no slot match was not made temporary.");
+    Dictionary<uint, string?> noMatchSelection = ReadSelectedPresetIds(legacyTemporaryPath);
+    if (!noMatchSelection.TryGetValue(sourceCharacterHash, out string? noMatchState) ||
+        noMatchState is not null)
+    {
+        throw new InvalidOperationException("Legacy unresolved no-match state was not persisted as explicit null.");
+    }
+    object legacyTemporaryReloaded = CreateStore(legacyTemporaryDirectory);
+    object? noMatchAfterReload = ResolveSelectedPreset(
+        legacyTemporaryReloaded,
+        sourceCharacterHash,
+        [11, 22]);
+    if (noMatchAfterReload is not null)
+        throw new InvalidOperationException("Explicit temporary did not survive a later matching slot reload.");
+
+    string deleteSelectionDirectory = Path.Combine(testRoot, "DeleteSelectionConfig");
+    Directory.CreateDirectory(deleteSelectionDirectory);
+    object deleteSelectionStore = CreateStore(deleteSelectionDirectory);
+    object deleteKeepPreset = createMethod.Invoke(deleteSelectionStore, [sourceCharacterHash, "DeleteKeep"])!;
+    object deleteActivePreset = createMethod.Invoke(deleteSelectionStore, [sourceCharacterHash, "DeleteActive"])!;
+    deleteMethod.Invoke(deleteSelectionStore, [deleteActivePreset]);
+    object deleteSelectionReloaded = CreateStore(deleteSelectionDirectory);
+    object? sourceAfterDelete = ResolveSelectedPreset(
+        deleteSelectionReloaded,
+        sourceCharacterHash,
+        Slots(deleteActivePreset));
+    if (sourceAfterDelete is not null)
+        throw new InvalidOperationException("Deleting the active preset did not make the source explicitly temporary.");
+    Dictionary<uint, string?> deleteSelection =
+        ReadSelectedPresetIds(Path.Combine(deleteSelectionDirectory, "GBFR-ExtraSigilSlots.presets.json"));
+    if (!deleteSelection.TryGetValue(sourceCharacterHash, out string? deleteState) ||
+        deleteState is not null)
+    {
+        throw new InvalidOperationException("Deleting the active preset did not persist explicit temporary state.");
+    }
+    object deleteInactivePreset = createMethod.Invoke(deleteSelectionReloaded, [sourceCharacterHash, "DeleteInactive"])!;
+    SelectPreset(deleteSelectionReloaded, deleteKeepPreset);
+    deleteMethod.Invoke(deleteSelectionReloaded, [deleteInactivePreset]);
+    object deleteSelectionReloaded2 = CreateStore(deleteSelectionDirectory);
+    object? sourceAfterDeleteInactive = ResolveSelectedPreset(
+        deleteSelectionReloaded2,
+        sourceCharacterHash,
+        Slots(deleteKeepPreset));
+    if (sourceAfterDeleteInactive is null || Id(sourceAfterDeleteInactive) != Id(deleteKeepPreset))
+        throw new InvalidOperationException("Deleting a non-active preset changed the selected preset.");
+    Console.WriteLine("PRESET_SELECTION_DELETE=PASS");
+
+    string normalizeSelectionDirectory = Path.Combine(testRoot, "NormalizeSelectionConfig");
+    Directory.CreateDirectory(normalizeSelectionDirectory);
+    string normalizeSelectionPath = Path.Combine(normalizeSelectionDirectory, "GBFR-ExtraSigilSlots.presets.json");
+    File.WriteAllText(
+        normalizeSelectionPath,
+        $$"""
+        {
+          "Version": 4,
+          "Presets": [
+            { "Id": "source-valid", "Name": "Source Valid", "CharacterHash": {{sourceCharacterHash}}, "Slots": [1] },
+            { "Id": "target-valid", "Name": "Target Valid", "CharacterHash": {{targetCharacterHash}}, "Slots": [2] },
+            { "Id": "duplicate", "Name": "Duplicate Source", "CharacterHash": {{sourceCharacterHash}}, "Slots": [3] },
+            { "Id": "duplicate", "Name": "Duplicate Target", "CharacterHash": {{targetCharacterHash}}, "Slots": [4] }
+          ],
+          "SelectedPresetIdsByCharacter": {
+            "0": "source-valid",
+            "{{sourceCharacterHash}}": "source-valid",
+            "{{targetCharacterHash}}": "duplicate",
+            "{{thirdCharacterHash}}": "missing",
+            "4294967295": "missing"
+          }
+        }
+        """,
+        new UTF8Encoding(false));
+    object normalizeSelectionStore = CreateStore(normalizeSelectionDirectory);
+    Dictionary<uint, string?> normalizedSelection = ReadSelectedPresetIds(normalizeSelectionPath);
+    if (normalizedSelection.ContainsKey(0) ||
+        !normalizedSelection.TryGetValue(sourceCharacterHash, out string? sourceValidState) ||
+        sourceValidState != "source-valid" ||
+        !normalizedSelection.TryGetValue(targetCharacterHash, out string? targetDuplicateState) ||
+        targetDuplicateState is not null ||
+        !normalizedSelection.TryGetValue(thirdCharacterHash, out string? missingState) ||
+        missingState is not null ||
+        !normalizedSelection.TryGetValue(4294967295u, out string? maxState) ||
+        maxState is not null)
+    {
+        throw new InvalidOperationException("Selection normalization did not drop invalid keys and coerce invalid IDs to explicit null.");
+    }
+    if (Directory.GetFiles(normalizeSelectionDirectory, "*.pre-normalize-v4-*.bak").Length != 1)
+        throw new InvalidOperationException("Selection normalization did not create a v4 backup.");
+    Console.WriteLine("PRESET_SELECTION_NORMALIZATION=PASS");
+
+Console.WriteLine("PRESET_STORE_TEST=PASS");
+    Console.WriteLine("PRESET_SCHEMA=4");
     Console.WriteLine("PER_CHARACTER_PRESETS=PASS");
     Console.WriteLine("PRESET_SINGLE_TRANSFER=PASS");
     Console.WriteLine("PRESET_EMPTY_TRANSFER=PASS");
@@ -490,6 +874,29 @@ string Name(object preset) => (string)presetNameProperty.GetValue(preset)!;
 uint Owner(object preset) => (uint)presetCharacterProperty.GetValue(preset)!;
 uint[] Slots(object preset) => (uint[])presetSlotsProperty.GetValue(preset)!;
 
+object? ResolveSelectedPreset(object store, uint characterHash, uint[] currentSlots) =>
+    resolveSelectedPresetMethod.Invoke(store, [characterHash, currentSlots]);
+void SelectPreset(object store, object preset) =>
+    selectPresetMethod.Invoke(store, [preset]);
+void MarkTemporary(object store, uint characterHash) =>
+    markTemporaryMethod.Invoke(store, [characterHash]);
+bool IsSelectedPreset(object store, object preset) =>
+    (bool)isSelectedPresetMethod.Invoke(store, [preset])!;
+
+static Dictionary<uint, string?> ReadSelectedPresetIds(string path)
+{
+    using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path, Encoding.UTF8));
+    JsonElement root = document.RootElement;
+    if (!root.TryGetProperty("SelectedPresetIdsByCharacter", out JsonElement selection))
+        return [];
+    Dictionary<uint, string?> result = [];
+    foreach (JsonProperty property in selection.EnumerateObject())
+    {
+        result[uint.Parse(property.Name)] =
+            property.Value.ValueKind == JsonValueKind.Null ? null : property.Value.GetString();
+    }
+    return result;
+}
 static void ExpectInvalidOperation(Action action, string failureMessage)
 {
     try
@@ -504,15 +911,15 @@ static void ExpectInvalidOperation(Action action, string failureMessage)
     throw new InvalidOperationException(failureMessage);
 }
 
-static void AssertV3Document(string path, int expectedPresetCount)
+static void AssertV4Document(string path, int expectedPresetCount)
 {
     using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path, Encoding.UTF8));
     JsonElement root = document.RootElement;
-    if (root.GetProperty("Version").GetInt32() != 3)
-        throw new InvalidOperationException("Preset document was not upgraded to schema v3.");
+    if (root.GetProperty("Version").GetInt32() != 4)
+        throw new InvalidOperationException("Preset document was not upgraded to schema v4.");
     JsonElement presets = root.GetProperty("Presets");
     if (presets.GetArrayLength() != expectedPresetCount)
-        throw new InvalidOperationException("Unexpected v3 preset count.");
+        throw new InvalidOperationException("Unexpected v4 preset count.");
     foreach (JsonElement preset in presets.EnumerateArray())
     {
         if (!preset.TryGetProperty("CharacterHash", out _) ||
@@ -520,7 +927,7 @@ static void AssertV3Document(string path, int expectedPresetCount)
             slots.GetArrayLength() != 24 ||
             preset.TryGetProperty("Characters", out _))
         {
-            throw new InvalidOperationException("A v3 preset retained the legacy global shape.");
+            throw new InvalidOperationException("A v4 preset retained the legacy global shape.");
         }
     }
 }

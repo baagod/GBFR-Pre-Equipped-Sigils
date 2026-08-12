@@ -7,7 +7,7 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal sealed class SigilPresetStore
 {
-    private const int CurrentVersion = 3;
+    private const int CurrentVersion = 4;
     internal const int MaximumNameLength = 48;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -76,7 +76,11 @@ internal sealed class SigilPresetStore
             CharacterHash = characterHash,
             Slots = NativeCore.GetSelection(characterHash),
         };
-        Mutate(() => _document.Presets.Add(created));
+        Mutate(() =>
+        {
+            _document.Presets.Add(created);
+            _document.SelectedPresetIdsByCharacter[created.CharacterHash] = created.Id;
+        });
         return created;
     }
 
@@ -97,8 +101,18 @@ internal sealed class SigilPresetStore
 
     internal void Delete(SigilPreset preset)
     {
-        Mutate(() => _document.Presets.RemoveAll(candidate =>
-            string.Equals(candidate.Id, preset.Id, StringComparison.Ordinal)));
+        Mutate(() =>
+        {
+            _document.Presets.RemoveAll(candidate =>
+                string.Equals(candidate.Id, preset.Id, StringComparison.Ordinal));
+            if (_document.SelectedPresetIdsByCharacter.TryGetValue(
+                    preset.CharacterHash,
+                    out string? selectedPresetId) &&
+                string.Equals(selectedPresetId, preset.Id, StringComparison.Ordinal))
+            {
+                _document.SelectedPresetIdsByCharacter[preset.CharacterHash] = null;
+            }
+        });
     }
 
     internal void TransferPreset(SigilPreset preset, uint targetCharacterHash)
@@ -115,7 +129,18 @@ internal sealed class SigilPresetStore
                 "The target character already has a preset with that name.");
         }
 
-        Mutate(() => preset.CharacterHash = targetCharacterHash);
+        uint sourceCharacterHash = preset.CharacterHash;
+        Mutate(() =>
+        {
+            preset.CharacterHash = targetCharacterHash;
+            if (_document.SelectedPresetIdsByCharacter.TryGetValue(
+                    sourceCharacterHash,
+                    out string? selectedPresetId) &&
+                string.Equals(selectedPresetId, preset.Id, StringComparison.Ordinal))
+            {
+                _document.SelectedPresetIdsByCharacter[sourceCharacterHash] = null;
+            }
+        });
     }
 
     internal IReadOnlyDictionary<uint, uint[]> GetSelections(SigilPreset preset)
@@ -126,6 +151,81 @@ internal sealed class SigilPresetStore
         {
             [preset.CharacterHash] = NormalizeSlots(preset.Slots),
         };
+    }
+
+    internal SigilPreset? ResolveSelectedPreset(
+        uint characterHash,
+        IReadOnlyList<uint> currentSlots)
+    {
+        if (characterHash == 0)
+            return null;
+
+        if (_document.SelectedPresetIdsByCharacter.TryGetValue(
+                characterHash,
+                out string? selectedPresetId))
+        {
+            if (string.IsNullOrEmpty(selectedPresetId))
+                return null;
+
+            SigilPreset? selected = FindById(selectedPresetId);
+            return selected is not null && selected.CharacterHash == characterHash
+                ? selected
+                : null;
+        }
+
+        uint[] normalizedCurrentSlots = NormalizeSlots(currentSlots);
+        SigilPreset? matchingPreset = _document.Presets
+            .FirstOrDefault(preset =>
+                preset.CharacterHash == characterHash &&
+                SlotsEqual(preset.Slots, normalizedCurrentSlots));
+        Mutate(() =>
+        {
+            _document.SelectedPresetIdsByCharacter[characterHash] = matchingPreset?.Id;
+        });
+        return matchingPreset;
+    }
+
+    internal bool IsSelectedPreset(SigilPreset preset)
+    {
+        if (preset.CharacterHash == 0)
+            return false;
+
+        SigilPreset? stored = FindById(preset.Id);
+        if (stored is null || stored.CharacterHash != preset.CharacterHash)
+            return false;
+
+        return _document.SelectedPresetIdsByCharacter.TryGetValue(
+                preset.CharacterHash,
+                out string? selectedPresetId) &&
+            !string.IsNullOrEmpty(selectedPresetId) &&
+            string.Equals(selectedPresetId, preset.Id, StringComparison.Ordinal);
+    }
+
+    internal void SelectPreset(SigilPreset preset)
+    {
+        if (preset.CharacterHash == 0)
+            throw new InvalidOperationException("The preset has no owning character.");
+
+        SigilPreset? stored = FindById(preset.Id);
+        if (stored is null || stored.CharacterHash != preset.CharacterHash)
+            throw new InvalidOperationException(
+                "The preset does not exist for this character.");
+
+        Mutate(() =>
+        {
+            _document.SelectedPresetIdsByCharacter[stored.CharacterHash] = stored.Id;
+        });
+    }
+
+    internal void MarkTemporary(uint characterHash)
+    {
+        if (characterHash == 0)
+            return;
+
+        Mutate(() =>
+        {
+            _document.SelectedPresetIdsByCharacter[characterHash] = null;
+        });
     }
 
     internal IReadOnlyList<string> GetPresetNamesForSlot(uint slotId)
@@ -273,10 +373,10 @@ internal sealed class SigilPresetStore
             {
                 string backupPath = BackupOriginal(
                     originalBytes,
-                    needsMigration ? "pre-v3" : "pre-normalize-v3");
+                    needsMigration ? "pre-v4" : "pre-normalize-v4");
                 Save();
                 _log(needsMigration
-                    ? $"Migrated sigil presets to per-character format v{CurrentVersion}; " +
+                    ? $"Migrated sigil presets to schema v{CurrentVersion} with selection state; " +
                         $"the previous file was backed up at {backupPath}."
                     : $"Normalized sigil preset data; " +
                         $"the previous file was backed up at {backupPath}.");
@@ -440,6 +540,7 @@ internal sealed class SigilPresetStore
     {
         document.Version = CurrentVersion;
         document.Presets ??= [];
+        document.SelectedPresetIdsByCharacter ??= [];
         HashSet<string> ids = new(StringComparer.Ordinal);
         Dictionary<uint, HashSet<string>> namesByCharacter = [];
         List<SigilPreset> normalizedPresets = [];
@@ -475,6 +576,28 @@ internal sealed class SigilPresetStore
             normalizedPresets.Add(preset);
         }
         document.Presets = normalizedPresets;
+
+        Dictionary<uint, string?> normalizedSelections = [];
+        foreach (KeyValuePair<uint, string?> selection in document.SelectedPresetIdsByCharacter
+            .OrderBy(pair => pair.Key))
+        {
+            if (selection.Key == 0)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(selection.Value))
+            {
+                normalizedSelections[selection.Key] = null;
+                continue;
+            }
+
+            SigilPreset? selectedPreset = normalizedPresets.FirstOrDefault(preset =>
+                string.Equals(preset.Id, selection.Value, StringComparison.Ordinal));
+            normalizedSelections[selection.Key] =
+                selectedPreset is not null && selectedPreset.CharacterHash == selection.Key
+                    ? selectedPreset.Id
+                    : null;
+        }
+        document.SelectedPresetIdsByCharacter = normalizedSelections;
     }
 
     private static string MakeUniqueName(string baseName, HashSet<string> names)
@@ -506,6 +629,35 @@ internal sealed class SigilPresetStore
         return normalized;
     }
 
+    private static uint[] NormalizeSlots(IReadOnlyList<uint> slots)
+    {
+        uint[] normalized = new uint[NativeCore.VirtualSlotCapacity];
+        int copyCount = Math.Min(slots.Count, normalized.Length);
+        for (int slot = 0; slot < copyCount; ++slot)
+            normalized[slot] = slots[slot];
+
+        HashSet<uint> seenSlotIds = [];
+        for (int slot = 0; slot < normalized.Length; ++slot)
+        {
+            uint slotId = normalized[slot];
+            if (slotId != 0 && !seenSlotIds.Add(slotId))
+                normalized[slot] = 0;
+        }
+        return normalized;
+    }
+
+    private static bool SlotsEqual(IReadOnlyList<uint> left, IReadOnlyList<uint> right)
+    {
+        if (left.Count != right.Count)
+            return false;
+        for (int index = 0; index < left.Count; ++index)
+        {
+            if (left[index] != right[index])
+                return false;
+        }
+        return true;
+    }
+
     private static string NormalizeName(string name)
     {
         name = name.Trim();
@@ -521,6 +673,9 @@ internal sealed class SigilPresetStore
         return new PresetDocument
         {
             Version = source.Version,
+            SelectedPresetIdsByCharacter = source.SelectedPresetIdsByCharacter?.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value) ?? [],
             Presets = source.Presets.Select(preset => new SigilPreset
             {
                 Id = preset.Id,
@@ -541,6 +696,7 @@ internal sealed class PresetDocument
 {
     public int Version { get; set; } = 2;
     public List<SigilPreset> Presets { get; set; } = [];
+    public Dictionary<uint, string?> SelectedPresetIdsByCharacter { get; set; } = [];
 }
 
 internal sealed class SigilPreset

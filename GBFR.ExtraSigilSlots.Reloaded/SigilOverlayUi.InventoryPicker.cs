@@ -255,9 +255,9 @@ internal sealed unsafe partial class SigilOverlayUi
             _presetConflicts.Remove((characterHash, targetSlot));
             if (sourceCharacterHash != 0)
                 _presetConflicts.Remove((sourceCharacterHash, item.VirtualOwnerSlot));
-            MarkPresetTemporary(characterHash);
+            _presetStore.MarkTemporary(characterHash);
             if (sourceCharacterHash != 0 && sourceCharacterHash != characterHash)
-                MarkPresetTemporary(sourceCharacterHash);
+                _presetStore.MarkTemporary(sourceCharacterHash);
             LoadSelection(characterHash);
             RefreshInventory();
             if (affectedPresets.Count != 0)
@@ -287,7 +287,18 @@ internal sealed unsafe partial class SigilOverlayUi
         if (NativeCore.SetSelection(characterHash, slot, 0))
         {
             _presetConflicts.Remove((characterHash, slot));
-            MarkPresetTemporary(characterHash);
+            try
+            {
+                _presetStore.MarkTemporary(characterHash);
+            }
+            catch (Exception exception)
+            {
+                _log($"Temporary preset marking failed: {exception}");
+                bool english = UiLocalization.IsEnglish(_state.Language);
+                SetPresetStatus(
+                    english ? "Could not update the selected preset." : "无法更新当前预设。",
+                    true);
+            }
             LoadSelection(characterHash);
             RefreshInventory();
         }

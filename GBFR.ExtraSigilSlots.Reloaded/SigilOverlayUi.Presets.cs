@@ -32,7 +32,6 @@ internal sealed unsafe partial class SigilOverlayUi
 
     private readonly Dictionary<(uint CharacterHash, int Slot),
         NativeCore.PresetSlotResult> _presetConflicts = [];
-    private readonly Dictionary<uint, string> _selectedPresetIdsByCharacter = [];
     private InventoryUsageFilter _usageFilter = InventoryUsageFilter.Unused;
     private string _presetStatus = string.Empty;
     private bool _presetStatusIsError;
@@ -121,10 +120,10 @@ internal sealed unsafe partial class SigilOverlayUi
 
         ImGui.BeginDisabled(characterPresets.Count == 0);
         if (ImGui.SmallButton("<##preset_previous"))
-            CyclePreset(characterHash, -1);
+            CyclePreset(characterHash, -1, english);
         ImGui.SameLine(0.0f, -1.0f);
         if (ImGui.SmallButton(">##preset_next"))
-            CyclePreset(characterHash, 1);
+            CyclePreset(characterHash, 1, english);
         ImGui.EndDisabled();
         ImGui.SameLine(0.0f, -1.0f);
 
@@ -373,10 +372,7 @@ internal sealed unsafe partial class SigilOverlayUi
             }
             ImGui.EndChild();
 
-            bool transferringActivePreset = _selectedPresetIdsByCharacter.TryGetValue(
-                preset.CharacterHash,
-                out string? activePresetId) &&
-                string.Equals(activePresetId, preset.Id, StringComparison.Ordinal);
+            bool transferringActivePreset = IsSelectedPreset(preset);
             ImGui.TextWrapped(transferringActivePreset
                 ? english
                     ? "The source character keeps its current slot contents as a temporary preset."
@@ -429,15 +425,9 @@ internal sealed unsafe partial class SigilOverlayUi
             uint sourceCharacterHash = preset.CharacterHash;
             string sourceName = UiLocalization.CharacterName(sourceCharacterHash, english);
             string targetName = UiLocalization.CharacterName(_presetTransferTargetHash, english);
+            ResolveSelectedPresetCore(sourceCharacterHash);
             _presetStore.TransferPreset(preset, _presetTransferTargetHash);
 
-            if (_selectedPresetIdsByCharacter.TryGetValue(
-                    sourceCharacterHash,
-                    out string? activePresetId) &&
-                string.Equals(activePresetId, preset.Id, StringComparison.Ordinal))
-            {
-                _selectedPresetIdsByCharacter.Remove(sourceCharacterHash);
-            }
             _presetManagerCharacterHash = sourceCharacterHash;
             _presetManagerSelectedPresetId =
                 _presetStore.GetPresetsForCharacter(sourceCharacterHash).FirstOrDefault()?.Id;
@@ -569,7 +559,6 @@ internal sealed unsafe partial class SigilOverlayUi
             if (_presetNameMode == PresetNameMode.Create)
             {
                 SigilPreset created = _presetStore.Create(_presetNameCharacterHash, name);
-                _selectedPresetIdsByCharacter[created.CharacterHash] = created.Id;
                 _presetManagerCharacterHash = created.CharacterHash;
                 _presetManagerSelectedPresetId = created.Id;
                 SetPresetStatus(
@@ -637,7 +626,7 @@ internal sealed unsafe partial class SigilOverlayUi
                 _presetConflicts[(result.CharacterHash, result.VirtualSlot)] = result;
             }
 
-            _selectedPresetIdsByCharacter[characterHash] = preset.Id;
+            _presetStore.SelectPreset(preset);
             SetPresetStatus(
                 english
                     ? $"Preset applied: {applied}/{requested} sigils, {conflicts} conflicts."
@@ -680,15 +669,8 @@ internal sealed unsafe partial class SigilOverlayUi
         {
             string deletedName = preset.Name;
             uint characterHash = preset.CharacterHash;
-            string deletedId = preset.Id;
+            ResolveSelectedPresetCore(characterHash);
             _presetStore.Delete(preset);
-            if (_selectedPresetIdsByCharacter.TryGetValue(
-                    characterHash,
-                    out string? activePresetId) &&
-                string.Equals(activePresetId, deletedId, StringComparison.Ordinal))
-            {
-                _selectedPresetIdsByCharacter.Remove(characterHash);
-            }
             _presetManagerSelectedPresetId =
                 _presetStore.GetPresetsForCharacter(characterHash).FirstOrDefault()?.Id;
             SetPresetStatus(
@@ -704,20 +686,43 @@ internal sealed unsafe partial class SigilOverlayUi
 
     private SigilPreset? ResolveSelectedPreset(uint characterHash)
     {
-        if (!_selectedPresetIdsByCharacter.TryGetValue(
-                characterHash,
-                out string? selectedPresetId))
+        try
         {
+            return ResolveSelectedPresetCore(characterHash);
+        }
+        catch (Exception exception)
+        {
+            _log($"Selected preset resolution failed: {exception}");
             return null;
         }
-        SigilPreset? selected = _presetStore.FindById(selectedPresetId);
-        if (selected is not null && selected.CharacterHash == characterHash)
-            return selected;
-        _selectedPresetIdsByCharacter.Remove(characterHash);
-        return null;
     }
 
-    private void CyclePreset(uint characterHash, int direction)
+    private SigilPreset? ResolveSelectedPresetCore(uint characterHash)
+    {
+        if (characterHash == 0)
+            return null;
+
+        IReadOnlyList<uint> currentSlots = characterHash == _selectionCharacterHash
+            ? _selection
+            : NativeCore.GetSelection(characterHash);
+        return _presetStore.ResolveSelectedPreset(characterHash, currentSlots);
+    }
+
+    private bool IsSelectedPreset(SigilPreset preset)
+    {
+        try
+        {
+            ResolveSelectedPresetCore(preset.CharacterHash);
+            return _presetStore.IsSelectedPreset(preset);
+        }
+        catch (Exception exception)
+        {
+            _log($"Selected preset check failed: {exception}");
+            return false;
+        }
+    }
+
+    private void CyclePreset(uint characterHash, int direction, bool english)
     {
         IReadOnlyList<SigilPreset> presets = _presetStore.GetPresetsForCharacter(characterHash);
         if (presets.Count == 0)
@@ -736,12 +741,17 @@ internal sealed unsafe partial class SigilOverlayUi
                 .presetIndex;
             index = (index + direction + presets.Count) % presets.Count;
         }
-        _selectedPresetIdsByCharacter[characterHash] = presets[index].Id;
-    }
 
-    private void MarkPresetTemporary(uint characterHash)
-    {
-        if (characterHash != 0)
-            _selectedPresetIdsByCharacter.Remove(characterHash);
+        try
+        {
+            _presetStore.SelectPreset(presets[index]);
+        }
+        catch (Exception exception)
+        {
+            _log($"Preset selection failed: {exception}");
+            SetPresetStatus(
+                english ? "Could not select the preset." : "无法选择预设。",
+                true);
+        }
     }
 }
