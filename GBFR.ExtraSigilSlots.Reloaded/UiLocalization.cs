@@ -19,13 +19,14 @@ internal static class UiLocalization
         "确认缩减上限超出清空相关重新变为可用库存不会删除保留全部槽位定义取消发生变化" +
         "预设始终保留高位以后扩展再次套用" +
         "次从都仍下" +
-        "主角格兰姬塔卡塔莉娜拉卡姆伊欧欧根萝赛塔菲莉兰斯洛特巴恩珀西瓦尔" +
+        "主角古兰姬塔卡塔莉娜拉卡姆伊欧欧根萝赛塔菲莉兰斯洛特巴恩珀西瓦尔" +
         "齐格飞夏洛特尤达拉哈娜露梅巴萨拉卡塞达冈达葛萨卡莉奥丝特罗伊德" +
         "希耶提索恩圣德芬伽兰查玛琪拉菲菈贝阿朵丽丝尤斯提斯芙劳菲迪埃尔";
 
     internal static readonly uint[] KnownCharacterHashes =
     [
         0x2A26B1B2,
+        0xA4ACBA76,
         0x18E2F9F9,
         0x079DF0CC,
         0x4D0A60C3,
@@ -63,7 +64,8 @@ internal static class UiLocalization
             return english ? "No current character detected" : "未检测到当前角色";
         (string Chinese, string English) names = hash switch
         {
-            0x2A26B1B2 => ("主角（格兰/姬塔）", "Captain (Gran/Djeeta)"),
+            0x2A26B1B2 => ("古兰", "Gran"),
+            0xA4ACBA76 => ("姬塔", "Djeeta"),
             0x18E2F9F9 => ("卡塔莉娜", "Katalina"),
             0x079DF0CC => ("拉卡姆", "Rackam"),
             0x4D0A60C3 => ("伊欧", "Io"),
