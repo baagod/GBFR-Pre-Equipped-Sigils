@@ -19,7 +19,8 @@ Type uiLocalization = assembly.GetType(
 MethodInfo characterNameMethod = uiLocalization.GetMethod("CharacterName", staticFlags)!;
 (uint Hash, string Chinese, string English)[] expectedCharacters =
 [
-    (0x2A26B1B2, "主角（格兰/姬塔）", "Captain (Gran/Djeeta)"),
+    (0x2A26B1B2, "古兰", "Gran"),
+    (0xA4ACBA76, "姬塔", "Djeeta"),
     (0x18E2F9F9, "卡塔莉娜", "Katalina"),
     (0x079DF0CC, "拉卡姆", "Rackam"),
     (0x4D0A60C3, "伊欧", "Io"),
@@ -48,6 +49,12 @@ MethodInfo characterNameMethod = uiLocalization.GetMethod("CharacterName", stati
     (0x646C3168, "芙劳", "Fraux"),
     (0x74DD4C79, "菲迪埃尔", "Fediel"),
 ];
+uint[] knownCharacterHashes = (uint[])uiLocalization.GetField(
+    "KnownCharacterHashes",
+    staticFlags)!.GetValue(null)!;
+if (!knownCharacterHashes.SequenceEqual(expectedCharacters.Select(character => character.Hash)))
+    throw new InvalidOperationException(
+        "UiLocalization.KnownCharacterHashes does not enumerate Djeeta (0xA4ACBA76).");
 foreach ((uint hash, string chinese, string english) in expectedCharacters)
 {
     string actualChinese = (string)characterNameMethod.Invoke(null, [hash, false])!;
@@ -125,6 +132,7 @@ PropertyInfo presetCharacterProperty = presetIdProperty.DeclaringType!.GetProper
 PropertyInfo presetSlotsProperty = presetIdProperty.DeclaringType!.GetProperty("Slots")!;
 
 const uint sourceCharacterHash = 0x2A26B1B2u;
+const uint djeetaCharacterHash = 0xA4ACBA76u;
 const uint targetCharacterHash = 0x18E2F9F9u;
 const uint thirdCharacterHash = 0x4D0A60C3u;
 string testRoot = Path.Combine(
@@ -491,6 +499,90 @@ try
     MarkTemporary(selectionReloadedTemporary, 0);
     Console.WriteLine("PRESET_SELECTION_PERSISTENCE=PASS");
 
+    string captainIsolationDirectory = Path.Combine(testRoot, "CaptainIsolationConfig");
+    Directory.CreateDirectory(captainIsolationDirectory);
+    object captainIsolationStore = CreateStore(captainIsolationDirectory);
+    object captainGranPreset = createMethod.Invoke(
+        captainIsolationStore,
+        [sourceCharacterHash, "GranPreset"])!;
+    object captainDjeetaPreset = createMethod.Invoke(
+        captainIsolationStore,
+        [djeetaCharacterHash, "DjeetaPreset"])!;
+    if (!IsSelectedPreset(captainIsolationStore, captainGranPreset) ||
+        !IsSelectedPreset(captainIsolationStore, captainDjeetaPreset))
+    {
+        throw new InvalidOperationException(
+            "Gran and Djeeta presets were not both persisted as selected.");
+    }
+
+    object captainIsolationReloaded = CreateStore(captainIsolationDirectory);
+    object? captainGranAfterReload = ResolveSelectedPreset(
+        captainIsolationReloaded,
+        sourceCharacterHash,
+        Slots(captainGranPreset));
+    object? captainDjeetaAfterReload = ResolveSelectedPreset(
+        captainIsolationReloaded,
+        djeetaCharacterHash,
+        Slots(captainDjeetaPreset));
+    if (captainGranAfterReload is null ||
+        Id(captainGranAfterReload) != Id(captainGranPreset) ||
+        captainDjeetaAfterReload is null ||
+        Id(captainDjeetaAfterReload) != Id(captainDjeetaPreset))
+    {
+        throw new InvalidOperationException(
+            "Gran and Djeeta selected presets were not restored independently after reload.");
+    }
+
+    string captainIsolationPath = Path.Combine(
+        captainIsolationDirectory,
+        "GBFR-ExtraSigilSlots.presets.json");
+    Dictionary<uint, string?> captainIsolationSelection =
+        ReadSelectedPresetIds(captainIsolationPath);
+    if (!captainIsolationSelection.TryGetValue(
+            sourceCharacterHash,
+            out string? captainGranSelectedId) ||
+        captainGranSelectedId != Id(captainGranPreset) ||
+        !captainIsolationSelection.TryGetValue(
+            djeetaCharacterHash,
+            out string? captainDjeetaSelectedId) ||
+        captainDjeetaSelectedId != Id(captainDjeetaPreset))
+    {
+        throw new InvalidOperationException(
+            "The preset file did not keep Gran and Djeeta selection keys separate.");
+    }
+
+    MarkTemporary(captainIsolationReloaded, sourceCharacterHash);
+    object captainIsolationAfterGranTemporary = CreateStore(captainIsolationDirectory);
+    object? captainGranAfterTemporary = ResolveSelectedPreset(
+        captainIsolationAfterGranTemporary,
+        sourceCharacterHash,
+        Slots(captainGranPreset));
+    object? captainDjeetaAfterGranTemporary = ResolveSelectedPreset(
+        captainIsolationAfterGranTemporary,
+        djeetaCharacterHash,
+        Slots(captainDjeetaPreset));
+    if (captainGranAfterTemporary is not null ||
+        captainDjeetaAfterGranTemporary is null ||
+        Id(captainDjeetaAfterGranTemporary) != Id(captainDjeetaPreset))
+    {
+        throw new InvalidOperationException(
+            "Marking Gran temporary changed Djeeta's selected preset.");
+    }
+    captainIsolationSelection = ReadSelectedPresetIds(captainIsolationPath);
+    if (!captainIsolationSelection.TryGetValue(
+            sourceCharacterHash,
+            out string? captainGranTemporaryState) ||
+        captainGranTemporaryState is not null ||
+        !captainIsolationSelection.TryGetValue(
+            djeetaCharacterHash,
+            out string? captainDjeetaAfterTemporaryState) ||
+        captainDjeetaAfterTemporaryState != Id(captainDjeetaPreset))
+    {
+        throw new InvalidOperationException(
+            "Gran temporary state was not persisted without overwriting Djeeta's selection.");
+    }
+    Console.WriteLine("CAPTAIN_PRESET_SELECTION_ISOLATION=PASS");
+
     string activeTransferDirectory = Path.Combine(testRoot, "ActiveTransferConfig");
     Directory.CreateDirectory(activeTransferDirectory);
     object activeTransferStore = CreateStore(activeTransferDirectory);
@@ -829,7 +921,7 @@ Console.WriteLine("PRESET_STORE_TEST=PASS");
     Console.WriteLine("PRESET_MIGRATION_BACKUP=PASS");
     Console.WriteLine("PRESET_V3_NORMALIZATION=PASS");
     Console.WriteLine("PRESET_HIGH_SLOT_RETENTION=PASS");
-    Console.WriteLine("CHARACTER_NAME_MAP=28/28");
+    Console.WriteLine($"CHARACTER_NAME_MAP={expectedCharacters.Length}/{expectedCharacters.Length}");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
     Console.WriteLine("ABI_VERSION=13");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
