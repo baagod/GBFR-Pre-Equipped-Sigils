@@ -201,8 +201,9 @@ void ReconcileGemProtection()
           gem.slot_id != slot_id || gem.gem_id == 0 ||
           gem.worn_by != kUnwornCharacterHash ||
           (gem.flags & kGemInvalidFlag) != 0 ||
-          (GetRequiredCharacterHash(gem.gem_id) != 0 &&
-           GetRequiredCharacterHash(gem.gem_id) != owner.character_hash))
+          !IsCharacterCompatible(
+             GetRequiredCharacterHash(gem.gem_id),
+             owner.character_hash))
       {
          // Inventory reconciliation owns removal of stale selections. Do not
          // protect a record which no longer satisfies the extra-slot contract.

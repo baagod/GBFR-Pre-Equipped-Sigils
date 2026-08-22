@@ -392,8 +392,9 @@ internal sealed unsafe partial class SigilOverlayUi : IDisposable
         for (int index = 0; index < _inventory.Count; ++index)
         {
             NativeCore.InventoryView item = _inventory[index];
-            if (item.RequiredCharacterHash != 0 &&
-                item.RequiredCharacterHash != characterHash)
+            if (!UiLocalization.IsCharacterCompatible(
+                    item.RequiredCharacterHash,
+                    characterHash))
                 continue;
             bool bodyUsed = item.Equipped;
             bool extensionUsed = item.VirtualOwnerCharacterHash != 0;

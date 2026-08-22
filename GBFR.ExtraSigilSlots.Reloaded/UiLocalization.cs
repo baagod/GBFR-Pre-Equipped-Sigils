@@ -4,6 +4,8 @@ internal static class UiLocalization
 {
     internal const int Chinese = 0;
     internal const int English = 1;
+    internal const uint GranCharacterHash = 0x2A26B1B2;
+    internal const uint DjeetaCharacterHash = 0xA4ACBA76;
 
     // These full-width/CJK punctuation glyphs sit outside the broad Han range
     // loaded by CjkConfiguredDx11Hook, so keep every UI separator here.
@@ -57,6 +59,16 @@ internal static class UiLocalization
     ];
 
     internal static bool IsEnglish(int language) => language == English;
+
+    internal static bool IsCharacterCompatible(
+        uint requiredCharacterHash,
+        uint characterHash) =>
+        requiredCharacterHash == 0 ||
+        requiredCharacterHash == characterHash ||
+        (IsCaptain(requiredCharacterHash) && IsCaptain(characterHash));
+
+    private static bool IsCaptain(uint characterHash) =>
+        characterHash is GranCharacterHash or DjeetaCharacterHash;
 
     internal static string CharacterName(uint hash, bool english)
     {

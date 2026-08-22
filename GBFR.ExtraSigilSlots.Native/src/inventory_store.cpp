@@ -144,8 +144,9 @@ bool RefreshInventorySnapshot()
                gem_iterator->second.gem_id != 0 &&
                gem_iterator->second.worn_by == kUnwornCharacterHash &&
                (gem_iterator->second.flags & kGemInvalidFlag) == 0 &&
-               (GetRequiredCharacterHash(gem_iterator->second.gem_id) == 0 ||
-                GetRequiredCharacterHash(gem_iterator->second.gem_id) == character_hash);
+               IsCharacterCompatible(
+                  GetRequiredCharacterHash(gem_iterator->second.gem_id),
+                  character_hash);
             if (valid)
                continue;
             g_virtual_owner_by_slot_id.erase(selected_slot_id);

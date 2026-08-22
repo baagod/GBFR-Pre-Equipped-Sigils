@@ -268,7 +268,7 @@ bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_
       if (source_address == 0 || source.slot_id != inventory_slot_id ||
           source.gem_id == 0 || source.worn_by != kUnwornCharacterHash ||
           (source.flags & kGemInvalidFlag) != 0 ||
-          (required_character != 0 && required_character != character_hash))
+          !IsCharacterCompatible(required_character, character_hash))
          return false;
    }
 
@@ -403,8 +403,9 @@ bool ApplyPresetSelections(
          }
 
          const uint32_t required_character = GetRequiredCharacterHash(source.gem_id);
-         if (required_character != 0 &&
-             required_character != source_selection.character_hash)
+         if (!IsCharacterCompatible(
+                required_character,
+                source_selection.character_hash))
          {
             result.owner_character_hash = required_character;
             result.status = GBFR20_PRESET_SLOT_CHARACTER_RESTRICTED;

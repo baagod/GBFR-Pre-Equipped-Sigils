@@ -66,6 +66,27 @@ foreach ((uint hash, string chinese, string english) in expectedCharacters)
             $"'{actualChinese}'/'{actualEnglish}'.");
     }
 }
+MethodInfo? isCharacterCompatibleMethod = uiLocalization.GetMethod(
+    "IsCharacterCompatible",
+    staticFlags);
+if (isCharacterCompatibleMethod is null)
+    throw new InvalidOperationException(
+        "UiLocalization does not expose the captain compatibility rule.");
+bool IsCharacterCompatible(uint requiredCharacterHash, uint characterHash) =>
+    (bool)isCharacterCompatibleMethod.Invoke(
+        null,
+        [requiredCharacterHash, characterHash])!;
+if (!IsCharacterCompatible(0, 0xA4ACBA76) ||
+    !IsCharacterCompatible(0x2A26B1B2, 0x2A26B1B2) ||
+    !IsCharacterCompatible(0x2A26B1B2, 0xA4ACBA76) ||
+    !IsCharacterCompatible(0xA4ACBA76, 0x2A26B1B2) ||
+    !IsCharacterCompatible(0xA4ACBA76, 0xA4ACBA76) ||
+    IsCharacterCompatible(0x2A26B1B2, 0x18E2F9F9) ||
+    IsCharacterCompatible(0x18E2F9F9, 0xA4ACBA76))
+{
+    throw new InvalidOperationException(
+        "Gran and Djeeta do not share the captain sigil compatibility group.");
+}
 
 Type nativeCore = assembly.GetType(
     "GBFR.ExtraSigilSlots.Reloaded.NativeCore",
@@ -922,6 +943,7 @@ Console.WriteLine("PRESET_STORE_TEST=PASS");
     Console.WriteLine("PRESET_V3_NORMALIZATION=PASS");
     Console.WriteLine("PRESET_HIGH_SLOT_RETENTION=PASS");
     Console.WriteLine($"CHARACTER_NAME_MAP={expectedCharacters.Length}/{expectedCharacters.Length}");
+    Console.WriteLine("CAPTAIN_SIGIL_COMPATIBILITY=PASS");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
     Console.WriteLine("ABI_VERSION=13");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");

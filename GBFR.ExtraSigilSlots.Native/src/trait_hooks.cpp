@@ -238,8 +238,9 @@ bool TryCopySelectedVirtualGem(
          source.slot_id == selected_slot_id &&
          source.worn_by == kUnwornCharacterHash &&
          (source.flags & kGemInvalidFlag) == 0 &&
-         (GetRequiredCharacterHash(source.gem_id) == 0 ||
-          GetRequiredCharacterHash(source.gem_id) == identity.character_hash) &&
+         IsCharacterCompatible(
+            GetRequiredCharacterHash(source.gem_id),
+            identity.character_hash) &&
          SafeCopyToOutput(source, output);
    }
    catch (...)

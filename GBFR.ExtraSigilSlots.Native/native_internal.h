@@ -73,6 +73,28 @@ inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kLocalPlayerSlotKey = 0xDBD9A18D;
 inline constexpr uint32_t kGemProtectedFlag = 0x01;
 inline constexpr uint32_t kGemInvalidFlag = 0x10;
+inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
+inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
+
+inline constexpr bool IsCaptainCharacterHash(uint32_t character_hash) noexcept
+{
+   return character_hash == kGranCharacterHash || character_hash == kDjeetaCharacterHash;
+}
+
+inline constexpr bool IsCharacterCompatible(
+   uint32_t required_character_hash,
+   uint32_t character_hash) noexcept
+{
+   return required_character_hash == 0 ||
+      required_character_hash == character_hash ||
+      (IsCaptainCharacterHash(required_character_hash) &&
+       IsCaptainCharacterHash(character_hash));
+}
+
+static_assert(IsCharacterCompatible(kGranCharacterHash, kDjeetaCharacterHash));
+static_assert(IsCharacterCompatible(kDjeetaCharacterHash, kGranCharacterHash));
+static_assert(!IsCharacterCompatible(kGranCharacterHash, 0x18E2F9F9));
+static_assert(!IsCharacterCompatible(0x18E2F9F9, kDjeetaCharacterHash));
 
 inline constexpr std::array<uint8_t, 16> kTraitApplyLoopPreflight = {
    0xFF, 0xC7, 0x83, 0xFF, 0x0D, 0x0F, 0x84, 0xB7,
