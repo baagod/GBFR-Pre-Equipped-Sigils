@@ -99,6 +99,13 @@ jobs:
         run: |
           & "$env:GITHUB_WORKSPACE/tests/run-smoke-tests.ps1" -Configuration Release
 
+      - name: Document local release-tag layout evidence
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          Write-Output 'Native 2.0.4/2.0.5 layout compatibility is verified locally against copyrighted executables before tagging; CI cannot redistribute those binaries.'
+          Write-Output 'Set GBFR_EXE_204 and GBFR_EXE_205 when reproducing the full mapped-image gate.'
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

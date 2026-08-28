@@ -5,8 +5,17 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal static class ExecutableHashDiagnostic
 {
-    internal const string KnownExecutableSha256 =
+    internal const string KnownExecutableSha256204 =
         "F827F3C13CAA90B290FAB2FE7E28165A80448FDE0A3F7A96D79DAC6B8343FF2A";
+    internal const string KnownExecutableSha256205 =
+        "7189B958FF0FE5238CEA28A2939FFDAD6E3A9ACB14DD274A9FCC8E7E275BD175";
+
+    private static readonly IReadOnlyDictionary<string, string> KnownExecutableVersions =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [KnownExecutableSha256204] = "2.0.4",
+            [KnownExecutableSha256205] = "2.0.5",
+        };
 
     internal static Task Start(
         string? executablePath,
@@ -47,15 +56,15 @@ internal static class ExecutableHashDiagnostic
             try
             {
                 string sha256 = await computeHash(cancellationToken).ConfigureAwait(false);
-                bool knownHashMatch = string.Equals(
+                bool knownHashMatch = KnownExecutableVersions.TryGetValue(
                     sha256,
-                    KnownExecutableSha256,
-                    StringComparison.OrdinalIgnoreCase);
+                    out string? knownVersion);
                 SafeLog(
                     log,
                     "Startup phase=executable-sha256 state=complete " +
                     $"elapsed_ms={ElapsedMilliseconds(startedAt)} sha256={sha256} " +
                     $"known_hash_match={(knownHashMatch ? "true" : "false")} " +
+                    $"known_version={knownVersion ?? "unknown"} " +
                     "diagnostic_only=true.");
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

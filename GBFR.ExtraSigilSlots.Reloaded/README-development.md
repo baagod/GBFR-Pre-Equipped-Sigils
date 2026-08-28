@@ -1,6 +1,6 @@
 # GBFR Extra Sigil Slots — Reloaded-II migration
 
-This project is the ReShade-free frontend for the ER 2.0.2-2.0.4 configurable extra-sigil mod.
+This project is the ReShade-free frontend for the ER 2.0.2-2.0.5 configurable extra-sigil mod.
 
 Runtime dependency boundary:
 

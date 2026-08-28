@@ -9,6 +9,8 @@ Build the product and run every harness from the repository root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
+$env:GBFR_EXE_204 = 'D:\granblue_fantasy_relink.exe'
+$env:GBFR_EXE_205 = 'D:\GAME\steam\steamapps\common\Granblue Fantasy Relink\granblue_fantasy_relink.exe'
 powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 ```
 
@@ -23,7 +25,8 @@ The harnesses cover:
 - keyboard/mouse versus HID/controller Raw Input classification, device-specific Win32 capture policy, foreground Raw Input cleanup policy, Present-thread input-reset coalescing, plus two-phase input release while held keys or mouse buttons drain;
 - event-driven frontend wake-up, key-repeat suppression, held-key latching, cancellation of an unconsumed background-open request, closed-frame sleeping, focus/capture mouse resynchronization, deterministic physical-button mask mapping, and first-interaction gating.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.
-- deferred full-EXE SHA-256 correctness/non-blocking behavior, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.
+- production semantic-layout resolution and exact-byte revalidation against section-mapped 2.0.4 and 2.0.5 executables when both `GBFR_EXE_204` and `GBFR_EXE_205` are set, including a mutated-hook-byte fail-closed check;
+- deferred full-EXE SHA-256 correctness/non-blocking behavior, recognition of both verified 2.0.4 and 2.0.5 hashes, plus source classification for official Deploy ASI and Launcher injection without similarly named-module false positives.
 - recoverable Overlay Broker leases, host-generation fencing, surviving-peer rebinding, and stale-writer rejection.
 
 These harnesses do not execute the real ImGui Win32 backend or decode a real

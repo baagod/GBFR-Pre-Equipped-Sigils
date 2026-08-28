@@ -59,11 +59,9 @@ Assert(hashLogs.Any(line =>
         line.Contains("diagnostic_only=true", StringComparison.Ordinal)),
     "The deferred diagnostic must log its begin marker.");
 
-string knownHash = (string)(hashDiagnostic.GetField(
-    "KnownExecutableSha256",
-    BindingFlags.NonPublic | BindingFlags.Static)?.GetRawConstantValue() ??
-    throw new MissingFieldException(hashDiagnostic.FullName, "KnownExecutableSha256"));
-releaseWorker.SetResult(knownHash);
+string knownHash204 = ReadConstant(hashDiagnostic, "KnownExecutableSha256204");
+string knownHash205 = ReadConstant(hashDiagnostic, "KnownExecutableSha256205");
+releaseWorker.SetResult(knownHash204);
 await deferredTask;
 string[] completedHashLogs = hashLogs.ToArray();
 int beginIndex = Array.FindIndex(completedHashLogs, line =>
@@ -75,8 +73,22 @@ Assert(beginIndex >= 0 && completeIndex > beginIndex,
 Assert(completedHashLogs.Any(line =>
         line.Contains("phase=executable-sha256 state=complete", StringComparison.Ordinal) &&
         line.Contains("known_hash_match=true", StringComparison.Ordinal) &&
+        line.Contains("known_version=2.0.4", StringComparison.Ordinal) &&
         line.Contains("elapsed_ms=", StringComparison.Ordinal)),
-    "The deferred diagnostic must log completion, elapsed time, and match status.");
+    "The deferred diagnostic must identify the 2.0.4 hash and log elapsed time.");
+
+ConcurrentQueue<string> hash205Logs = new();
+Task hash205Task = (Task)(startCore.Invoke(
+    null,
+    [(Func<CancellationToken, Task<string>>)(_ => Task.FromResult(knownHash205)),
+     (Action<string>)hash205Logs.Enqueue, CancellationToken.None, null]) ??
+    throw new InvalidOperationException("2.0.5 diagnostic task was not returned."));
+await hash205Task;
+Assert(hash205Logs.Any(line =>
+        line.Contains("known_hash_match=true", StringComparison.Ordinal) &&
+        line.Contains("known_version=2.0.5", StringComparison.Ordinal)),
+    "The deferred diagnostic must identify the 2.0.5 hash without replacing 2.0.4.");
+Console.WriteLine("DEFERRED_SHA256_KNOWN_VERSIONS=PASS");
 Console.WriteLine("DEFERRED_SHA256_NONBLOCKING=PASS");
 
 ConcurrentQueue<string> failedHashLogs = new();
@@ -107,7 +119,7 @@ Assert(cancelledHashLogs.Any(line =>
         line.Contains("reason=cancelled", StringComparison.Ordinal)),
     "Hash cancellation must be logged and contained.");
 
-Func<CancellationToken, Task<string>> immediateWorker = _ => Task.FromResult(knownHash);
+Func<CancellationToken, Task<string>> immediateWorker = _ => Task.FromResult(knownHash204);
 Task throwingLoggerTask = (Task)(startCore.Invoke(
     null,
     [immediateWorker, (Action<string>)(_ => throw new InvalidOperationException("logger failure")),
@@ -169,6 +181,10 @@ object Classify(string[] paths, bool[] exports) =>
 
 static string ReadKind(object source) =>
     source.GetType().GetProperty("Kind")?.GetValue(source)?.ToString() ?? string.Empty;
+
+static string ReadConstant(Type type, string name) =>
+    (string)(type.GetField(name, BindingFlags.NonPublic | BindingFlags.Static)?.GetRawConstantValue() ??
+        throw new MissingFieldException(type.FullName, name));
 
 static MethodInfo GetStaticMethod(Type type, string name) => type.GetMethod(
     name,
