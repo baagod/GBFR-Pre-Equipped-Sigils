@@ -32,6 +32,7 @@ void GBFR20_CALL GBFR20_Tick()
        !g_layout_ready.load(std::memory_order_acquire))
       return;
    UpdateEditSessionState();
+   ReconcileGemProtection();
    ValidateAuthorizedStatuses();
    ScheduleSelectedStatusRebind();
    PumpReconcileApplyQueue();
@@ -201,6 +202,7 @@ int32_t GBFR20_CALL GBFR20_CopyInventoryItem(
    GBFR20_InventoryItem result{};
    result.gem = source.gem;
    result.equipped = source.equipped ? 1u : 0u;
+   result.protected_locked = source.protected_locked ? 1u : 0u;
    result.required_character_hash = source.required_character_hash;
    result.virtual_owner_character_hash = source.virtual_owner_character_hash;
    result.virtual_owner_slot = source.virtual_owner_slot;

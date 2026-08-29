@@ -300,7 +300,7 @@ bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_
    }
    for (const uint32_t affected_hash : affected_characters)
       SaveCharacterSelection(affected_hash);
-   ScheduleGemProtectionReconcile();
+   ReconcileGemProtection();
    MarkInventoryDirty();
 
    bool auto_apply = false;
@@ -491,7 +491,7 @@ bool ApplyPresetSelections(
 
    for (const uint32_t affected_hash : affected_characters)
       SaveCharacterSelection(affected_hash);
-   ScheduleGemProtectionReconcile();
+   ReconcileGemProtection();
    MarkInventoryDirty();
 
    bool auto_apply = false;

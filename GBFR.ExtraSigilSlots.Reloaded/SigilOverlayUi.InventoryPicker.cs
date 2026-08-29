@@ -59,6 +59,11 @@ internal sealed unsafe partial class SigilOverlayUi
                 : $"扩展已使用（槽 {NativeSlotCount + item.VirtualOwnerSlot}）");
         }
 
+        if (item.ProtectedLocked)
+        {
+            details.Add(english ? "locked" : "已锁定");
+        }
+
         IReadOnlyList<string> presetNames =
             _presetStore.GetPresetNamesForSlot(item.Gem.SlotId);
         if (presetNames.Count != 0)

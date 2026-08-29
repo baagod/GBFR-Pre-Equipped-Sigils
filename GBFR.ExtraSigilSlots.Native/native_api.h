@@ -10,7 +10,7 @@
 
 #define GBFR20_CALL __cdecl
 
-constexpr uint32_t GBFR20_ABI_VERSION = 13;
+constexpr uint32_t GBFR20_ABI_VERSION = 14;
 constexpr uint32_t GBFR20_VIRTUAL_SLOT_CAPACITY = 24;
 constexpr uint32_t GBFR20_OWNER_CHARACTER_CAPACITY = 4;
 constexpr uint32_t GBFR20_PRESET_CHARACTER_CAPACITY = 32;
@@ -50,6 +50,7 @@ struct GBFR20_InventoryItem
 {
    GBFR20_GemData gem;
    uint32_t equipped;
+   uint32_t protected_locked;
    uint32_t required_character_hash;
    uint32_t virtual_owner_character_hash;
    int32_t virtual_owner_slot;

@@ -161,7 +161,10 @@ bool RefreshInventorySnapshot()
       SaveCharacterSelection(character_hash);
       ScheduleReconcileApply(character_hash);
    }
-   ScheduleGemProtectionReconcile();
+   // Protect newly selected sigils and release previously selected sigils
+   // before publishing this snapshot, so the picker immediately shows the
+   // same native locked state the game menus observe.
+   ReconcileGemProtection();
 
    std::vector<InventoryItem> snapshot;
    snapshot.reserve(records.size());
@@ -169,7 +172,12 @@ bool RefreshInventorySnapshot()
    const bool english = g_names_are_english;
    for (const RawInventoryRecord& record : records)
    {
-      const GemData& gem = record.gem;
+      // The protection reconcile can change gem flags above. Refresh the
+      // record from game memory before publishing the picker snapshot.
+      GemData gem = record.gem;
+      GemData fresh{};
+      if (SafeReadGem(record.address, fresh) && fresh.slot_id == gem.slot_id)
+         gem = fresh;
       if (gem.gem_id == 0 || (gem.flags & kGemInvalidFlag) != 0)
          continue;
 
@@ -177,6 +185,7 @@ bool RefreshInventorySnapshot()
       item.gem = gem;
       item.address = record.address;
       item.equipped = gem.worn_by != kUnwornCharacterHash;
+      item.protected_locked = (gem.flags & kGemProtectedFlag) != 0;
       item.required_character_hash = GetRequiredCharacterHash(gem.gem_id);
       if (const auto owner = virtual_owners.find(gem.slot_id); owner != virtual_owners.end())
       {

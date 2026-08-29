@@ -21,7 +21,7 @@ directories are ignored by Git.
 The harnesses cover:
 
 - missing NumConfig creation, byte-for-byte preservation of valid files, exact backup plus default replacement for invalid settings/selections, pending 1–24 count-input normalization, transactional shrink/expand/no-op count changes, fail-closed in-memory handling before executable/layout verification, native startup-phase callbacks, and the absence of full-EXE hashing from the synchronous native startup path;
-- packed ABI v13 sizes and transactional preset-reference updates;
+- packed ABI v14 sizes and transactional preset-reference updates;
 - keyboard/mouse versus HID/controller Raw Input classification, device-specific Win32 capture policy, foreground Raw Input cleanup policy, Present-thread input-reset coalescing, plus two-phase input release while held keys or mouse buttons drain;
 - event-driven frontend wake-up, key-repeat suppression, held-key latching, cancellation of an unconsumed background-open request, closed-frame sleeping, focus/capture mouse resynchronization, deterministic physical-button mask mapping, and first-interaction gating.
 - Reloaded-II hotkey defaults, persistence, live updates, and invalid-value normalization.

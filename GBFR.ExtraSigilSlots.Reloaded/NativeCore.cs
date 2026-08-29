@@ -8,7 +8,7 @@ namespace GBFR.ExtraSigilSlots.Reloaded;
 
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 13;
+    internal const int AbiVersion = 14;
     internal const int DefaultVirtualSlotCount = 8;
     internal const int VirtualSlotCapacity = 24;
     internal const int OwnerCharacterCapacity = 4;
@@ -41,6 +41,7 @@ internal static unsafe partial class NativeCore
     {
         internal GemData Gem;
         internal uint Equipped;
+        internal uint ProtectedLocked;
         internal uint RequiredCharacterHash;
         internal uint VirtualOwnerCharacterHash;
         internal int VirtualOwnerSlot;
@@ -155,6 +156,7 @@ internal static unsafe partial class NativeCore
     internal sealed record InventoryView(
         GemData Gem,
         bool Equipped,
+        bool ProtectedLocked,
         uint RequiredCharacterHash,
         uint VirtualOwnerCharacterHash,
         int VirtualOwnerSlot,
@@ -329,6 +331,7 @@ internal static unsafe partial class NativeCore
         view = new InventoryView(
             item.Gem,
             item.Equipped != 0,
+            item.ProtectedLocked != 0,
             item.RequiredCharacterHash,
             item.VirtualOwnerCharacterHash,
             item.VirtualOwnerSlot,

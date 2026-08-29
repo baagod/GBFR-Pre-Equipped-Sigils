@@ -4,7 +4,7 @@
 > 基线日期：2026-08-10
 > 当前主线：`main`
 > 初始审计基线：`5e54035` / `v0.7.8`
-> 当前维护版本：`v0.8.5`
+> 当前维护版本：`v0.8.6`
 > 支持游戏版本：Granblue Fantasy: Relink Endless Ragnarok 2.0.2、2.0.3、2.0.4、2.0.5
 > 仓库：`cajoxorize366-oss/GBFR-Extra-Sigil-Slots`
 
@@ -24,6 +24,7 @@
 - `v0.8.2` 将 Overlay Broker 输入关闭改为 requested/effective 两阶段释放；按住热键或鼠标关闭窗口时，WndProc、DirectInput 和光标捕获会在原生中性屏障完成后统一放行，避免间歇性鼠标冻结或劫持。
 - `v0.8.3` 加入 ER 2.0.4 诊断哈希与支持声明，并包含首次打开输入队列修复：闭窗时不再继续把消息送入休眠中的 ImGui；首次唤醒在 Present 线程一次性清理残留队列、Win32 backend 私有鼠标状态并校准当前光标位置。
 - `v0.8.4` 将预设文档升级为 v4：每个角色的已选预设 ID 与预设内容一起持久化，关闭菜单、切换角色或重建 UI 后不再无条件回落到临时预设；同时补齐古兰与姬塔各自的角色哈希映射，避免姬塔回落识别为古兰。
+- `v0.8.6` 修正扩展因子自动锁定同步（选中/预设/启动时立即保护），并升级 C ABI 至 v14。
 - `v0.8.5` 加入 ER 2.0.5 支持：用真实 2.0.4／2.0.5 EXE 的节映射镜像直接执行生产语义解析器和全部精确字节复核，保留两版诊断哈希，并验证篡改 Hook 字节后失败关闭；不能假设两版 `.text` 存在统一 RVA 偏移。
 - 接手前仍须先检查实际 `git status`；任何后来出现的用户修改都不得用 `git reset --hard`、`git checkout --` 或类似方式删除。
 - `2026/7/18-backup` 分支保存重构前基线 `1351349`。
@@ -59,7 +60,7 @@
 ```mermaid
 flowchart TD
     R["Reloaded-II"] --> M["GBFR.ExtraSigilSlots.Reloaded.dll"]
-    M --> A["Packed C ABI v13"]
+    M --> A["Packed C ABI v14"]
     A --> N["GBFR.ExtraSigilSlots.Native.dll"]
 
     M --> P["Overlay peer: UI / presets / IME"]
@@ -75,7 +76,7 @@ flowchart TD
     S --> G
 ```
 
-原生与托管之间唯一正式边界是 `GBFR.ExtraSigilSlots.Native/native_api.h`。当前 ABI 版本为 13，使用 `__cdecl` 和 `#pragma pack(push, 1)`；结构字段顺序、尺寸、返回码和导出名不得静默变化。参见：
+原生与托管之间唯一正式边界是 `GBFR.ExtraSigilSlots.Native/native_api.h`。当前 ABI 版本为 14，使用 `__cdecl` 和 `#pragma pack(push, 1)`；结构字段顺序、尺寸、返回码和导出名不得静默变化。参见：
 
 - `native_api.h:13-27`：ABI、容量和预设结果码。
 - `native_api.h:31-132`：packed structs 与静态尺寸断言。
@@ -112,6 +113,7 @@ flowchart TD
 | 两阶段输入释放 | `v0.8.2` | 统一 requested/effective 键鼠释放、WndProc、DirectInput 和光标所有权。 |
 | ER 2.0.4 与首次唤醒输入 | `v0.8.3` | 纳入 2.0.4 诊断与发布声明；休眠期间停止 ImGui 输入排队，首次唤醒重置残留输入、后端鼠标状态和光标位置。 |
 | 角色独立预设选择 | `v0.8.4` | 持久化每个角色的已选预设，并补齐古兰与姬塔的独立角色哈希映射，避免姬塔被回落识别为古兰。 |
+| 扩展因子锁定同步 | `v0.8.6` | 修复选中扩展因子后自动锁定同步：由 overlay tick 确定性驱动 reconcile，选中/预设/启动时立即写入游戏原生锁定位。 |
 | ER 2.0.5 兼容验证 | `v0.8.5` | 对真实 2.0.4／2.0.5 EXE 做节映射并直接运行生产 resolver；记录独立布局与双版本诊断哈希，保留未知、含糊或被修改布局的失败关闭。 |
 
 ### 4.1 已放弃或只保留作研究的路线
@@ -127,7 +129,7 @@ flowchart TD
 
 1. Reloaded-II 根据 `ModConfig.json` 加载托管 DLL。
 2. 托管层定位并加载 `GBFR.ExtraSigilSlots.Native.dll`。
-3. `NativeCore.Initialize` 校验 ABI 版本 13；不匹配直接抛出错误，不允许带着错位结构继续运行。
+3. `NativeCore.Initialize` 校验 ABI 版本 14；不匹配直接抛出错误，不允许带着错位结构继续运行。
 4. 托管层注册 Reloaded-II 热键配置，默认 F8；热键变化通过 C ABI 同步给原生和前端 gate。
 5. 托管层作为普通 peer 注册到进程内 Overlay Broker；如果没有可用 carrier，则参与选举。
 6. 完成原生初始化后，托管层才启动后台 EXE SHA-256 诊断。该诊断不参与 Hook 安装决策。
@@ -622,7 +624,7 @@ Mod 的目标是只劫持键盘和鼠标：
 
 ### 13.1 低风险：可以先做
 
-- 持续检查 ABI 文档漂移；`tests/README.md` 当前已与 ABI 13 同步。
+- 持续检查 ABI 文档漂移；`tests/README.md` 当前已与 ABI 14 同步。
 - 为 update-only 小包增加正式脚本；目前 `build-release.ps1` 只自动生成完整包，小包是额外流程。
 - 统一重复日志格式、phase message 和 error formatting，不改变调用顺序。
 - 把测试 harness 中重复的临时目录、native load、delegate lookup 抽成测试工具库。
@@ -826,7 +828,7 @@ powershell -ExecutionPolicy Bypass -File .\tests\run-smoke-tests.ps1
 
 ## 19. 精炼前的不可破坏检查清单
 
-- [ ] C ABI 仍是 v13；struct sizes 仍为 0x24／100／20／276。
+- [ ] C ABI 仍是 v14；struct sizes 仍为 0x24／100／20／276。
 - [ ] 本体槽语义、内部原始 loop limit 13 和虚拟容量 24 未改变。
 - [ ] 不写 SaveData，不改 `GemData.WORN_BY`。
 - [ ] 物理 `slot_id` 仍是唯一 inventory identity。

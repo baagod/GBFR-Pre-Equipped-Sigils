@@ -148,6 +148,7 @@ struct InventoryItem
    GemData gem{};
    uintptr_t address = 0;
    bool equipped = false;
+   bool protected_locked = false;
    uint32_t required_character_hash = 0;
    uint32_t virtual_owner_character_hash = 0;
    int32_t virtual_owner_slot = -1;

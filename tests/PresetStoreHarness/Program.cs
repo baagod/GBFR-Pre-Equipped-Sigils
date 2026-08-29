@@ -109,8 +109,8 @@ try
     IntPtr abiExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetAbiVersion");
     IntPtr applyExport = NativeLibrary.GetExport(nativeLibrary, "GBFR20_ApplyPreset");
     GetAbiVersion getAbiVersion = Marshal.GetDelegateForFunctionPointer<GetAbiVersion>(abiExport);
-    if (getAbiVersion() != 13 || applyExport == IntPtr.Zero)
-        throw new InvalidOperationException("Native ABI 13 preset exports are unavailable.");
+    if (getAbiVersion() != 14 || applyExport == IntPtr.Zero)
+        throw new InvalidOperationException("Native ABI 14 preset exports are unavailable.");
 }
 finally
 {
@@ -945,7 +945,7 @@ Console.WriteLine("PRESET_STORE_TEST=PASS");
     Console.WriteLine($"CHARACTER_NAME_MAP={expectedCharacters.Length}/{expectedCharacters.Length}");
     Console.WriteLine("CAPTAIN_SIGIL_COMPATIBILITY=PASS");
     Console.WriteLine("MANAGED_NUMCONFIG_CREATION=False");
-    Console.WriteLine("ABI_VERSION=13");
+    Console.WriteLine("ABI_VERSION=14");
     Console.WriteLine("PRESET_SELECTION_SIZE=100");
     Console.WriteLine("PRESET_RESULT_SIZE=20");
 }

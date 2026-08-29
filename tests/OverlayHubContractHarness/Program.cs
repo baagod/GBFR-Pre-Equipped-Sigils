@@ -104,7 +104,7 @@ try
         NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetInputCaptureDevices"));
     var getInputCaptureActive = Marshal.GetDelegateForFunctionPointer<GetInputCaptureActiveDelegate>(
         NativeLibrary.GetExport(nativeLibrary, "GBFR20_GetInputCaptureActive"));
-    Assert(getAbiVersion() == 13, "Managed/native ABI 13 was not built.");
+    Assert(getAbiVersion() == 14, "Managed/native ABI 14 was not built.");
     Assert(setInputHooksEnabled(0) != 0,
         "Guest mode must be selectable before native initialization.");
     Assert(setInputHooksEnabled(1) != 0,
