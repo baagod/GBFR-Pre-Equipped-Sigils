@@ -58,8 +58,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -103,8 +103,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -148,8 +148,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -193,8 +193,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -238,8 +238,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -283,8 +283,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -328,8 +328,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -373,8 +373,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -418,8 +418,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -463,8 +463,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -508,8 +508,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -553,8 +553,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -598,8 +598,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -643,8 +643,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -688,8 +688,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -733,8 +733,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -778,8 +778,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -823,8 +823,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -868,8 +868,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -913,8 +913,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -958,8 +958,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1003,8 +1003,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1048,8 +1048,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1093,8 +1093,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1138,8 +1138,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1183,8 +1183,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1228,8 +1228,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1273,8 +1273,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1318,8 +1318,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
             15,
          },
          TemplateGemSlot{
-            0x041D7B20,
-            0x1470F860,
+            0x297D03F7,
+            0x74AA75D6,
             15,
             0x24883AF3,
             15,
@@ -1328,6 +1328,8 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       },
    },
 };
+
+
 
 
 }

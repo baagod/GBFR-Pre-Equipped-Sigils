@@ -39,7 +39,7 @@ $common = @(
     @{ Gem = '04AC2281'; T1 = 'B5FF9FD3'; T2 = $null },   # slot 2: Inspire V+ + war spirit (war T filled per char)
     @{ Gem = '335DA2A5'; T1 = 'E69A4694'; T2 = '95F3FA86' }, # slot 3: Guts V+ + Autorevive
     @{ Gem = 'B1CCC211'; T1 = 'B6E31F76'; T2 = '8B3BF60C' }, # slot 4: Steadfast V+ + Improved Dodging
-    @{ Gem = '041D7B20'; T1 = '1470F860'; T2 = '24883AF3' }  # slot 5: Perseverance V+ + Potion Hoarder
+    @{ Gem = '297D03F7'; T1 = '74AA75D6'; T2 = '24883AF3' }  # slot 5: 刚健Ⅴ＋ + 药水携带数 (Sturdy V+ + Potion Hoarder)
 )
 
 $sb = [System.Text.StringBuilder]::new()
