@@ -26,7 +26,7 @@ void Initialize()
    g_module_directory = std::filesystem::path(module_path.data()).parent_path();
    g_config_path = g_module_directory / L"GBFR-ReloadedSigilSlotsConfig.ini";
    g_compatibility_path =
-      g_module_directory / L"GBFR-ExtraSigilSlots.compatibility.tsv";
+      g_module_directory / L"GBFR-ReloadedSigilSlots.compatibility.tsv";
 
    const uint64_t settings_started = BeginStartupPhase("settings-and-selections");
    LoadSettingsAndSelections(false);

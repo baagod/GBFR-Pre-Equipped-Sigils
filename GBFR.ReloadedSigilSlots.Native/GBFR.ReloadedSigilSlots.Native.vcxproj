@@ -98,7 +98,9 @@
     <ClCompile Include="src\selection_store.cpp" />
     <ClCompile Include="src\template_loadout.cpp" />
     <ClCompile Include="src\trait_hooks.cpp" />
-    <ClCompile Include="third_party\safetyhook.cpp" />
+    <ClCompile Include="third_party\safetyhook.cpp">
+      <DisableSpecificWarnings>4834;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="third_party\Zydis.c">
       <CompileAs>CompileAsC</CompileAs>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

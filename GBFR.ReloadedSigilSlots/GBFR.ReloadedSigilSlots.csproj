@@ -22,8 +22,8 @@
     <None Include="..\GBFR.ReloadedSigilSlots.Native\bin\$(Configuration)\GBFR.ReloadedSigilSlots.Native.dll"
           Link="GBFR.ReloadedSigilSlots.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.compatibility.tsv"
-          Link="GBFR-ExtraSigilSlots.compatibility.tsv"
+    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ReloadedSigilSlots.compatibility.tsv"
+          Link="GBFR-ReloadedSigilSlots.compatibility.tsv"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
