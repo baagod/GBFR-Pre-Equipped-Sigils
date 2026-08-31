@@ -48,13 +48,13 @@
 | 字段 | 值 |
 |---|---|
 | 名称（Mod Name） | `GBFR Reloaded Sigil Slots (Auto Loadout)` |
-| 摘要（Summary） | `自动配装虚拟因子槽位：运行时注入合成因子（当前娜露梅 5 槽），不依赖库存、不写存档、无界面。` |
+| 摘要（Summary） | `自动配装虚拟因子槽位：全部 29 名角色各 5 个虚拟槽（运行时合成因子），不依赖库存、不写存档、无界面。` |
 | 分类（Category） | `Gameplay Effects` 或 `Cheats`（如实标注为增强/作弊类） |
 | 标签（Tags） | `Reloaded-II` `Sigils` `Auto Loadout` `QoL` `Gameplay` `Cheat` |
-| 版本 | 0.2.0 |
+| 版本 | 0.3.0 |
 | 游戏版本 | Granblue Fantasy: Relink（ER 2.0.5） |
 | 依赖 | [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II) 1.30.3+（写在 Mod Dependencies） |
-| 主文件 | `dist/GBFR-ReloadedSigilSlots-0.2.0.zip`（内含 `GBFR.ReloadedSigilSlots` 文件夹） |
+| 主文件 | `dist/GBFR-ReloadedSigilSlots-0.3.0.zip`（内含 `GBFR.ReloadedSigilSlots` 文件夹） |
 | 截图 | 至少 2–4 张：① 血条下 5 槽 buff 图标 ② 训练场/战斗 ③ 娜露梅状态面板 ④ 日志验证行。**一律用游戏内真实截图，不要用 AI 生成图** |
 
 ---
@@ -70,17 +70,19 @@
 
 [截图 1] [截图 2]
 
-## 当前配装（v0.2）——娜露梅
+## 当前配装（v0.3）——全部 29 名角色
 
-| 槽位 | 因子 | 词条（15 级） |
+每个角色自动获得 5 个虚拟槽（全部词条 15 级）：
+
+| 槽位 | 因子 | 词条 |
 |---|---|---|
-| 1 | 斩姬之觉醒＋ | 斩姬梦幻 + 斩姬武艺 |
-| 2 | 激昂Ⅴ＋ | 激昂 + 斩姬的战气 |
+| 1 | 角色觉醒＋（每角色专属） | 该角色两个专属词条（如娜露梅：斩姬梦幻 + 斩姬武艺） |
+| 2 | 激昂Ⅴ＋ | 激昂 + 角色战气（每角色专属） |
 | 3 | 豪胆Ⅴ＋ | 豪胆 + 自动复活 |
 | 4 | 不动Ⅴ＋ | 不动 + 躲避性能 |
 | 5 | 坚持Ⅴ＋ | 坚持 + 药水携带数 |
 
-> 其他角色规划中；当前配装表编译期内置。
+> 姬塔与古兰共享主角专属。
 
 ## 安装
 

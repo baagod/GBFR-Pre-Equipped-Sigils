@@ -79,6 +79,14 @@ GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
+**v0.3 起覆盖全部 29 名角色**（每角色 5 槽），数据由生成脚本维护，不要手写 hash：
+
+| 工具 | 作用 |
+|---|---|
+| `docs/tool-extract-exclusives.ps1` | 从 compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据 → 生成 `kDefaultTemplates[]` 数组文本 |
+
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）→ 运行脚本输出到临时文件 → 替换 `template_loadout.cpp` 中 `constexpr CharacterTemplate kDefaultTemplates[] = { ... };` 段（自动定位起止替换）。
 
 结构（每槽一个 `TemplateGemSlot`）：
 
@@ -98,7 +106,7 @@ TemplateGemSlot{
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
 - **加槽位必须同步**：INI `VirtualSlotCount` ≥ 槽数（循环上限 = 13 + 该值，默认 5）。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
-  `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通）。
+  `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
 - 角色 hash（角色名 → hash）：见 `UiLocalization.cs` 的历史版本或 compatibility.tsv 的
   character_key 列；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、娜露梅 `E7053919`、
