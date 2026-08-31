@@ -37,6 +37,26 @@
 
 你的仓库交接文档写明欢迎后续维护者接手，希望得到你的许可。无论是否允许都感谢你的工作！🙏
 
+### 1.2b 补充消息（仓库上线后的续发，追加在原对话里）
+
+**场景**：申请已发出，之后源码仓库上线，需要补充链接时，在原私信对话中追加以下内容（不要新开一条私信）：
+
+**中文版：**
+
+> 你好！补充一下：我们的源码仓库已经上线，你可以直接审阅代码、git 提交历史与维护文档：
+>
+> https://github.com/baagod/GBFR-ReloadedSigilSlots
+>
+> 之前提到的精简情况与 AI 辅助开发说明都可以在仓库里核实。再次感谢你的时间！🙏
+
+**English version:**
+
+> Hello! Just a follow-up: our source repository is now live, where you can review the code, the full git history and the maintenance docs:
+>
+> https://github.com/baagod/GBFR-ReloadedSigilSlots
+>
+> Everything mentioned earlier (the slimming, the AI-assisted development disclosure) can be verified there. Thanks again for your time! 🙏
+
 ### 1.3 发送后
 
 1. 保存回复内容（截图或链接）——发布页 Credit 区要引用；
