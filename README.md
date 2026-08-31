@@ -1,54 +1,33 @@
-# GBFR Extra Sigil Slots
+# GBFR Reloaded Sigil Slots
 
-Reloaded-II configurable extra-sigil-slot mod for Granblue Fantasy: Relink ER 2.0.2 through 2.0.5.
+《碧蓝幻想：Relink》自动配装虚拟因子槽位 mod（Endless Ragnarok 2.0.5）。
+派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（Hiyajomaho-num9），已删除选择器 UI、Overlay Broker、输入捕获、预设与库存依赖，新增与库存无关的模板配装引擎。
 
-The repository contains a C++ native hook and a C# Reloaded-II loader, but they are packaged as one Reloaded-II mod.
+## 文档入口
 
-Reloaded-II 1.30.3 or newer is recommended. The native DLL is loaded by the managed Reloaded-II mod and is not a standalone ASI plugin. To launch through Steam with ASI injection, use Reloaded-II's `Edit Application -> Advanced Tools & Options -> Deploy ASI Loader`, then launch the normal game executable. Re-deploy the ASI Loader after moving or updating Reloaded-II, and do not rename `GBFR.ExtraSigilSlots.Native.dll` to `.asi`.
+| 文档 | 对象 | 内容 |
+|---|---|---|
+| [GBFR.ReloadedSigilSlots/README.md](GBFR.ReloadedSigilSlots/README.md) | 用户 | 功能、安装、验证、配装表、hash 查询 |
+| [docs/MAINTENANCE.md](docs/MAINTENANCE.md) | **AI 接手者** | 架构、数据流、雷区、构建部署、操作速查 |
+| [docs/gbfr-sigil-hashes.zh-CN.tsv](docs/gbfr-sigil-hashes.zh-CN.tsv) | 维护者 | 完整 hash 查询表（S=物品，T=词条） |
 
-The compact selector opens with `F8` by default; its hotkey can be changed in Reloaded-II without adding a hotkey editor to the in-game ImGui menu. It supports Simplified Chinese and English (including Chinese IME input), displays the current character by name, and reports the complete valid physical-sigil scan count separately from the filtered picker match count. Version 0.8.6 supports ER 2.0.2 through 2.0.5 by using one-shot semantic layout resolution while retaining recoverable Overlay Broker handoff, 1–24 configurable virtual slots, per-character named presets and preset transfer, usage filters, body-slot conflict reporting, and protected virtual-slot sigils. Input release is coordinated through the native effective-device mask, and a sleeping frontend no longer queues Win32 input into ImGui; the first wake frame resets stale backend mouse state and cursor position before the selector becomes interactive.
+## 仓库结构
 
-## Virtual slot count
+```
+GBFR.ReloadedSigilSlots/         C# 托管层（Reloaded-II 壳，打包进 mod）
+GBFR.ReloadedSigilSlots.Native/  C++ 原生核心（Hook 与模板合成引擎）
+docs/                            参考文档与 hash 表（不打包）
+dist/                            构建产物（zip，git 忽略）
+build-release.ps1                一键构建脚本
+```
 
-Enter the desired count in the in-game ImGui menu and save it, then restart the game. The current effective count never changes while the game is running. The default is `8`, the supported range is `1` through `24`, and invalid input is normalized to `1`. Manual `VirtualSlotCount` editing in `GBFR-ExtraSigilSlotsNumConfig.ini` remains supported.
-
-- If the file is missing, the native runtime creates a complete default INI.
-- If the complete settings and character-selection data is valid, startup leaves every byte untouched.
-- If any required setting or saved slot value is invalid—including `0`, a negative value, non-numeric text, or a value above `24`—the original bytes are first saved beside it as `GBFR-ExtraSigilSlotsNumConfig.ini.invalid-<timestamp>.bak`, then a complete default INI is created with `VirtualSlotCount=8`.
-- A UI count change is stored separately until restart. On the next start, the native runtime first makes an exact `.resize-<timestamp>.bak`, atomically rewrites NumConfig, and clears every character's current selection beyond the new limit. Inventory sigils are only detached, never deleted; named presets retain all 24 stored slot definitions.
-- Increasing the count creates empty new current slots. It does not silently restore old high-slot assignments; a saved preset may reapply them through the normal ownership and conflict checks.
-- The release archive contains neither mutable NumConfig nor its pending count request.
-
-## Build and package
-
-Requirements:
-
-- Windows x64
-- Visual Studio 2022 Build Tools with MSVC v143 and a Windows SDK
-- .NET 8 SDK
-- PowerShell 5.1 or newer
-
-Run from the repository root:
+## 快速上手（维护）
 
 ```powershell
+# 构建（需 VS2022 Build Tools + .NET 8 SDK）
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
+
+# 部署：游戏退出后，把 dist\GBFR.ReloadedSigilSlots 复制到 Reloaded-II 的 Mods\
 ```
 
-The script defaults to `Release`, `x64`, and version `0.8.6`. These defaults can
-be overridden explicitly, for example with `-Configuration Debug` or
-`-Version 0.8.6-test`.
-
-The installable archive is generated at:
-
-```text
-dist\GBFR-Extra-Sigil-Slots-0.8.6.zip
-```
-
-Extract the `GBFR.ExtraSigilSlots.Reloaded` folder from the ZIP into Reloaded-II's `Mods` directory. Remove or disable the old `GBFR.ExtraSigilSlots20.Reloaded` mod so Reloaded-II cannot load both identities. Neither `GBFR-ExtraSigilSlotsNumConfig.ini` nor `GBFR-ExtraSigilSlots.presets.json` is included in an archive. Missing NumConfig is created by the native runtime; an existing valid NumConfig is preserved byte-for-byte, while an invalid NumConfig is backed up before a complete default is generated. Named presets are stored in Reloaded-II's persistent mod-config directory and automatically migrate from valid current/legacy JSON files left in an older mod directory. An invalid persistent preset file is preserved as a content-addressed `.invalid-<digest>.bak` before recovery is attempted. Settings are not copied into a missing NumConfig by the managed migrator.
-
-If first launch appears to hang, collect `%APPDATA%\Reloaded-Mod-Loader-II\Logs` and the mod's `ExtraSigilSlots.Reloaded.log`. Startup entries use `phase`, `state`, and `elapsed_ms`; the last `state=begin` line identifies the operation that did not return. One-shot semantic layout resolution, exact local-byte preflight, and hook installation remain synchronous so the game cannot run ahead of the hooks. There is no timer or per-frame signature scan. An ambiguous or incomplete layout fails closed without rewriting saved sigil selections; the independent input transaction remains available so the overlay can report the compatibility error. Only after initialization does a background `executable-sha256` diagnostic read the full EXE; it recognizes the verified 2.0.4 and 2.0.5 hashes, is marked `diagnostic_only=true`, and never enables, rejects, or rolls back hooks. The same log explicitly reports `由 Launcher 注入`, `由 .asi Bootstrapper 加载`, or `source=unknown` after checking the official Reloaded bootstrapper module and its `InitializeASI` export.
-
-## Development
-
-- [Native architecture and refactor plan](docs/native-architecture.md)
-- [Smoke-test harnesses](tests/README.md)
+改配装、加槽位、加角色的具体步骤见 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) 第 4、10 节。
