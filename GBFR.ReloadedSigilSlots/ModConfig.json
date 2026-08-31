@@ -1,7 +1,7 @@
 {
   "ModId": "GBFR.ReloadedSigilSlots",
   "ModName": "GBFR Reloaded Sigil Slots (2.0.5)",
-  "ModAuthor": "Hiyajomaho-num9 (derived from Extra Sigil Slots)",
+  "ModAuthor": "baagod (from Extra Sigil Slots)",
   "ModVersion": "0.1.0",
   "ModDescription": "Standalone auto-loadout virtual sigil slots for Granblue Fantasy: Relink Endless Ragnarok. Applies a fixed template loadout (e.g. Guts V+ / Autorevive V+) to characters at runtime without touching save data or inventory. Derived from GBFR.ExtraSigilSlots (Hiyajomaho-num9) with the selector UI, Overlay Broker, input capture, and preset machinery removed.",
   "ModDll": "GBFR.ReloadedSigilSlots.dll",
