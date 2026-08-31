@@ -17,12 +17,8 @@ namespace
 constexpr std::string_view kDefaultConfigText =
    "[Settings]\r\n"
    "ConfigVersion=2\r\n"
-   "ToggleKey=119\r\n"
-   "ShowEquipped=0\r\n"
    "AutoApply=1\r\n"
-   "Language=zh-CN\r\n"
    "VirtualSlotCount=5\r\n";
-std::mutex g_slot_count_request_mutex;
 
 enum class ConfigFileState
 {
@@ -190,8 +186,7 @@ bool ValidateConfigText(std::string_view text) noexcept
             if (section == ConfigSection::Settings)
             {
                const bool known = normalized_key == "configversion" ||
-                  normalized_key == "togglekey" || normalized_key == "showequipped" ||
-                  normalized_key == "autoapply" || normalized_key == "language" ||
+                  normalized_key == "autoapply" ||
                   normalized_key == "virtualslotcount";
                if (known)
                {
@@ -203,25 +198,10 @@ bool ValidateConfigText(std::string_view text) noexcept
                      if (!ParseDecimal(value, number) || number != kCurrentSettingsVersion)
                         return false;
                   }
-                  else if (normalized_key == "togglekey")
-                  {
-                     if (!ParseDecimal(value, number) || number < 1 || number > 255)
-                        return false;
-                  }
-                  else if (normalized_key == "showequipped")
-                  {
-                     if (!ParseDecimal(value, number) || number > 1)
-                        return false;
-                  }
                   else if (normalized_key == "autoapply")
                   {
                      if (!ParseDecimal(value, number) || number != 1)
                         return false;
-                  }
-                  else if (normalized_key == "language" &&
-                           value != "en" && value != "zh-CN")
-                  {
-                     return false;
                   }
                   else if (normalized_key == "virtualslotcount" &&
                            (!ParseDecimal(value, number) || number < 1 ||
@@ -244,7 +224,7 @@ bool ValidateConfigText(std::string_view text) noexcept
       offset = newline + 1;
    }
 
-   return finish_section() && settings_seen && settings_keys.size() == 6;
+   return finish_section() && settings_seen && settings_keys.size() == 3;
 }
 
 ConfigFileInspection InspectConfigFile()
@@ -608,16 +588,8 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
    }
 
    UiSettings settings;
-   const int toggle_key = static_cast<int>(GetPrivateProfileIntW(
-      L"Settings", L"ToggleKey", VK_F8, g_config_path.c_str()));
-   settings.toggle_key = toggle_key;
-   settings.show_equipped =
-      GetPrivateProfileIntW(L"Settings", L"ShowEquipped", 0, g_config_path.c_str()) != 0;
    settings.auto_apply =
       GetPrivateProfileIntW(L"Settings", L"AutoApply", 1, g_config_path.c_str()) != 0;
-   const std::string configured_language =
-      WideToUtf8(ReadIniString(L"Settings", L"Language", L"zh-CN"));
-   settings.language = configured_language == "en" ? "en" : "zh-CN";
    settings.virtual_slot_count = static_cast<int>(GetPrivateProfileIntW(
       L"Settings",
       L"VirtualSlotCount",

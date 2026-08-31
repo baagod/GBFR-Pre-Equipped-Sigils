@@ -49,11 +49,6 @@ struct ResolvedGameLayout
    uintptr_t status_map_sentinel_offset = 0;
    uintptr_t status_map_buckets_offset = 0;
    uintptr_t status_map_mask_offset = 0;
-   uintptr_t character_record_map_sentinel_offset = 0;
-   uintptr_t character_record_map_buckets_offset = 0;
-   uintptr_t character_record_map_mask_offset = 0;
-   uintptr_t character_record_primary_hash_offset = 0;
-   uintptr_t character_record_fallback_hash_offset = 0;
    uintptr_t status_character_hash_offset = 0;
    uintptr_t status_context_mode_offset = 0;
    uint8_t trait_apply_original_limit = 0;
@@ -64,16 +59,14 @@ struct ResolvedGameLayout
 inline constexpr int kNativeInternalSlotCount = 13;
 inline constexpr int kDefaultVirtualSlotCount = 5;
 inline constexpr int kVirtualSlotCapacity = 24;
-inline constexpr int kMainGemCapacity = 5100;
 inline constexpr int kCurrentSettingsVersion = 2;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
-inline constexpr uint32_t kLocalPlayerSlotKey = 0xDBD9A18D;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
 
 // Template (synthesized) sigil slots use a slot-id range that can never
-// collide with real inventory slot ids (0 .. kMainGemCapacity - 1).
+// collide with real inventory slot ids (0 .. 5099).
 inline constexpr uint32_t kTemplateSlotIdBase = 0xFE000000u;
 
 inline constexpr bool IsTemplateSlotId(uint32_t slot_id) noexcept
@@ -149,10 +142,6 @@ inline constexpr std::array<uint8_t, 24> kStatusOwnerCharacterLoopPreflight = {
    0x48, 0x8B, 0x73, 0x20, 0x48, 0x8B, 0x7B, 0x28,
    0x48, 0x39, 0xFE, 0x0F, 0x84, 0x76, 0x01, 0x00,
    0x00, 0x4C, 0x8D, 0xB3, 0x30, 0x32, 0x00, 0x00};
-inline constexpr std::array<uint8_t, 10> kLocalContext1BindCallPreflight = {
-   0xE8, 0xEE, 0x47, 0x74, 0x00, 0x89, 0xD8, 0x89, 0x5D, 0xFC};
-inline constexpr std::array<uint8_t, 10> kLocalContext1BindReturnPreflight = {
-   0x89, 0xD8, 0x89, 0x5D, 0xFC, 0x48, 0x8B, 0x45, 0xE8, 0x8B};
 
 using GemData = GBFR20_GemData;
 static_assert(sizeof(GemData) == 0x24);
@@ -197,24 +186,9 @@ struct NaturalContributionFrame
    bool active = false;
 };
 
-struct LocalContext1Binding
-{
-   uintptr_t manager = 0;
-   uintptr_t record = 0;
-   uintptr_t status = 0;
-   uint32_t owner_key = 0;
-   uint32_t character_hash = 0;
-   uint32_t thread_id = 0;
-   uint64_t generation = 0;
-   bool active = false;
-};
-
 struct UiSettings
 {
-   int toggle_key = VK_F8;
-   bool show_equipped = false;
    bool auto_apply = true;
-   std::string language = "zh-CN";
    int virtual_slot_count = kDefaultVirtualSlotCount;
 };
 
@@ -285,8 +259,6 @@ extern bool g_runtime_message_is_error;
 extern SafetyHookInline g_get_gem_hook;
 extern SafetyHookMid g_trait_fetch_hook;
 extern SafetyHookMid g_status_owner_tick_hook;
-extern SafetyHookMid g_local_context1_bind_call_hook;
-extern SafetyHookMid g_local_context1_bind_return_hook;
 
 extern std::shared_mutex g_selection_mutex;
 extern std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> g_character_selections;
@@ -312,9 +284,6 @@ extern std::atomic_uint32_t g_status_owner_thread_id;
 extern std::atomic_uint64_t g_status_owner_tick_count;
 extern std::atomic_uint32_t g_status_owner_character_count;
 extern std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes;
-extern std::shared_mutex g_local_context1_binding_mutex;
-extern std::unordered_map<uintptr_t, LocalContext1Binding> g_local_context1_bindings;
-extern std::atomic_uint64_t g_local_context1_binding_generation;
 extern std::atomic_bool g_pending_refresh;
 extern std::atomic<uint32_t> g_pending_character_hash;
 extern std::atomic_uint32_t g_pending_injected_count;
@@ -339,7 +308,6 @@ extern std::atomic_uint32_t g_active_getter_calls;
 extern std::atomic_uint32_t g_active_mid_calls;
 extern thread_local uint64_t g_tls_apply_generation;
 extern thread_local NaturalContributionFrame g_tls_natural_contribution;
-extern thread_local LocalContext1Binding g_tls_local_context1_binding;
 extern std::atomic_uint64_t g_natural_bind_attempts;
 extern std::atomic_uint64_t g_natural_bind_successes;
 extern std::atomic_uint64_t g_natural_bind_status_address;
@@ -375,11 +343,6 @@ bool SafeReadGem(uintptr_t address, GemData& value) noexcept;
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept;
 uint32_t SafeReadOwnerCharacterHashes(uintptr_t manager, std::array<uint32_t, 4>& hashes) noexcept;
 bool SafeResolveStatusByMapKey(uintptr_t manager, uint32_t map_key, uintptr_t& status) noexcept;
-bool SafeResolveCharacterRecordByOwnerKey(uintptr_t manager, uint32_t owner_key, uintptr_t& record) noexcept;
-bool SafeReadCharacterRecordHash(uintptr_t record, uint32_t& character_hash) noexcept;
-bool ValidateLocalContext1Binding(const LocalContext1Binding& binding, uintptr_t expected_status, const StatusIdentity* expected_identity = nullptr) noexcept;
-bool TryGetLocalContext1Binding(uintptr_t status, uint32_t character_hash, LocalContext1Binding& binding) noexcept;
-bool TryGetLocalContext1BindingByCharacter(uint32_t character_hash, LocalContext1Binding& binding) noexcept;
 bool SafeResolveCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status) noexcept;
 bool SafeResolveSelectedCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status, StatusIdentity& identity) noexcept;
 void CommitAuthorizedStatus(uintptr_t status, const StatusIdentity& identity, uint64_t generation, const std::array<uint32_t, kVirtualSlotCapacity>& slots);

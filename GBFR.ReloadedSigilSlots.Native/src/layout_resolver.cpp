@@ -120,16 +120,6 @@ constexpr uint8_t kStatusMapBytes[] = {
 constexpr auto kStatusMapPattern =
    MakePattern(kStatusMapBytes, "xxx????xxxxxx????xxx????xxxxxxxxxxxx");
 
-constexpr uint8_t kCharacterMapBytes[] = {
-   0x8B, 0x93, 0, 0, 0, 0,
-   0x44, 0x21, 0xE2,
-   0x48, 0x8B, 0x83, 0, 0, 0, 0,
-   0x4C, 0x8B, 0x83, 0, 0, 0, 0,
-   0x48, 0x89, 0xD1, 0x48, 0xC1, 0xE1, 0x04,
-   0x49, 0x8B, 0x4C, 0x08, 0x08};
-constexpr auto kCharacterMapPattern =
-   MakePattern(kCharacterMapBytes, "xx????xxxxxx????xxx????xxxxxxxxxxxx");
-
 struct ImageView
 {
    uintptr_t base = 0;
@@ -465,55 +455,13 @@ bool ResolveMapOffsets(
        !ReadValue(image, status_map + 20, status_buckets))
       return false;
 
-   uintptr_t character_maps[4]{};
-   const size_t character_map_count = FindPatternMatches(
-      image,
-      owner_function.begin,
-      owner_function.end - owner_function.begin,
-      kCharacterMapPattern,
-      character_maps,
-      std::size(character_maps));
-   if (character_map_count != 2)
-      return false;
-   uint32_t character_mask = 0;
-   uint32_t character_sentinel = 0;
-   uint32_t character_buckets = 0;
-   for (size_t index = 0; index < character_map_count; ++index)
-   {
-      uint32_t current_mask = 0;
-      uint32_t current_sentinel = 0;
-      uint32_t current_buckets = 0;
-      if (!ReadValue(image, character_maps[index] + 2, current_mask) ||
-          !ReadValue(image, character_maps[index] + 12, current_sentinel) ||
-          !ReadValue(image, character_maps[index] + 19, current_buckets))
-         return false;
-      if (index == 0)
-      {
-         character_mask = current_mask;
-         character_sentinel = current_sentinel;
-         character_buckets = current_buckets;
-      }
-      else if (current_mask != character_mask ||
-               current_sentinel != character_sentinel ||
-               current_buckets != character_buckets)
-      {
-         return false;
-      }
-   }
-
    if (!IsReasonableObjectOffset(status_sentinel, alignof(uintptr_t)) ||
        !IsReasonableObjectOffset(status_buckets, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(status_mask, alignof(uint32_t)) ||
-       !IsReasonableObjectOffset(character_sentinel, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(character_buckets, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(character_mask, alignof(uint32_t)))
+       !IsReasonableObjectOffset(status_mask, alignof(uint32_t)))
       return false;
    layout.status_map_sentinel_offset = status_sentinel;
    layout.status_map_buckets_offset = status_buckets;
    layout.status_map_mask_offset = status_mask;
-   layout.character_record_map_sentinel_offset = character_sentinel;
-   layout.character_record_map_buckets_offset = character_buckets;
-   layout.character_record_map_mask_offset = character_mask;
    return true;
 }
 
@@ -590,13 +538,7 @@ bool ValidateResolvedGameLayout(
           layout.status_map_sentinel_offset, alignof(uintptr_t)) ||
        !IsReasonableObjectOffset(
           layout.status_map_buckets_offset, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(layout.status_map_mask_offset, alignof(uint32_t)) ||
-       !IsReasonableObjectOffset(
-          layout.character_record_map_sentinel_offset, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(
-          layout.character_record_map_buckets_offset, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(
-          layout.character_record_map_mask_offset, alignof(uint32_t)))
+       !IsReasonableObjectOffset(layout.status_map_mask_offset, alignof(uint32_t)))
       return false;
 
    uint8_t apply_limit = 0;
@@ -797,10 +739,7 @@ bool ResolveGameLayout()
    if (!ResolveMapOffsets(image, owner_function, layout))
       return FailResolution("status/character map offsets");
 
-   // These fields belong exclusively to the quarantined LocalContext1 path. They
-   // remain recorded in the layout, but no hook currently consumes that path.
-   layout.character_record_primary_hash_offset = 0x59F4;
-   layout.character_record_fallback_hash_offset = 0x59F0;
+   // Remaining map/object offsets are validated by ValidateResolvedGameLayout.
 
    if (!ValidateResolvedGameLayout(image, layout))
       return FailResolution("resolved layout final validation");

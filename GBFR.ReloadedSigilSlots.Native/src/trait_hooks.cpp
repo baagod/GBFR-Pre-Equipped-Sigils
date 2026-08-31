@@ -8,8 +8,6 @@ namespace gbfr::native
 SafetyHookInline g_get_gem_hook;
 SafetyHookMid g_trait_fetch_hook;
 SafetyHookMid g_status_owner_tick_hook;
-SafetyHookMid g_local_context1_bind_call_hook;
-SafetyHookMid g_local_context1_bind_return_hook;
 
 std::atomic<uint32_t> g_last_character_hash{0};
 std::atomic<int32_t> g_last_context_mode{-1};
@@ -18,14 +16,10 @@ std::atomic_uint32_t g_status_owner_thread_id{0};
 std::atomic_uint64_t g_status_owner_tick_count{0};
 std::atomic_uint32_t g_status_owner_character_count{0};
 std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes{};
-std::shared_mutex g_local_context1_binding_mutex;
-std::unordered_map<uintptr_t, LocalContext1Binding> g_local_context1_bindings;
-std::atomic_uint64_t g_local_context1_binding_generation{0};
 std::atomic_uint32_t g_active_getter_calls{0};
 std::atomic_uint32_t g_active_mid_calls{0};
 thread_local uint64_t g_tls_apply_generation = 0;
 thread_local NaturalContributionFrame g_tls_natural_contribution{};
-thread_local LocalContext1Binding g_tls_local_context1_binding{};
 std::atomic_uint64_t g_natural_bind_attempts{0};
 std::atomic_uint64_t g_natural_bind_successes{0};
 std::atomic_uint64_t g_natural_bind_status_address{0};
@@ -382,85 +376,6 @@ void OnTraitFetch(safetyhook::Context& context)
    context.rip = g_image_base + g_game_layout.trait_category_getter_return_rva;
 }
 
-void OnLocalContext1BindCall(safetyhook::Context& context)
-{
-   ActiveCallGuard active_call(g_active_mid_calls);
-   g_tls_local_context1_binding = {};
-   if (g_shutting_down.load(std::memory_order_acquire))
-      return;
-
-   const uint32_t owner_key = static_cast<uint32_t>(context.rbx);
-   if (owner_key != kLocalPlayerSlotKey)
-      return;
-
-   LocalContext1Binding binding{};
-   binding.manager = context.rdi;
-   binding.record = context.rdx;
-   binding.status = context.rcx;
-   binding.owner_key = owner_key;
-   binding.thread_id = GetCurrentThreadId();
-   binding.generation =
-      g_local_context1_binding_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
-   if (binding.generation == 0)
-      binding.generation =
-         g_local_context1_binding_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
-   binding.active = true;
-
-   uintptr_t resolved_record = 0;
-   uintptr_t resolved_status = 0;
-   if (!SafeReadCharacterRecordHash(binding.record, binding.character_hash) ||
-       !SafeResolveCharacterRecordByOwnerKey(
-          binding.manager, binding.owner_key, resolved_record) ||
-       resolved_record != binding.record ||
-       !SafeResolveStatusByMapKey(
-          binding.manager, binding.owner_key, resolved_status) ||
-       resolved_status != binding.status)
-   {
-      g_status_owner_manager_address.store(binding.manager, std::memory_order_release);
-      g_natural_bind_owner_key.store(0, std::memory_order_release);
-      g_natural_bind_owner_status_address.store(resolved_status, std::memory_order_release);
-      StatusIdentity rejected_identity{binding.character_hash, 1};
-      PublishNaturalBindDiagnostic(
-         binding.status,
-         rejected_identity,
-         CountSelectedSlots(GetSelection(binding.character_hash)),
-         0,
-         NaturalBindStatusRejected);
-      return;
-   }
-
-   {
-      LocalContext1Binding persisted = binding;
-      persisted.active = false;
-      std::unique_lock lock(g_local_context1_binding_mutex);
-      g_local_context1_bindings.clear();
-      g_local_context1_bindings.emplace(binding.status, persisted);
-   }
-   {
-      std::unique_lock lock(g_authorization_mutex);
-      for (auto iterator = g_authorized_statuses.begin();
-           iterator != g_authorized_statuses.end();)
-      {
-         if (iterator->second.context_mode == 1 && iterator->first != binding.status)
-            iterator = g_authorized_statuses.erase(iterator);
-         else
-            ++iterator;
-      }
-   }
-
-   g_tls_local_context1_binding = binding;
-   g_status_owner_manager_address.store(binding.manager, std::memory_order_release);
-   g_status_owner_thread_id.store(binding.thread_id, std::memory_order_release);
-   g_natural_bind_owner_key.store(binding.owner_key, std::memory_order_release);
-   g_natural_bind_owner_status_address.store(binding.status, std::memory_order_release);
-}
-
-void OnLocalContext1BindReturn(safetyhook::Context&)
-{
-   ActiveCallGuard active_call(g_active_mid_calls);
-   g_tls_local_context1_binding.active = false;
-}
-
 void OnStatusOwnerCharacterLoop(safetyhook::Context& context)
 {
    ActiveCallGuard active_call(g_active_mid_calls);
@@ -633,12 +548,7 @@ void ShutdownHooks()
    g_status_owner_manager_address.store(0, std::memory_order_release);
    g_natural_bind_owner_key.store(0, std::memory_order_release);
    g_natural_bind_owner_status_address.store(0, std::memory_order_release);
-   g_tls_local_context1_binding = {};
 
-   if (g_local_context1_bind_return_hook)
-      (void)g_local_context1_bind_return_hook.disable();
-   if (g_local_context1_bind_call_hook)
-      (void)g_local_context1_bind_call_hook.disable();
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
@@ -674,18 +584,12 @@ void ShutdownHooks()
             g_game_layout.trait_category_original_limit);
    }
    g_status_owner_tick_hook.reset();
-   g_local_context1_bind_return_hook.reset();
-   g_local_context1_bind_call_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
    ResetGameLayout();
    {
       std::unique_lock lock(g_authorization_mutex);
       g_authorized_statuses.clear();
-   }
-   {
-      std::unique_lock lock(g_local_context1_binding_mutex);
-      g_local_context1_bindings.clear();
    }
 }
 
