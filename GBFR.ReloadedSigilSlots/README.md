@@ -49,6 +49,24 @@ VirtualSlotCount=5
 
 目前只有 `VirtualSlotCount`（1–24）有实际意义。配置文件非法时会被备份为 `.invalid-*.bak` 后重建默认值，不会直接覆盖。
 
+## Hash 查询表（完整版）
+
+仓库 `docs/` 下有完整名字表（从原版数据恢复，仅作参考，不参与编译、不进 mod 包）：
+
+- `docs/gbfr-sigil-hashes.zh-CN.tsv`（中文，1238 行）
+- `docs/gbfr-sigil-hashes.en.tsv`（英文）
+
+格式：`类型<TAB>hash<TAB>名字`，每行三列：
+
+```
+S	335DA2A5	豪胆Ⅴ＋    ← S = 因子物品（gem_id 用这个）
+T	E69A4694	豪胆       ← T = 词条（trait1/trait2 用这个）
+```
+
+**查询方法**：用编辑器（VS Code / 记事本）打开 TSV，`Ctrl+F` 搜索词条或因子名字，取第二列的 8 位十六进制 hash。改配装时：
+- 物品 hash（`gem_id`）查 **S** 行；
+- 词条 hash（`trait1`/`trait2`）查 **T** 行。
+
 ## 修改配装（改词条 / 加槽位）
 
 配装表是**编译期内置**的，位于 `GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。每个槽是一个 `TemplateGemSlot`：
