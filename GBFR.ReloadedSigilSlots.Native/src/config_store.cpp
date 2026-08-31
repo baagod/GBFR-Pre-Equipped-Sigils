@@ -21,7 +21,7 @@ constexpr std::string_view kDefaultConfigText =
    "ShowEquipped=0\r\n"
    "AutoApply=1\r\n"
    "Language=zh-CN\r\n"
-   "VirtualSlotCount=8\r\n";
+   "VirtualSlotCount=5\r\n";
 constexpr std::wstring_view kPendingSlotCountFileName =
    L"GBFR-ReloadedSigilSlotsConfig.pending";
 std::mutex g_slot_count_request_mutex;

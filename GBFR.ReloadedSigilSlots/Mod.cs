@@ -117,7 +117,7 @@ public sealed class Mod : IMod
 
     private void Log(string message)
     {
-        string line = $"[{ModId}] {message}";
+        string line = $"[{DateTime.Now:HH:mm:ss.fff}] [{ModId}] {message}";
         ILogger? logger;
         lock (_logLock)
         {

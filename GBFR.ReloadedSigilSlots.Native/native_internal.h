@@ -64,7 +64,7 @@ struct ResolvedGameLayout
 };
 
 inline constexpr int kNativeInternalSlotCount = 13;
-inline constexpr int kDefaultVirtualSlotCount = 8;
+inline constexpr int kDefaultVirtualSlotCount = 5;
 inline constexpr int kVirtualSlotCapacity = 24;
 inline constexpr int kMainGemCapacity = 5100;
 inline constexpr int kCurrentSettingsVersion = 2;

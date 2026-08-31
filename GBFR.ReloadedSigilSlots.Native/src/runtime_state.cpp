@@ -1,6 +1,7 @@
 #include "../native_internal.h"
 
 #include <cctype>
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
 
@@ -50,7 +51,18 @@ int GetExpandedInternalSlotCount() noexcept
 
 void Log(const std::string& message)
 {
-   const std::string line = "[GBFR ReloadedSigilSlots Native] " + message + "\n";
+   SYSTEMTIME time{};
+   GetLocalTime(&time);
+   char timestamp[40]{};
+   sprintf_s(
+      timestamp,
+      "%02u:%02u:%02u.%03u",
+      time.wHour,
+      time.wMinute,
+      time.wSecond,
+      time.wMilliseconds);
+   const std::string line =
+      std::string("[") + timestamp + "] [GBFR ReloadedSigilSlots Native] " + message + "\n";
    OutputDebugStringA(line.c_str());
    if (const GBFR20_LogCallback callback = g_log_callback.load(std::memory_order_acquire);
        callback != nullptr)
