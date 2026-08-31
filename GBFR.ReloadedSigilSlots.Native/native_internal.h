@@ -57,9 +57,8 @@ struct ResolvedGameLayout
 };
 
 inline constexpr int kNativeInternalSlotCount = 13;
-inline constexpr int kDefaultVirtualSlotCount = 5;
+inline constexpr int kTemplateSlotCount = 5;
 inline constexpr int kVirtualSlotCapacity = 24;
-inline constexpr int kCurrentSettingsVersion = 2;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
@@ -186,12 +185,6 @@ struct NaturalContributionFrame
    bool active = false;
 };
 
-struct UiSettings
-{
-   bool auto_apply = true;
-   int virtual_slot_count = kDefaultVirtualSlotCount;
-};
-
 enum EditSessionState : int32_t
 {
    EditSessionUnknownLocked = 0,
@@ -242,7 +235,6 @@ bool MatchesBytes(uintptr_t address, const std::array<uint8_t, Size>& expected) 
 extern HMODULE g_module;
 extern uintptr_t g_image_base;
 extern std::filesystem::path g_module_directory;
-extern std::filesystem::path g_config_path;
 extern std::filesystem::path g_compatibility_path;
 extern std::once_flag g_initialize_once;
 extern std::atomic_bool g_initialized;
@@ -319,10 +311,6 @@ extern std::atomic_int32_t g_natural_bind_result;
 extern std::atomic_uint32_t g_natural_bind_owner_key;
 extern std::atomic_uint64_t g_natural_bind_owner_status_address;
 
-extern UiSettings g_settings;
-extern std::mutex g_settings_mutex;
-extern std::atomic_int32_t g_virtual_slot_count;
-
 int GetVirtualSlotCount() noexcept;
 int GetExpandedInternalSlotCount() noexcept;
 void Log(const std::string& message);
@@ -357,7 +345,6 @@ bool SafeNotifyStatusDirty(uintptr_t manager, uint32_t character_hash, uint32_t 
 bool ReadByte(uintptr_t address, uint8_t& value) noexcept;
 bool WriteByte(uintptr_t address, uint8_t value);
 
-void LoadSettingsAndSelections(bool activate_selection_ownership);
 bool LoadCompatibilityTable(const std::filesystem::path& path);
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash);
 

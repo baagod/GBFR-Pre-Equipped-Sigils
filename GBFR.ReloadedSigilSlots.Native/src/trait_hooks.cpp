@@ -454,12 +454,7 @@ void ScheduleSelectedStatusRebind()
       return;
    }
 
-   bool auto_apply = false;
-   {
-      std::scoped_lock lock(g_settings_mutex);
-      auto_apply = g_settings.auto_apply;
-   }
-   if (!auto_apply && !identity_changed)
+   if (!identity_changed)
       return;
 
    const uint64_t signature =

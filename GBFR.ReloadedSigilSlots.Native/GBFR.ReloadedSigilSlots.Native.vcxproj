@@ -87,7 +87,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\config_store.cpp" />
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\exports.cpp" />
     <ClCompile Include="src\layout_resolver.cpp" />

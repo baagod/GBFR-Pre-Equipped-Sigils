@@ -60,5 +60,7 @@ foreach ($c in $chars) {
 
 $out = $sb.ToString()
 Set-Content -Path "$env:TEMP\loadout_table.txt" -Value $out -Encoding UTF8
-Write-Output "generated: $($chars.Count) characters, $($out.Length) chars -> $env:TEMP\loadout_table.txt"
-Write-Output "lines: $(($out -split "`n").Count)"
+# Slot count for native_internal.h kTemplateSlotCount (must match common slot count + awakening slot)
+$slotCount = 1 + $common.Count
+Write-Output "generated: $($chars.Count) characters, $slotCount slots, $($out.Length) chars -> $env:TEMP\loadout_table.txt"
+Write-Output "SLOT_COUNT=$slotCount (sync native_internal.h kTemplateSlotCount if changed)"

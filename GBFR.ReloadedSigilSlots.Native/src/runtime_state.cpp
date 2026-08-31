@@ -10,7 +10,6 @@ namespace gbfr::native
 HMODULE g_module = nullptr;
 uintptr_t g_image_base = 0;
 std::filesystem::path g_module_directory;
-std::filesystem::path g_config_path;
 std::filesystem::path g_compatibility_path;
 
 std::once_flag g_initialize_once;
@@ -36,10 +35,7 @@ std::atomic_uint64_t g_lifecycle_rebind_not_before_ms{0};
 
 int GetVirtualSlotCount() noexcept
 {
-   return std::clamp(
-      g_virtual_slot_count.load(std::memory_order_acquire),
-      1,
-      kVirtualSlotCapacity);
+   return kTemplateSlotCount;
 }
 
 int GetExpandedInternalSlotCount() noexcept
