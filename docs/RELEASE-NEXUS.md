@@ -73,10 +73,10 @@
 | 摘要（Summary） | `自动配装虚拟因子槽位：全部 29 名角色各 5 个虚拟槽（运行时合成因子），不依赖库存、不写存档、无界面。` |
 | 分类（Category） | `Gameplay Effects` 或 `Cheats`（如实标注为增强/作弊类） |
 | 标签（Tags） | `Reloaded-II` `Sigils` `Auto Loadout` `QoL` `Gameplay` `Cheat` |
-| 版本 | 0.3.1 |
+| 版本 | 0.3.2 |
 | 游戏版本 | Granblue Fantasy: Relink（ER 2.0.5） |
 | 依赖 | [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II) 1.30.3+（写在 Mod Dependencies） |
-| 主文件 | `dist/GBFR-ReloadedSigilSlots-0.3.1.zip`（内含 `GBFR.ReloadedSigilSlots` 文件夹） |
+| 主文件 | `dist/GBFR-ReloadedSigilSlots-0.3.2.zip`（内含 `GBFR.ReloadedSigilSlots` 文件夹） |
 | 截图 | 至少 2–4 张：① 血条下 5 槽 buff 图标 ② 训练场/战斗 ③ 娜露梅状态面板 ④ 日志验证行。**一律用游戏内真实截图，不要用 AI 生成图** |
 
 ---
@@ -187,7 +187,7 @@ Nexus 官方政策（[Generative AI Categorisation & Tagging](https://forums.nex
 1. 完成第 1 节许可并获得回复；
 2. 准备游戏内截图（血条 buff、训练场、日志）；
 3. 登录 Nexus → Upload → 填写第 2 节信息表 + 第 3 节描述 + 第 4 节权限 + **AI-Generated Content 标签**；
-4. 上传 `GBFR-ReloadedSigilSlots-0.3.1.zip`；
+4. 上传 `GBFR-ReloadedSigilSlots-0.3.2.zip`；
 5. 发布后检查：页面渲染正常、AI 声明与 Credit 区正确、权限徽章正确；
 6. 在根 README 与 ModConfig 的 `ProjectUrl` 补上 Nexus 页面地址。
 

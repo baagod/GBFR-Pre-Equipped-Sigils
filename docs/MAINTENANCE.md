@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是**技术维护**文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-ReloadedSigilSlots
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.3.1。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
+> 当前版本：0.3.2。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 
 ---
 
@@ -115,7 +115,7 @@ TemplateGemSlot{
 环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.1
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.2
 # 产物: dist\GBFR-ReloadedSigilSlots-<version>.zip
 ```
 
