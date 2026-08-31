@@ -49,6 +49,42 @@ VirtualSlotCount=5
 
 目前只有 `VirtualSlotCount`（1–24）有实际意义。配置文件非法时会被备份为 `.invalid-*.bak` 后重建默认值，不会直接覆盖。
 
+## 修改配装（改词条 / 加槽位）
+
+配装表是**编译期内置**的，位于 `GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。每个槽是一个 `TemplateGemSlot`：
+
+```cpp
+TemplateGemSlot{
+   0x335DA2A5, // gem_id：物品 hash（游戏 master 表查找/显示名用，必须是真实存在的物品）
+   0xE69A4694, // trait1：主词条 hash
+   15,         // trait1_level：主词条等级（Ⅴ＋ = 15）
+   0x95F3FA86, // trait2：副词条 hash（0 = 单词条）
+   15,         // trait2_level：副词条等级
+   15,         // sigil_level：物品显示等级
+},
+```
+
+- **改词条**：替换 `trait1`/`trait2` 的 hash 与等级；
+- **加槽位**：在 `slots{}` 里追加一个 `TemplateGemSlot`，同时把配置文件里的 `VirtualSlotCount` 调大（循环上限 = 13 + 该值，默认 5 只覆盖 5 个虚拟槽）；
+- 词条/物品 hash 是游戏数据决定的固定值（全玩家一致）。常用参考：
+
+| 词条（T） | hash | 物品（S，V＋） | hash |
+|---|---|---|---|
+| 豪胆 | `E69A4694` | 豪胆Ⅴ＋ | `335DA2A5` |
+| 自动复活 | `95F3FA86` | 不动Ⅴ＋ | `B1CCC211` |
+| 不动 | `B6E31F76` | 坚持Ⅴ＋ | `041D7B20` |
+| 躲避性能 | `8B3BF60C` | 药水携带数Ⅴ＋ | `23C84E82` |
+| 坚持 | `1470F860` | 激昂Ⅴ＋ | `04AC2281` |
+| 药水携带数 | `24883AF3` | 斩姬之觉醒＋ | `1A57AEF1` |
+| 激昂 | `B5FF9FD3` | 斩姬的战气＋ | `CEF31894` |
+| 斩姬梦幻 | `29B07BEB` | 转世的战气 | `DB05A865` |
+| 斩姬武艺 | `A63B89CD` | 浪迹天涯Ⅴ＋ | `04BD9F6B` |
+| 斩姬的战气 | `FDD1AD24` | 刚健Ⅴ＋ | `164E776A` |
+
+（每角色的专属词条/物品 hash 各不相同，扩展其他角色时可对照原版 `names` 表或询问作者。）
+
+改完运行 `build-release.ps1` 重新打包即可。
+
 ## 构建
 
 环境要求：Windows x64、Visual Studio 2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
