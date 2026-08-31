@@ -22,6 +22,8 @@
 - 改为**内置模板配装表自动注入**（当前：娜露梅 5 槽：斩姬之觉醒＋、激昂＋战气、豪胆＋自动复活、不动＋躲避性能、坚持＋药水携带数），运行时合成因子，**不依赖库存、不写存档**；
 - 代码从 ~9000 行精简到 ~3900 行，仅保留核心 Hook、语义布局解析与 fail-closed 安全机制，已在本机 ER 2.0.5 验证正常（战斗 5/5 注入确认）。
 
+**如实说明**：代码由 AI 助手在人类指导下编写（需求设计、配装内容、游戏内验证与文档由人类主导），完整 git 提交历史与维护文档可查。你的机制与工程化设计是我们保留的核心基础。
+
 想请问：**是否可以允许我将其发布到 Nexus Mods？** 发布时我会在页面明确注明派生来源和你的署名（Credit），并保持"允许修改、要求注明来源"的开放权限。
 
 你的仓库交接文档写明欢迎后续维护者接手，希望得到你的许可。无论是否允许都感谢你的工作！🙏
@@ -39,6 +41,8 @@ I've built a slimmed-down derivative of your GBFR Extra Sigil Slots (0.8.6), cal
 - Removed the F8 selector UI, Overlay Broker, input capture and preset machinery;
 - Replaced them with a **built-in template loadout engine** (currently Narmaya, 5 virtual slots: Awakening+, Inspire + War Spirit, Guts + Autorevive, Steadfast + Improved Dodging, Perseverance + Potion Hoarder), sigils synthesized at runtime — **no inventory dependency, no save writes**;
 - Code trimmed from ~9000 to ~3900 lines, keeping only the core hooks, the semantic layout resolver and the fail-closed safety machinery; verified working on ER 2.0.5 (5/5 trait injection confirmed in battle).
+
+**For transparency**: the code was written by an AI assistant under human direction (requirements, loadout contents, in-game verification and documentation were human-led); full git history and maintenance docs are available. Your hook architecture and engineering design are the core foundation we kept.
 
 May I publish it on Nexus Mods? I will clearly credit you and the original mod as the source, and keep an open permission (modification allowed with credit required).
 
