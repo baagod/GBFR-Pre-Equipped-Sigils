@@ -2,7 +2,8 @@
 
 > 面向对象：后续接管本项目的 AI agent / 开发者。
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是**技术维护**文档。
-> 项目位置：本仓库根目录。游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
+> 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-ReloadedSigilSlots
+> 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
 > 当前版本：0.3.1。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 
 ---
