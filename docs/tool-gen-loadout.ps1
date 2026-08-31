@@ -45,43 +45,20 @@ $common = @(
 $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('constexpr CharacterTemplate kDefaultTemplates[] = {')
 foreach ($c in $chars) {
-    [void]$sb.AppendLine('   {')
-    [void]$sb.AppendLine("      0x$($c.Hash), // character")
-    [void]$sb.AppendLine('      {')
+    [void]$sb.AppendLine("   { 0x$($c.Hash), { // character")
     # slot 1: awakening+
-    [void]$sb.AppendLine('         TemplateGemSlot{')
-    [void]$sb.AppendLine("            0x$($c.Awake), // gem_id: awakening+")
-    [void]$sb.AppendLine("            0x$($c.T1), // trait1")
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine("            0x$($c.T2), // trait2")
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine('         },')
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($c.Awake), 0x$($c.T1), 15, 0x$($c.T2), 15, 15}, // slot1 awakening+ (2 exclusives)")
     # slot 2: inspire + war spirit
-    [void]$sb.AppendLine('         TemplateGemSlot{')
-    [void]$sb.AppendLine("            0x$($common[0].Gem), // gem_id: Inspire V+")
-    [void]$sb.AppendLine("            0x$($common[0].T1), // trait1: Inspire")
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine("            0x$($c.War), // trait2: war spirit")
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine('            15,')
-    [void]$sb.AppendLine('         },')
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[0].Gem), 0x$($common[0].T1), 15, 0x$($c.War), 15, 15}, // slot2 Inspire V+ + war spirit)")
     # slots 3-5
-    foreach ($s in $common[1..3]) {
-        [void]$sb.AppendLine('         TemplateGemSlot{')
-        [void]$sb.AppendLine("            0x$($s.Gem),")
-        [void]$sb.AppendLine("            0x$($s.T1),")
-        [void]$sb.AppendLine('            15,')
-        [void]$sb.AppendLine("            0x$($s.T2),")
-        [void]$sb.AppendLine('            15,')
-        [void]$sb.AppendLine('            15,')
-        [void]$sb.AppendLine('         },')
-    }
-    [void]$sb.AppendLine('      },')
-    [void]$sb.AppendLine('   },')
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[1].Gem), 0x$($common[1].T1), 15, 0x$($common[1].T2), 15, 15}, // slot3 Guts V+ + Autorevive)")
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[2].Gem), 0x$($common[2].T1), 15, 0x$($common[2].T2), 15, 15}, // slot4 Steadfast V+ + Improved Dodging)")
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[3].Gem), 0x$($common[3].T1), 15, 0x$($common[3].T2), 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)")
+    [void]$sb.AppendLine('   }},')
 }
 [void]$sb.AppendLine('};')
 
 $out = $sb.ToString()
 Set-Content -Path "$env:TEMP\loadout_table.txt" -Value $out -Encoding UTF8
 Write-Output "generated: $($chars.Count) characters, $($out.Length) chars -> $env:TEMP\loadout_table.txt"
+Write-Output "lines: $(($out -split "`n").Count)"
