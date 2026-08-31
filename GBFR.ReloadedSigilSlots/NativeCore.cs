@@ -57,7 +57,6 @@ internal static unsafe partial class NativeCore
         bool nativeLibraryCompleted = false;
         try
         {
-            log("Startup phase=native-library-load state=begin.");
             NativeSetLogCallback(
                 (IntPtr)(delegate* unmanaged[Cdecl]<sbyte*, void>)&ForwardNativeLog
             );

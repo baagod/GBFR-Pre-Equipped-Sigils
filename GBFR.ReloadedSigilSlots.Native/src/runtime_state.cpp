@@ -69,9 +69,11 @@ void Log(const std::string& message)
    }
 }
 
-uint64_t BeginStartupPhase(std::string_view phase)
+uint64_t BeginStartupPhase(std::string_view)
 {
-   Log("Startup phase=" + std::string(phase) + " state=begin.");
+   // Phases log once on completion (with elapsed time); failures are still
+   // reported explicitly by CompleteStartupPhase, so a stuck startup is
+   // identifiable by the last completed phase.
    return GetTickCount64();
 }
 

@@ -66,25 +66,11 @@ public sealed class Mod : IMod
                     AutoFlush = true,
                 };
             }
-            Log("Startup phase=managed-initialize state=begin.");
-
-            long injectionStarted = BeginStartupPhase("reloaded-injection-source");
-            ReloadedInjectionSource injectionSource = ReloadedInjectionSourceDetector.Detect();
-            CompleteStartupPhase(
-                "reloaded-injection-source",
-                injectionStarted,
-                injectionSource.Kind != ReloadedInjectionKind.Unknown);
-            Log(ReloadedInjectionSourceDetector.FormatLogMessage(injectionSource));
-
             long nativeStarted = BeginStartupPhase("native-core");
             NativeCore.Configure(modDirectory);
             bool hooksReady = NativeCore.Initialize(Log);
             CompleteStartupPhase("native-core", nativeStarted, hooksReady);
-            if (hooksReady)
-            {
-                Log($"Native core initialized: {NativeCore.GetRuntimeMessage()}");
-            }
-            else
+            if (!hooksReady)
             {
                 Log($"Native core loaded without hooks: {NativeCore.GetRuntimeMessage()}");
             }
@@ -143,7 +129,7 @@ public sealed class Mod : IMod
 
     private long BeginStartupPhase(string phase)
     {
-        Log($"Startup phase={phase} state=begin.");
+        // Phases log once on completion; see CompleteStartupPhase.
         return Stopwatch.GetTimestamp();
     }
 
