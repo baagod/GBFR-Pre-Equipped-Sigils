@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace GBFR.ExtraSigilSlots.Reloaded;
+namespace GBFR.ReloadedSigilSlots;
 
 internal enum ReloadedInjectionKind
 {

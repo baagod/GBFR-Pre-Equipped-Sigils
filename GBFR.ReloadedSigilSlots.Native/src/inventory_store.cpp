@@ -139,6 +139,8 @@ bool RefreshInventorySnapshot()
          {
             if (selected_slot_id == 0)
                continue;
+            if (IsTemplateSlotId(selected_slot_id))
+               continue; // Template slots are inventory-independent.
             const auto gem_iterator = gems_by_slot_id.find(selected_slot_id);
             const bool valid = gem_iterator != gems_by_slot_id.end() &&
                gem_iterator->second.gem_id != 0 &&

@@ -76,6 +76,36 @@ inline constexpr uint32_t kGemInvalidFlag = 0x10;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
 
+// Template (synthesized) sigil slots use a slot-id range that can never
+// collide with real inventory slot ids (0 .. kMainGemCapacity - 1).
+inline constexpr uint32_t kTemplateSlotIdBase = 0xFE000000u;
+
+inline constexpr bool IsTemplateSlotId(uint32_t slot_id) noexcept
+{
+   return slot_id >= kTemplateSlotIdBase;
+}
+
+inline constexpr uint32_t MakeTemplateSlotId(int virtual_slot) noexcept
+{
+   return kTemplateSlotIdBase + static_cast<uint32_t>(virtual_slot);
+}
+
+struct TemplateGemSlot
+{
+   uint32_t gem_id = 0; // real gem hash for the gem-master lookup; 0 = empty slot
+   uint32_t trait1 = 0;
+   int32_t trait1_level = 0;
+   uint32_t trait2 = 0; // 0 = single-trait sigil
+   int32_t trait2_level = 0;
+   int32_t sigil_level = 0; // displayed sigil level (V+ = 15)
+};
+
+struct CharacterTemplate
+{
+   uint32_t character_hash = 0;
+   std::array<TemplateGemSlot, kVirtualSlotCapacity> slots{};
+};
+
 inline constexpr bool IsCaptainCharacterHash(uint32_t character_hash) noexcept
 {
    return character_hash == kGranCharacterHash || character_hash == kDjeetaCharacterHash;
@@ -488,6 +518,11 @@ bool RefreshInventorySnapshot();
 void ScheduleGemProtectionReconcile() noexcept;
 void ReconcileGemProtection();
 void SetGemProtectionDetour(uintptr_t system_data, uint32_t slot_id, bool protected_value);
+
+const CharacterTemplate* FindCharacterTemplate(uint32_t character_hash) noexcept;
+const TemplateGemSlot* FindTemplateSlot(uint32_t character_hash, int virtual_slot) noexcept;
+void InstallDefaultTemplateSelections();
+bool TryCopyTemplateGem(uint32_t character_hash, uint32_t selected_slot_id, void* output) noexcept;
 
 void ScheduleSelectedStatusRebind();
 bool ResolveGameLayout();

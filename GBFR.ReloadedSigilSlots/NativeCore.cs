@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace GBFR.ExtraSigilSlots.Reloaded;
+namespace GBFR.ReloadedSigilSlots;
 
 internal static unsafe partial class NativeCore
 {
@@ -14,7 +14,7 @@ internal static unsafe partial class NativeCore
     internal const int OwnerCharacterCapacity = 4;
     internal const int PresetCharacterCapacity = 32;
 
-    private const string LibraryName = "GBFR.ExtraSigilSlots.Native.dll";
+    private const string LibraryName = "GBFR.ReloadedSigilSlots.Native.dll";
     private static readonly object ResolverLock = new();
     private static readonly object NativeLogLock = new();
     private static string? _libraryPath;

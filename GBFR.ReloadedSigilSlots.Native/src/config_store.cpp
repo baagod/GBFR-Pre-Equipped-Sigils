@@ -23,7 +23,7 @@ constexpr std::string_view kDefaultConfigText =
    "Language=zh-CN\r\n"
    "VirtualSlotCount=8\r\n";
 constexpr std::wstring_view kPendingSlotCountFileName =
-   L"GBFR-ExtraSigilSlotsNumConfig.pending";
+   L"GBFR-ReloadedSigilSlotsConfig.pending";
 std::mutex g_slot_count_request_mutex;
 
 enum class ConfigFileState

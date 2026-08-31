@@ -2,8 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
-    <AssemblyName>GBFR.ExtraSigilSlots.Reloaded</AssemblyName>
-    <RootNamespace>GBFR.ExtraSigilSlots.Reloaded</RootNamespace>
+    <AssemblyName>GBFR.ReloadedSigilSlots</AssemblyName>
+    <RootNamespace>GBFR.ReloadedSigilSlots</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -12,31 +12,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GBFR.OverlayHub.Contracts\GBFR.OverlayHub.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Reloaded.Mod.Interfaces" Version="2.5.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Reloaded.SharedLib.Hooks" Version="1.9.0" ExcludeAssets="runtime" />
-    <PackageReference Include="Reloaded.Imgui.Hook" Version="4.1.0" />
-    <PackageReference Include="Reloaded.Imgui.Hook.Direct3D11" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="ModConfig.json" CopyToOutputDirectory="Always" />
+    <None Include="README.md" CopyToOutputDirectory="Always" />
     <None Include="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="Always" />
-    <None Include="README-development.md" CopyToOutputDirectory="Always" />
-    <None Include="README-safety-test.md" CopyToOutputDirectory="Always" />
-    <None Include="..\GBFR.ExtraSigilSlots.Native\bin\$(Configuration)\GBFR.ExtraSigilSlots.Native.dll"
-          Link="GBFR.ExtraSigilSlots.Native.dll"
+    <None Include="..\GBFR.ReloadedSigilSlots.Native\bin\$(Configuration)\GBFR.ReloadedSigilSlots.Native.dll"
+          Link="GBFR.ReloadedSigilSlots.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ExtraSigilSlots.Native\GBFR-ExtraSigilSlots.names.en.tsv"
+    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.names.en.tsv"
           Link="GBFR-ExtraSigilSlots.names.en.tsv"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ExtraSigilSlots.Native\GBFR-ExtraSigilSlots.names.zh-CN.tsv"
+    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.names.zh-CN.tsv"
           Link="GBFR-ExtraSigilSlots.names.zh-CN.tsv"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ExtraSigilSlots.Native\GBFR-ExtraSigilSlots.compatibility.tsv"
+    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.compatibility.tsv"
           Link="GBFR-ExtraSigilSlots.compatibility.tsv"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

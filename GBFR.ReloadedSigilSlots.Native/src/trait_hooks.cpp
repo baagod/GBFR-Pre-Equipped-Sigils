@@ -230,6 +230,12 @@ bool TryCopySelectedVirtualGem(
    if (selected_slot_id == 0)
       return false;
 
+   // Template slots synthesize a GemData from the built-in loadout table
+   // instead of referencing a physical inventory copy.
+   if (IsTemplateSlotId(selected_slot_id))
+      return TryCopyTemplateGem(
+         identity.character_hash, selected_slot_id, output);
+
    try
    {
       const uintptr_t source_address = ResolveGemAddress(selected_slot_id);

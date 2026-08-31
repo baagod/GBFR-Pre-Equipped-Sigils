@@ -24,7 +24,7 @@ void Initialize()
    }
 
    g_module_directory = std::filesystem::path(module_path.data()).parent_path();
-   g_config_path = g_module_directory / L"GBFR-ExtraSigilSlotsNumConfig.ini";
+   g_config_path = g_module_directory / L"GBFR-ReloadedSigilSlotsConfig.ini";
    g_compatibility_path =
       g_module_directory / L"GBFR-ExtraSigilSlots.compatibility.tsv";
 
@@ -116,6 +116,7 @@ void Initialize()
    const uint64_t activation_started =
       BeginStartupPhase("verified-settings-activation");
    LoadSettingsAndSelections(true);
+   InstallDefaultTemplateSelections();
    CompleteStartupPhase(
       "verified-settings-activation", activation_started, true);
 

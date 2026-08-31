@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace GBFR.ExtraSigilSlots.Reloaded;
+namespace GBFR.ReloadedSigilSlots;
 
 internal static unsafe partial class NativeCore
 {

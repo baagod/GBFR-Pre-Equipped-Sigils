@@ -5,18 +5,18 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.8.6'
+    [string]$Version = '0.1.0'
 )
 
 $ErrorActionPreference = 'Stop'
 
 $root = $PSScriptRoot
-$nativeProject = Join-Path $root 'GBFR.ExtraSigilSlots.Native\GBFR.ExtraSigilSlots.Native.vcxproj'
-$managedProject = Join-Path $root 'GBFR.ExtraSigilSlots.Reloaded\GBFR.ExtraSigilSlots.Reloaded.csproj'
-$managedOutput = Join-Path $root "GBFR.ExtraSigilSlots.Reloaded\bin\$Configuration"
+$nativeProject = Join-Path $root 'GBFR.ReloadedSigilSlots.Native\GBFR.ReloadedSigilSlots.Native.vcxproj'
+$managedProject = Join-Path $root 'GBFR.ReloadedSigilSlots\GBFR.ReloadedSigilSlots.csproj'
+$managedOutput = Join-Path $root "GBFR.ReloadedSigilSlots\bin\$Configuration"
 $distRoot = Join-Path $root 'dist'
-$packageDir = Join-Path $distRoot 'GBFR.ExtraSigilSlots.Reloaded'
-$zipPath = Join-Path $distRoot "GBFR-Extra-Sigil-Slots-$Version.zip"
+$packageDir = Join-Path $distRoot 'GBFR.ReloadedSigilSlots'
+$zipPath = Join-Path $distRoot "GBFR-ReloadedSigilSlots-$Version.zip"
 
 $msbuild = $null
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -91,8 +91,8 @@ New-Item -ItemType Directory -Path $packageDir | Out-Null
 Copy-Item -Path (Join-Path $managedOutput '*') -Destination $packageDir -Recurse -Force
 
 foreach ($requiredFile in @(
-    'GBFR.ExtraSigilSlots.Reloaded.dll',
-    'GBFR.ExtraSigilSlots.Native.dll'
+    'GBFR.ReloadedSigilSlots.dll',
+    'GBFR.ReloadedSigilSlots.Native.dll'
 )) {
     $requiredPath = Join-Path $packageDir $requiredFile
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
@@ -101,10 +101,11 @@ foreach ($requiredFile in @(
 }
 
 foreach ($excludedFile in @(
-    'GBFR.ExtraSigilSlots.Reloaded.pdb',
+    'GBFR.ReloadedSigilSlots.pdb',
+    'GBFR-ReloadedSigilSlotsConfig.ini',
+    'GBFR-ReloadedSigilSlotsConfig.pending',
     'GBFR-ExtraSigilSlotsNumConfig.ini',
     'GBFR-ExtraSigilSlotsNumConfig.pending',
-    'GBFR-ExtraSigilSlots20.ini',
     'GBFR-ExtraSigilSlots.presets.json',
     'GBFR-ExtraSigilSlots20.presets.json',
     'README-development.md'
@@ -123,30 +124,23 @@ if (Test-Path -LiteralPath $runtimesPath) {
 }
 
 $legacyArtifact = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
-    Where-Object { $_.Name -like '*ExtraSigilSlots20*' } |
+    Where-Object {
+        $_.Name -like 'GBFR.ExtraSigilSlots*' -or
+        $_.Name -like '*ExtraSigilSlots20*'
+    } |
     Select-Object -First 1
 if ($legacyArtifact) {
-    throw "Legacy ExtraSigilSlots20 artifact was packaged: $($legacyArtifact.FullName)"
+    throw "Legacy ExtraSigilSlots artifact was packaged: $($legacyArtifact.FullName)"
 }
 
-$packagedNumConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
+$packagedConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
     Where-Object {
-        $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.ini' -or
-        $_.Name -ieq 'GBFR-ExtraSigilSlotsNumConfig.pending'
+        $_.Name -ieq 'GBFR-ReloadedSigilSlotsConfig.ini' -or
+        $_.Name -ieq 'GBFR-ReloadedSigilSlotsConfig.pending'
     } |
     Select-Object -First 1
-if ($packagedNumConfig) {
-    throw "Mutable NumConfig state must be runtime-created and was packaged unexpectedly: $($packagedNumConfig.FullName)"
-}
-
-$packagedPresetState = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
-    Where-Object {
-        $_.Name -like 'GBFR-ExtraSigilSlots.presets.json*' -or
-        $_.Name -like 'GBFR-ExtraSigilSlots20.presets.json*'
-    } |
-    Select-Object -First 1
-if ($packagedPresetState) {
-    throw "Mutable preset state or a preset backup was packaged unexpectedly: $($packagedPresetState.FullName)"
+if ($packagedConfig) {
+    throw "Mutable config state must be runtime-created and was packaged unexpectedly: $($packagedConfig.FullName)"
 }
 
 Compress-Archive -LiteralPath $packageDir -DestinationPath $zipPath -CompressionLevel Optimal
