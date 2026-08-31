@@ -112,6 +112,37 @@ Auto-applies a fixed template loadout to your characters through **runtime-synth
 
 ---
 
+## 3.5 AI 使用声明（必须，Nexus 强制）
+
+Nexus 官方政策（[Generative AI Categorisation & Tagging](https://forums.nexusmods.com/topic/13542525-an-update-on-generative-ai-categorisation-tagging/)）：
+**未披露生成式 AI 使用 = 违反 ToS，会被审核处理**；错误标记同样会被处理。
+
+三个标签（Generative AI Usage 分类）：
+
+| 标签 | 定义 | 本项目适用性 |
+|---|---|---|
+| **AI-Generated Content** | AI 生成的代码/UI/语音/翻译/游戏内资产；**"mod 主要由 AI 生成"时使用** | ✅ **本项目打这个**：代码主体由 AI 编写 |
+| AI Media | AI 宣传图/缩略图/视频/**AI 生成的页面描述** | ⚠️ 描述若为 AI 起草需注意（见下） |
+| AI Assisted | 开发者主导 + AI 参与有限，**要求显著证据**（git 历史、开发文档、可解释代码） | ❌ 不适用（代码大头是 AI 写的，硬标会被审核替换） |
+
+**本项目的发布对策**：
+
+1. **标签**：上传时选择 **AI-Generated Content**（在 Generative AI Usage 分类下），最诚实且不会被审核推翻；
+2. **描述开头加一段声明**：
+
+   ```markdown
+   > **AI-assisted development disclosure**: this mod's code was written by an AI
+   > assistant under human direction. Design decisions, loadout contents, in-game
+   > verification and documentation were human-led; full git history and a
+   > maintenance manual are available in the source repository.
+   ```
+
+3. **截图**：一律用**游戏内真实截图**（血条 buff、训练场、日志），不要用 AI 生成的宣传图，避免触发 AI Media 标签；
+4. **描述文本**：AI 起草的模板**发布前必须由你人工审校/确认**后再提交，页面描述以你确认的版本为准；
+5. **许可申请**：发给原作者的申请里可顺带说明"AI 辅助开发"（透明加分，非强制）。
+
+---
+
 ## 4. 权限声明（Declaration）建议
 
 发布表单的权限部分按以下推荐填写（可在页面 Permissions 页随时修改）：

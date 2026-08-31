@@ -30,14 +30,6 @@
 2. 把 mod 文件夹解压到 Reloaded-II 的 `Mods` 目录；
 3. 启用 mod 后启动游戏（Launcher 或 Steam + Deploy ASI 均可）。
 
-## 验证
-
-- mod 目录下的日志 `ReloadedSigilSlots.Reloaded.log` 应出现：
-  - `Installed 5 built-in template loadout selection(s)`
-  - `Live battle Trait contribution confirmed for 0xE7053919: 5/5 virtual sigils reached the context-1 status`
-- 训练场实测：豪胆触发（濒死不死）、自动复活触发（倒地自起）；
-- 血条下方会出现注入词条的 buff 图标。
-
 ## 配置
 
 配置文件 `GBFR-ReloadedSigilSlotsConfig.ini`（首次启动时在 mod 目录自动生成）：
