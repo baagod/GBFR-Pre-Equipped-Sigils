@@ -174,5 +174,17 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   （数组 + `kTemplateSlotCount` 常量同步更新）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表）→ 模板表加
   `CharacterTemplate` 条目 → 编译 → 部署 → 验证。
+- **升版本**（如 0.3.2 → 0.3.3）：
+  1. 改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
+  2. 重新构建（`build-release.ps1`）；
+  3. **扫描全文档旧版本号残留**（必须）：
+     ```powershell
+     Select-String -Path README.md,GBFR.ReloadedSigilSlots\README.md,GBFR.ReloadedSigilSlots\ModConfig.json,docs\*.md -Pattern "0\.3\.2"
+     ```
+     命中处全部更新（常见：MAINTENANCE 头部/构建注释、RELEASE-NEXUS 信息表/上传清单）；
+  4. 改配装/功能时同步 RELEASE-NEXUS 描述模板里的配装表与摘要；
+  5. 提交 → 推送（`-c credential.helper="!gh auth git-credential"`）→ 部署（游戏退出后复制 dist 包）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
   （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
+- **推送**：`git -c credential.helper="!gh auth git-credential" push origin main`
+  （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检查 gh token 的 Contents: Read and write 权限）。
