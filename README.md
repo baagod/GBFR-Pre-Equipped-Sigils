@@ -1,18 +1,18 @@
 # GBFR Reloaded Sigil Slots
 
-《碧蓝幻想：Relink》自动配装虚拟因子槽位 Mod（ER 2.0.5）：**全部 29 名角色自动获得 5 个虚拟因子槽**，运行时合成因子注入状态计算——**零库存、零存档、零配置**。派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)，删除了选择器 UI、Overlay Broker、输入捕获、预设与库存依赖，新增与库存无关的模板配装引擎。
+《碧蓝幻想：Relink》自动配装虚拟因子槽位 Mod（ER 2.0.5）：**全部 29 名角色自动获得 5 个虚拟因子槽**，运行时合成因子注入 —— **零库存、零存档、零配置**。派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)。
 
-## 模板配装（每角色 5 个虚拟槽，全部词条 15 级）
+## 模板配装
+
+5 个虚拟槽全部词条 15 级，不占用本体 12 槽。
 
 | 槽位 | 因子 | 词条 |
 |---|---|---|
 | 1 | 角色觉醒＋（每角色专属） | 该角色两个专属词条（如娜露梅：斩姬梦幻 + 斩姬武艺） |
-| 2 | 激昂Ⅴ＋ | 激昂 + 角色战气（每角色专属） |
+| 2 | 激昂Ⅴ＋ | 激昂 + 角色战气（角色专属） |
 | 3 | 豪胆Ⅴ＋ | 豪胆 + 自动复活 |
 | 4 | 不动Ⅴ＋ | 不动 + 躲避性能 |
 | 5 | 刚健Ⅴ＋ | 刚健 + 药水携带数 |
-
-不占用本体 12 槽；姬塔与古兰共享主角专属。全部为防御/容错向词条，不增加输出。
 
 ## 文档入口
 
@@ -25,7 +25,7 @@
 ## 仓库结构
 
 ```
-GBFR.ReloadedSigilSlots/         C# 托管层（Reloaded-II 壳，打包进 mod）
+GBFR.ReloadedSigilSlots/         C# 托管层（Reloaded-II 壳，打包进 Mod）
 GBFR.ReloadedSigilSlots.Native/  C++ 原生核心（Hook 与模板合成引擎）
 docs/                            参考文档与 hash 表（不打包）
 dist/                            构建产物（zip，git 忽略）
