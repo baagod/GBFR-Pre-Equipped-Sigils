@@ -2,6 +2,8 @@
 
 《碧蓝幻想：Relink》自动配装虚拟因子槽位 mod（Endless Ragnarok 2.0.5）。
 
+> 📖 技术维护文档（架构/数据流/雷区/操作指南，面向 AI 接手者）：[docs/MAINTENANCE.md](../docs/MAINTENANCE.md)
+
 独立 Reloaded-II mod，派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（Hiyajomaho-num9）。删除了原版的选择器界面、Overlay Broker、输入捕获、预设机制与库存依赖，新增了**与库存无关的模板配装引擎**。
 
 ## 功能
