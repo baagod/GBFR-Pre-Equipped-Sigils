@@ -22,12 +22,6 @@
     <None Include="..\GBFR.ReloadedSigilSlots.Native\bin\$(Configuration)\GBFR.ReloadedSigilSlots.Native.dll"
           Link="GBFR.ReloadedSigilSlots.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.names.en.tsv"
-          Link="GBFR-ExtraSigilSlots.names.en.tsv"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.names.zh-CN.tsv"
-          Link="GBFR-ExtraSigilSlots.names.zh-CN.tsv"
-          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ExtraSigilSlots.compatibility.tsv"
           Link="GBFR-ExtraSigilSlots.compatibility.tsv"
           CopyToOutputDirectory="PreserveNewest" />

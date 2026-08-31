@@ -431,33 +431,6 @@ bool SafeResolveSelectedCharacterStatus(
       identity.context_mode >= 0 && identity.context_mode <= 2;
 }
 
-bool SafeCanEditCharacter(uint32_t character_hash) noexcept
-{
-   if (!g_layout_ready.load(std::memory_order_acquire) ||
-       !g_hooks_ready.load(std::memory_order_acquire))
-      return false;
-   UpdateEditSessionState();
-   const int32_t edit_session = g_edit_session_state.load(std::memory_order_acquire);
-   if (edit_session != EditSessionEquipment &&
-       edit_session != EditSessionFreeTraining)
-      return false;
-   uint32_t ui_character_hash = 0;
-   if (character_hash == 0 ||
-       !SafeReadUiSelectedCharacterHash(ui_character_hash) ||
-       ui_character_hash != character_hash)
-      return false;
-
-   uintptr_t manager = 0;
-   uintptr_t status = 0;
-   StatusIdentity identity{};
-   return SafeResolveSelectedCharacterStatus(character_hash, manager, status, identity);
-}
-
-void MarkInventoryDirty() noexcept
-{
-   g_inventory_dirty.store(true, std::memory_order_release);
-}
-
 void CommitAuthorizedStatus(
    uintptr_t status,
    const StatusIdentity& identity,

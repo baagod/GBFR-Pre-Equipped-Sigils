@@ -28,22 +28,9 @@ void Initialize()
    g_compatibility_path =
       g_module_directory / L"GBFR-ExtraSigilSlots.compatibility.tsv";
 
-   const uint64_t slot_count_started = BeginStartupPhase("pending-slot-count");
-   const bool slot_count_applied = ApplyPendingVirtualSlotCount();
-   CompleteStartupPhase("pending-slot-count", slot_count_started, slot_count_applied);
-
    const uint64_t settings_started = BeginStartupPhase("settings-and-selections");
    LoadSettingsAndSelections(false);
    CompleteStartupPhase("settings-and-selections", settings_started, true);
-
-   std::string language;
-   {
-      std::scoped_lock lock(g_settings_mutex);
-      language = g_settings.language == "en" ? "en" : "zh-CN";
-   }
-   const uint64_t names_started = BeginStartupPhase("localized-name-table");
-   const bool names_loaded = ReloadNameTable(language);
-   CompleteStartupPhase("localized-name-table", names_started, names_loaded);
 
    const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');
@@ -66,30 +53,6 @@ void Initialize()
       return;
    }
    CompleteStartupPhase("executable-validation", executable_started, true);
-
-   const uint64_t input_hooks_started = BeginStartupPhase("input-iat-hooks");
-   const bool input_hooks_enabled =
-      g_input_hooks_enabled.load(std::memory_order_acquire);
-   const bool input_hooks_ready =
-      input_hooks_enabled ? InstallInputIatHooks() : true;
-   if (!input_hooks_enabled)
-   {
-      Log(
-         "Game-local USER32 and DirectInput8 hooks were intentionally skipped; "
-         "the shared Overlay Hub owns keyboard and mouse interception.");
-   }
-   else if (!input_hooks_ready)
-   {
-      Log(
-         "Game-local input gates failed transactionally and were rolled back; "
-         "gameplay compatibility resolution will continue without native input capture.");
-   }
-   CompleteStartupPhase("input-iat-hooks", input_hooks_started, input_hooks_ready);
-
-   // Input interception is intentionally independent from gameplay memory hooks.
-   // Keeping a fully installed input transaction alive lets the managed overlay
-   // display a compatibility error without leaking keyboard or mouse input to the
-   // game. Shutdown still restores it through ShutdownHooks().
 
    const uint64_t compatibility_started = BeginStartupPhase("compatibility-table");
    const bool compatibility_loaded = LoadCompatibilityTable(g_compatibility_path);

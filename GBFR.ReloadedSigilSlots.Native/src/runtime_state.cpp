@@ -33,8 +33,6 @@ std::atomic_uint32_t g_lifecycle_rebind_attempts{0};
 std::atomic_uint64_t g_lifecycle_rebind_signature{0};
 std::atomic_uint32_t g_lifecycle_signature_attempts{0};
 std::atomic_uint64_t g_lifecycle_rebind_not_before_ms{0};
-std::atomic_uint32_t g_overlay_thread_id{0};
-std::atomic_uint64_t g_overlay_frame_count{0};
 
 int GetVirtualSlotCount() noexcept
 {

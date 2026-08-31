@@ -22,8 +22,6 @@ constexpr std::string_view kDefaultConfigText =
    "AutoApply=1\r\n"
    "Language=zh-CN\r\n"
    "VirtualSlotCount=5\r\n";
-constexpr std::wstring_view kPendingSlotCountFileName =
-   L"GBFR-ReloadedSigilSlotsConfig.pending";
 std::mutex g_slot_count_request_mutex;
 
 enum class ConfigFileState
@@ -545,29 +543,6 @@ std::wstring ReadIniString(const wchar_t* section, const wchar_t* key, const wch
       g_config_path.c_str());
    return buffer.data();
 }
-
-std::wstring ReadLargeIniString(
-   const wchar_t* section,
-   const wchar_t* key,
-   const wchar_t* fallback)
-{
-   std::vector<wchar_t> buffer(65536, L'\0');
-   GetPrivateProfileStringW(
-      section,
-      key,
-      fallback,
-      buffer.data(),
-      static_cast<DWORD>(buffer.size()),
-      g_config_path.c_str());
-   return buffer.data();
-}
-
-void WriteIniInt(const wchar_t* section, const wchar_t* key, int value)
-{
-   const std::wstring text = std::to_wstring(value);
-   WritePrivateProfileStringW(section, key, text.c_str(), g_config_path.c_str());
-}
-
 std::wstring CharacterSectionName(uint32_t character_hash)
 {
    wchar_t buffer[32]{};
@@ -615,498 +590,6 @@ std::array<uint32_t, kVirtualSlotCapacity> ParseSlots(std::wstring_view text)
    }
    return slots;
 }
-
-std::filesystem::path PendingSlotCountPath()
-{
-   return g_module_directory / kPendingSlotCountFileName;
-}
-
-enum class PendingSlotCountState
-{
-   Missing,
-   Valid,
-   Invalid,
-   ReadFailed,
-};
-
-PendingSlotCountState ReadPendingSlotCount(int& slot_count, DWORD& error)
-{
-   slot_count = 0;
-   std::string bytes;
-   if (!ReadSmallFile(PendingSlotCountPath(), 128, bytes, error))
-   {
-      if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
-         return PendingSlotCountState::Missing;
-      return PendingSlotCountState::ReadFailed;
-   }
-
-   constexpr std::string_view prefix = "VirtualSlotCount=";
-   std::string_view text = TrimAscii(bytes);
-   uint32_t parsed = 0;
-   if (!text.starts_with(prefix) || text.find('\0') != std::string_view::npos ||
-       !ParseDecimal(text.substr(prefix.size()), parsed) || parsed < 1 ||
-       parsed > kVirtualSlotCapacity)
-   {
-      return PendingSlotCountState::Invalid;
-   }
-   slot_count = static_cast<int>(parsed);
-   return PendingSlotCountState::Valid;
-}
-
-bool DeletePendingSlotCount(DWORD& error)
-{
-   if (DeleteFileW(PendingSlotCountPath().c_str()) != FALSE)
-   {
-      error = ERROR_SUCCESS;
-      return true;
-   }
-   error = GetLastError();
-   return error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND;
-}
-
-bool ReadConfiguredVirtualSlotCount(std::string_view text, int& slot_count)
-{
-   if (text.starts_with("\xEF\xBB\xBF"))
-      text.remove_prefix(3);
-   ConfigSection section = ConfigSection::None;
-   size_t offset = 0;
-   while (offset <= text.size())
-   {
-      const size_t newline = text.find('\n', offset);
-      std::string_view line = text.substr(
-         offset,
-         newline == std::string_view::npos ? text.size() - offset : newline - offset);
-      if (!line.empty() && line.back() == '\r')
-         line.remove_suffix(1);
-      line = TrimAscii(line);
-      if (!line.empty() && line.front() != ';' && line.front() != '#')
-      {
-         if (line.front() == '[' && line.back() == ']')
-         {
-            const std::string normalized = ToLowerAscii(
-               std::string(line.substr(1, line.size() - 2)));
-            section = normalized == "settings" ? ConfigSection::Settings : ConfigSection::Other;
-         }
-         else if (section == ConfigSection::Settings)
-         {
-            const size_t equals = line.find('=');
-            if (equals != std::string_view::npos &&
-                ToLowerAscii(std::string(TrimAscii(line.substr(0, equals)))) ==
-                   "virtualslotcount")
-            {
-               uint32_t parsed = 0;
-               if (!ParseDecimal(TrimAscii(line.substr(equals + 1)), parsed) || parsed < 1 ||
-                   parsed > kVirtualSlotCapacity)
-                  return false;
-               slot_count = static_cast<int>(parsed);
-               return true;
-            }
-         }
-      }
-      if (newline == std::string_view::npos)
-         break;
-      offset = newline + 1;
-   }
-   return false;
-}
-
-std::vector<uint32_t> ParseAsciiSlots(std::string_view text)
-{
-   std::vector<uint32_t> slots;
-   size_t offset = 0;
-   while (offset <= text.size() && slots.size() < kVirtualSlotCapacity)
-   {
-      const size_t comma = text.find(',', offset);
-      uint32_t slot_id = 0;
-      if (!ParseHex8(TrimAscii(text.substr(
-             offset,
-             comma == std::string_view::npos ? text.size() - offset : comma - offset)),
-             slot_id))
-      {
-         return {};
-      }
-      slots.push_back(slot_id);
-      if (comma == std::string_view::npos)
-         break;
-      offset = comma + 1;
-   }
-   return slots;
-}
-
-std::string BuildResizedSlotList(
-   std::string_view current_value,
-   int current_slot_count,
-   int target_slot_count)
-{
-   const std::vector<uint32_t> current_slots = ParseAsciiSlots(current_value);
-   std::ostringstream stream;
-   stream << std::uppercase << std::hex << std::setfill('0');
-   const size_t retained = std::min({
-      current_slots.size(),
-      static_cast<size_t>(current_slot_count),
-      static_cast<size_t>(target_slot_count)});
-   for (int index = 0; index < target_slot_count; ++index)
-   {
-      if (index != 0)
-         stream << ',';
-      const uint32_t value = static_cast<size_t>(index) < retained
-         ? current_slots[static_cast<size_t>(index)]
-         : 0;
-      stream << std::setw(8) << value;
-   }
-   return stream.str();
-}
-
-bool RewriteConfigForSlotCount(
-   std::string_view original,
-   int current_slot_count,
-   int target_slot_count,
-   std::string& rewritten)
-{
-   rewritten.clear();
-   rewritten.reserve(original.size() + 256);
-   ConfigSection section = ConfigSection::None;
-   bool setting_replaced = false;
-   size_t offset = 0;
-   while (offset < original.size())
-   {
-      const size_t newline = original.find('\n', offset);
-      size_t line_end = newline == std::string_view::npos ? original.size() : newline;
-      const bool has_carriage_return = line_end > offset && original[line_end - 1] == '\r';
-      const size_t content_end = has_carriage_return ? line_end - 1 : line_end;
-      std::string_view line = original.substr(offset, content_end - offset);
-      std::string_view parsed_line = line;
-      if (offset == 0 && parsed_line.starts_with("\xEF\xBB\xBF"))
-         parsed_line.remove_prefix(3);
-      const std::string_view trimmed = TrimAscii(parsed_line);
-
-      bool replaced = false;
-      if (!trimmed.empty() && trimmed.front() != ';' && trimmed.front() != '#')
-      {
-         if (trimmed.front() == '[' && trimmed.back() == ']')
-         {
-            const std::string normalized = ToLowerAscii(
-               std::string(trimmed.substr(1, trimmed.size() - 2)));
-            if (normalized == "settings")
-               section = ConfigSection::Settings;
-            else if (normalized.starts_with("character_"))
-               section = ConfigSection::Character;
-            else
-               section = ConfigSection::Other;
-         }
-         else
-         {
-            const size_t equals = line.find('=');
-            if (equals != std::string_view::npos)
-            {
-               const std::string key = ToLowerAscii(
-                  std::string(TrimAscii(line.substr(0, equals))));
-               const bool replace_count =
-                  section == ConfigSection::Settings && key == "virtualslotcount";
-               const bool replace_slots =
-                  section == ConfigSection::Character && key == "slots";
-               if (replace_count || replace_slots)
-               {
-                  size_t value_begin = equals + 1;
-                  while (value_begin < line.size() &&
-                         (line[value_begin] == ' ' || line[value_begin] == '\t'))
-                     ++value_begin;
-                  size_t value_end = line.size();
-                  while (value_end > value_begin &&
-                         (line[value_end - 1] == ' ' || line[value_end - 1] == '\t'))
-                     --value_end;
-                  rewritten.append(line.substr(0, value_begin));
-                  if (replace_count)
-                  {
-                     rewritten.append(std::to_string(target_slot_count));
-                     setting_replaced = true;
-                  }
-                  else
-                  {
-                     rewritten.append(BuildResizedSlotList(
-                        line.substr(value_begin, value_end - value_begin),
-                        current_slot_count,
-                        target_slot_count));
-                  }
-                  rewritten.append(line.substr(value_end));
-                  replaced = true;
-               }
-            }
-         }
-      }
-      if (!replaced)
-         rewritten.append(line);
-      if (has_carriage_return)
-         rewritten.push_back('\r');
-      if (newline != std::string_view::npos)
-         rewritten.push_back('\n');
-      if (newline == std::string_view::npos)
-         break;
-      offset = newline + 1;
-   }
-   return setting_replaced && ValidateConfigText(rewritten);
-}
-
-bool BackupResizeConfig(
-   std::string_view original_bytes,
-   std::filesystem::path& backup,
-   DWORD& error)
-{
-   const std::wstring base =
-      g_config_path.wstring() + BuildConfigBackupSuffix(L"resize");
-   for (uint32_t index = 0; index < 1000; ++index)
-   {
-      backup = index == 0 ? base : base + L"." + std::to_wstring(index);
-      if (WriteNewFile(backup, original_bytes, error))
-         return true;
-      if (error != ERROR_FILE_EXISTS && error != ERROR_ALREADY_EXISTS)
-         return false;
-   }
-   error = ERROR_FILE_EXISTS;
-   return false;
-}
-
-}
-
-bool ApplyPendingVirtualSlotCount()
-{
-   std::scoped_lock lock(g_slot_count_request_mutex);
-   int target_slot_count = 0;
-   DWORD error = ERROR_SUCCESS;
-   const PendingSlotCountState pending_state =
-      ReadPendingSlotCount(target_slot_count, error);
-   if (pending_state == PendingSlotCountState::Missing)
-      return true;
-   if (pending_state != PendingSlotCountState::Valid)
-   {
-      Log(
-         pending_state == PendingSlotCountState::Invalid
-            ? "The pending virtual-slot-count request is invalid and was left untouched."
-            : "The pending virtual-slot-count request could not be read; Win32 error=" +
-                 std::to_string(error) + ".");
-      return false;
-   }
-
-   if (!EnsureValidConfigFile())
-   {
-      Log("The pending virtual-slot-count request was not applied because NumConfig is unavailable.");
-      return false;
-   }
-   const ConfigFileInspection inspection = InspectConfigFile();
-   int current_slot_count = 0;
-   if (inspection.state != ConfigFileState::Valid ||
-       !inspection.original_bytes_available ||
-       !ReadConfiguredVirtualSlotCount(inspection.original_bytes, current_slot_count))
-   {
-      Log("The pending virtual-slot-count request was not applied because NumConfig could not be verified.");
-      return false;
-   }
-
-   if (current_slot_count == target_slot_count)
-   {
-      if (!DeletePendingSlotCount(error))
-      {
-         Log(
-            "The already-applied virtual-slot-count request could not be cleared; Win32 error=" +
-            std::to_string(error) + ".");
-         return false;
-      }
-      Log(
-         "Pending virtual-slot-count request already matches NumConfig and was cleared: " +
-         std::to_string(target_slot_count) + ".");
-      return true;
-   }
-
-   std::string rewritten;
-   if (!RewriteConfigForSlotCount(
-          inspection.original_bytes, current_slot_count, target_slot_count, rewritten))
-   {
-      Log("The pending virtual-slot-count request failed its rewritten NumConfig validation.");
-      return false;
-   }
-
-   std::filesystem::path backup;
-   if (!BackupResizeConfig(inspection.original_bytes, backup, error))
-   {
-      Log(
-         "The pending virtual-slot-count request was not applied because its NumConfig backup failed; Win32 error=" +
-         std::to_string(error) + ".");
-      return false;
-   }
-   if (!WriteFileAtomically(g_config_path, rewritten, true, error))
-   {
-      Log(
-         "The pending virtual-slot-count request was not applied because the atomic NumConfig replacement failed; Win32 error=" +
-         std::to_string(error) + ".");
-      return false;
-   }
-
-   if (!DeletePendingSlotCount(error))
-   {
-      Log(
-         "Virtual slot count was changed, but the completed pending request could not be removed; Win32 error=" +
-         std::to_string(error) + ". It will be cleared on the next start.");
-   }
-   Log(
-      "Virtual slot count changed transactionally from " +
-      std::to_string(current_slot_count) + " to " +
-      std::to_string(target_slot_count) + "; previous NumConfig backup=\"" +
-      WideToUtf8(backup.wstring()) + "\".");
-   return true;
-}
-
-int RequestPendingVirtualSlotCount(int slot_count)
-{
-   if (slot_count < 1 || slot_count > kVirtualSlotCapacity)
-      return GBFR20_SLOT_COUNT_REQUEST_FAILED;
-
-   std::scoped_lock lock(g_slot_count_request_mutex);
-   DWORD error = ERROR_SUCCESS;
-   if (slot_count == GetVirtualSlotCount())
-   {
-      return DeletePendingSlotCount(error)
-         ? GBFR20_SLOT_COUNT_REQUEST_CLEARED
-         : GBFR20_SLOT_COUNT_REQUEST_FAILED;
-   }
-
-   const std::string request =
-      "VirtualSlotCount=" + std::to_string(slot_count) + "\r\n";
-   if (!WriteFileAtomically(PendingSlotCountPath(), request, true, error))
-   {
-      Log(
-         "Could not save the pending virtual-slot-count request; Win32 error=" +
-         std::to_string(error) + ".");
-      return GBFR20_SLOT_COUNT_REQUEST_FAILED;
-   }
-   return GBFR20_SLOT_COUNT_REQUEST_PENDING;
-}
-
-int GetPendingVirtualSlotCount()
-{
-   std::scoped_lock lock(g_slot_count_request_mutex);
-   int slot_count = 0;
-   DWORD error = ERROR_SUCCESS;
-   return ReadPendingSlotCount(slot_count, error) == PendingSlotCountState::Valid
-      ? slot_count
-      : 0;
-}
-
-void SaveCharacterSelection(uint32_t character_hash)
-{
-   std::array<uint32_t, kVirtualSlotCapacity> slots{};
-   {
-      std::shared_lock lock(g_selection_mutex);
-      const auto iterator = g_character_selections.find(character_hash);
-      if (iterator != g_character_selections.end())
-         slots = iterator->second;
-   }
-
-   std::wostringstream stream;
-   stream << std::uppercase << std::hex << std::setfill(L'0');
-   const size_t active_slot_count = static_cast<size_t>(GetVirtualSlotCount());
-   for (size_t index = 0; index < active_slot_count; ++index)
-   {
-      if (index != 0)
-         stream << L',';
-      stream << std::setw(8) << slots[index];
-   }
-   const std::wstring section = CharacterSectionName(character_hash);
-   const std::wstring value = stream.str();
-   WritePrivateProfileStringW(section.c_str(), L"Slots", value.c_str(), g_config_path.c_str());
-}
-
-void LoadManagedProtectionSlots()
-{
-   const std::wstring text = ReadLargeIniString(
-      L"Internal", L"ManagedProtectionSlots", L"");
-   std::unordered_map<uint32_t, uint64_t> parsed;
-   bool valid = true;
-   size_t offset = 0;
-   while (offset < text.size())
-   {
-      const size_t comma = text.find(L',', offset);
-      const std::wstring_view token(
-         text.data() + offset,
-         comma == std::wstring::npos ? text.size() - offset : comma - offset);
-      if (token.size() != 25 || token[8] != L':')
-      {
-         valid = false;
-         break;
-      }
-
-      uint64_t slot_id = 0;
-      uint64_t fingerprint = 0;
-      const auto parse_hex = [](std::wstring_view value, uint64_t& parsed_value) {
-         parsed_value = 0;
-         for (const wchar_t character : value)
-         {
-            uint64_t digit = 0;
-            if (character >= L'0' && character <= L'9')
-               digit = static_cast<uint64_t>(character - L'0');
-            else if (character >= L'a' && character <= L'f')
-               digit = static_cast<uint64_t>(character - L'a' + 10);
-            else if (character >= L'A' && character <= L'F')
-               digit = static_cast<uint64_t>(character - L'A' + 10);
-            else
-               return false;
-            parsed_value = (parsed_value << 4) | digit;
-         }
-         return true;
-      };
-      if (!parse_hex(token.substr(0, 8), slot_id) ||
-          !parse_hex(token.substr(9, 16), fingerprint) || slot_id == 0 ||
-          slot_id > std::numeric_limits<uint32_t>::max() || fingerprint == 0 ||
-          !parsed.emplace(
-             static_cast<uint32_t>(slot_id), fingerprint).second)
-      {
-         valid = false;
-         break;
-      }
-      if (comma == std::wstring::npos)
-         break;
-      offset = comma + 1;
-   }
-
-   {
-      std::scoped_lock lock(g_gem_protection_mutex);
-      g_mod_owned_protections = valid
-         ? std::move(parsed)
-         : std::unordered_map<uint32_t, uint64_t>{};
-   }
-   if (!valid)
-   {
-      Log(
-         "Invalid internal managed-protection list was discarded; native player locks will be preserved.");
-      WritePrivateProfileStringW(
-         L"Internal", L"ManagedProtectionSlots", L"", g_config_path.c_str());
-   }
-}
-
-void SaveManagedProtectionSlots()
-{
-   std::vector<std::pair<uint32_t, uint64_t>> slots;
-   {
-      std::scoped_lock lock(g_gem_protection_mutex);
-      slots.assign(
-         g_mod_owned_protections.begin(),
-         g_mod_owned_protections.end());
-   }
-   std::sort(slots.begin(), slots.end(), [](const auto& left, const auto& right) {
-      return left.first < right.first;
-   });
-
-   std::wostringstream stream;
-   stream << std::uppercase << std::hex << std::setfill(L'0');
-   for (size_t index = 0; index < slots.size(); ++index)
-   {
-      if (index != 0)
-         stream << L',';
-      stream << std::setw(8) << slots[index].first << L':'
-             << std::setw(16) << slots[index].second;
-   }
-   const std::wstring value = stream.str();
-   WritePrivateProfileStringW(
-      L"Internal", L"ManagedProtectionSlots", value.c_str(), g_config_path.c_str());
 }
 
 void LoadSettingsAndSelections(bool activate_selection_ownership)
@@ -1119,21 +602,10 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
          std::scoped_lock lock(g_settings_mutex);
          g_settings = std::move(defaults);
       }
-      if (activate_selection_ownership)
-      {
-         std::scoped_lock protection_lock(g_gem_protection_mutex);
-         g_mod_owned_protections.clear();
-      }
       std::unique_lock lock(g_selection_mutex);
       g_character_selections.clear();
-      g_virtual_owner_by_slot_id.clear();
-      if (activate_selection_ownership)
-         ScheduleGemProtectionReconcile();
       return;
    }
-
-   if (activate_selection_ownership)
-      LoadManagedProtectionSlots();
 
    UiSettings settings;
    const int toggle_key = static_cast<int>(GetPrivateProfileIntW(
@@ -1164,15 +636,11 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
    {
       std::unique_lock lock(g_selection_mutex);
       g_character_selections.clear();
-      g_virtual_owner_by_slot_id.clear();
-      if (activate_selection_ownership)
-         ScheduleGemProtectionReconcile();
       return;
    }
 
    std::unique_lock lock(g_selection_mutex);
    g_character_selections.clear();
-   g_virtual_owner_by_slot_id.clear();
    for (const wchar_t* section = section_names.data(); *section != L'\0';
         section += std::wcslen(section) + 1)
    {
@@ -1192,56 +660,22 @@ void LoadSettingsAndSelections(bool activate_selection_ownership)
    if (!activate_selection_ownership)
       return;
 
-   std::vector<uint32_t> character_hashes;
-   character_hashes.reserve(g_character_selections.size());
-   for (const auto& [hash, slots] : g_character_selections)
-      character_hashes.push_back(hash);
-   std::sort(character_hashes.begin(), character_hashes.end());
-
+   // De-duplicate non-zero slot ids across characters; duplicates are cleared.
    std::unordered_set<uint32_t> claimed_slot_ids;
    const int active_slot_count = GetVirtualSlotCount();
-   g_virtual_owner_by_slot_id.clear();
-   for (const uint32_t hash : character_hashes)
+   for (auto& entry : g_character_selections)
    {
-      auto& slots = g_character_selections[hash];
+      auto& slots = entry.second;
       for (int index = 0; index < active_slot_count; ++index)
       {
          uint32_t& slot_id = slots[static_cast<size_t>(index)];
          if (slot_id == 0)
             continue;
          if (!claimed_slot_ids.emplace(slot_id).second)
-         {
             slot_id = 0;
-            continue;
-         }
-         g_virtual_owner_by_slot_id[slot_id] = {hash, index};
       }
       for (int index = active_slot_count; index < kVirtualSlotCapacity; ++index)
-      {
-         uint32_t& inactive_slot_id = slots[static_cast<size_t>(index)];
-         if (inactive_slot_id == 0)
-            continue;
-         inactive_slot_id = 0;
-      }
+         slots[static_cast<size_t>(index)] = 0;
    }
-   lock.unlock();
-   ScheduleGemProtectionReconcile();
-}
-
-void SaveUiSettings()
-{
-   UiSettings settings;
-   {
-      std::scoped_lock lock(g_settings_mutex);
-      settings = g_settings;
-   }
-   WriteIniInt(L"Settings", L"ConfigVersion", kCurrentSettingsVersion);
-   WriteIniInt(L"Settings", L"ToggleKey", settings.toggle_key);
-   WriteIniInt(L"Settings", L"ShowEquipped", settings.show_equipped ? 1 : 0);
-   WriteIniInt(L"Settings", L"AutoApply", settings.auto_apply ? 1 : 0);
-   WriteIniInt(L"Settings", L"VirtualSlotCount", settings.virtual_slot_count);
-   const std::wstring language(settings.language.begin(), settings.language.end());
-   WritePrivateProfileStringW(
-      L"Settings", L"Language", language.c_str(), g_config_path.c_str());
 }
 }

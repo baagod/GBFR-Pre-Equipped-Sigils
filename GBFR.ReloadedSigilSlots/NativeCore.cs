@@ -14,7 +14,7 @@ namespace GBFR.ReloadedSigilSlots;
 /// </summary>
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 14;
+    internal const int AbiVersion = 15;
 
     private const string LibraryName = "GBFR.ReloadedSigilSlots.Native.dll";
     private static readonly object ResolverLock = new();
@@ -47,7 +47,7 @@ internal static unsafe partial class NativeCore
         }
     }
 
-    internal static bool Initialize(Action<string> log, bool enableInputHooks = false)
+    internal static bool Initialize(Action<string> log)
     {
         ArgumentNullException.ThrowIfNull(log);
         lock (NativeLogLock)
@@ -66,12 +66,6 @@ internal static unsafe partial class NativeCore
             {
                 throw new InvalidOperationException(
                     $"Native ABI mismatch: managed {AbiVersion}, native {abiVersion}."
-                );
-            }
-            if (NativeSetInputHooksEnabled(enableInputHooks ? 1 : 0) == 0)
-            {
-                throw new InvalidOperationException(
-                    "Native input-hook mode could not be selected before initialization."
                 );
             }
             log(

@@ -34,8 +34,6 @@ struct ResolvedGameLayout
    uintptr_t trait_fetch_call_path_rva = 0;
    uintptr_t trait_category_getter_return_rva = 0;
    uintptr_t get_gem_data_by_index_rva = 0;
-   uintptr_t set_gem_protection_rva = 0;
-   uintptr_t set_gem_protection_tail_rva = 0;
    uintptr_t status_rebuild_rva = 0;
    uintptr_t status_notifier_rva = 0;
    uintptr_t status_owner_tick_rva = 0;
@@ -71,8 +69,6 @@ inline constexpr int kCurrentSettingsVersion = 2;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kLocalPlayerSlotKey = 0xDBD9A18D;
-inline constexpr uint32_t kGemProtectedFlag = 0x01;
-inline constexpr uint32_t kGemInvalidFlag = 0x10;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
 
@@ -141,12 +137,6 @@ inline constexpr std::array<uint8_t, 12> kTraitCategoryGetterReturnPreflight = {
    0x84, 0xC0, 0x74, 0x8E, 0xF6, 0x45, 0xD8, 0x10, 0x75, 0x88, 0x8B, 0x55};
 inline constexpr std::array<uint8_t, 12> kGetterPreflight = {
    0x55, 0x41, 0x57, 0x41, 0x56, 0x56, 0x57, 0x53, 0x48, 0x83, 0xEC, 0x28};
-inline constexpr std::array<uint8_t, 12> kGemProtectionSetterPreflight = {
-   0x55, 0x41, 0x56, 0x56, 0x57, 0x53, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8D};
-inline constexpr std::array<uint8_t, 23> kGemProtectionSetterTailPreflight = {
-   0x8B, 0x41, 0x20, 0x48, 0x83, 0xC1, 0x20, 0x89,
-   0xC2, 0x45, 0x84, 0xF6, 0x74, 0x10, 0x83, 0xCA,
-   0x01, 0x39, 0xD0, 0x74, 0x17, 0x89, 0x11};
 inline constexpr std::array<uint8_t, 12> kStatusRebuildPreflight = {
    0x55, 0x56, 0x57, 0x48, 0x83, 0xEC, 0x50, 0x48, 0x8D, 0x6C, 0x24, 0x50};
 inline constexpr std::array<uint8_t, 12> kStatusNotifierPreflight = {
@@ -173,19 +163,6 @@ struct StatusIdentity
    int32_t context_mode = -1;
 };
 
-struct InventoryItem
-{
-   GemData gem{};
-   uintptr_t address = 0;
-   bool equipped = false;
-   bool protected_locked = false;
-   uint32_t required_character_hash = 0;
-   uint32_t virtual_owner_character_hash = 0;
-   int32_t virtual_owner_slot = -1;
-   std::string label;
-   std::string searchable;
-};
-
 struct AuthorizedStatus
 {
    uintptr_t status = 0;
@@ -193,12 +170,6 @@ struct AuthorizedStatus
    int32_t context_mode = -1;
    uint64_t generation = 0;
    std::array<uint32_t, kVirtualSlotCapacity> slots{};
-};
-
-struct VirtualOwner
-{
-   uint32_t character_hash = 0;
-   int32_t virtual_slot = -1;
 };
 
 enum NaturalBindResult : int32_t
@@ -236,13 +207,6 @@ struct LocalContext1Binding
    uint32_t thread_id = 0;
    uint64_t generation = 0;
    bool active = false;
-};
-
-struct IatPatch
-{
-   void** slot = nullptr;
-   void* original = nullptr;
-   void* replacement = nullptr;
 };
 
 struct UiSettings
@@ -319,7 +283,6 @@ extern std::string g_runtime_message;
 extern bool g_runtime_message_is_error;
 
 extern SafetyHookInline g_get_gem_hook;
-extern SafetyHookInline g_set_gem_protection_hook;
 extern SafetyHookMid g_trait_fetch_hook;
 extern SafetyHookMid g_status_owner_tick_hook;
 extern SafetyHookMid g_local_context1_bind_call_hook;
@@ -328,7 +291,6 @@ extern SafetyHookMid g_local_context1_bind_return_hook;
 extern std::shared_mutex g_selection_mutex;
 extern std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> g_character_selections;
 extern std::unordered_map<uint32_t, uint32_t> g_required_character_by_gem;
-extern std::unordered_map<uint32_t, VirtualOwner> g_virtual_owner_by_slot_id;
 extern std::shared_mutex g_authorization_mutex;
 extern std::unordered_map<uintptr_t, AuthorizedStatus> g_authorized_statuses;
 extern std::atomic<uint32_t> g_last_authorized_character_hash;
@@ -343,9 +305,6 @@ extern std::atomic_uint64_t g_lifecycle_rebind_signature;
 extern std::atomic_uint32_t g_lifecycle_signature_attempts;
 extern std::atomic_uint64_t g_lifecycle_rebind_not_before_ms;
 
-extern std::mutex g_inventory_index_mutex;
-extern uintptr_t g_indexed_system_data;
-extern std::unordered_map<uint32_t, uintptr_t> g_inventory_by_slot_id;
 extern std::atomic<uint32_t> g_last_character_hash;
 extern std::atomic<int32_t> g_last_context_mode;
 extern std::atomic_uint64_t g_status_owner_manager_address;
@@ -356,11 +315,6 @@ extern std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes;
 extern std::shared_mutex g_local_context1_binding_mutex;
 extern std::unordered_map<uintptr_t, LocalContext1Binding> g_local_context1_bindings;
 extern std::atomic_uint64_t g_local_context1_binding_generation;
-extern std::atomic_uint32_t g_overlay_thread_id;
-extern std::atomic_uint64_t g_overlay_frame_count;
-extern std::atomic_uint64_t g_inventory_revision;
-extern std::atomic_bool g_inventory_dirty;
-
 extern std::atomic_bool g_pending_refresh;
 extern std::atomic<uint32_t> g_pending_character_hash;
 extern std::atomic_uint32_t g_pending_injected_count;
@@ -368,8 +322,6 @@ extern std::atomic_uint32_t g_next_apply_generation;
 extern std::atomic_uint64_t g_queued_apply_request;
 extern std::atomic_uint64_t g_apply_retry_not_before_ms;
 extern std::atomic_bool g_apply_in_flight;
-extern std::mutex g_reconcile_apply_mutex;
-extern std::unordered_set<uint32_t> g_reconcile_apply_hashes;
 extern std::atomic_uint64_t g_active_apply_generation;
 extern std::atomic_uint64_t g_claimed_apply_generation;
 extern std::atomic_uint32_t g_active_apply_thread_id;
@@ -384,9 +336,7 @@ extern std::atomic_uint32_t g_last_apply_injected_count;
 extern std::atomic_int g_apply_result;
 extern std::atomic_int g_last_consumed_apply_result;
 extern std::atomic_uint32_t g_active_getter_calls;
-extern std::atomic_uint32_t g_active_protection_calls;
 extern std::atomic_uint32_t g_active_mid_calls;
-extern std::atomic_uint32_t g_active_input_calls;
 extern thread_local uint64_t g_tls_apply_generation;
 extern thread_local NaturalContributionFrame g_tls_natural_contribution;
 extern thread_local LocalContext1Binding g_tls_local_context1_binding;
@@ -401,50 +351,9 @@ extern std::atomic_int32_t g_natural_bind_result;
 extern std::atomic_uint32_t g_natural_bind_owner_key;
 extern std::atomic_uint64_t g_natural_bind_owner_status_address;
 
-extern std::atomic_bool g_input_capture_requested;
-extern std::atomic_bool g_input_capture_effective;
-extern std::atomic_uint32_t g_input_capture_requested_devices;
-extern std::atomic_uint32_t g_input_capture_effective_devices;
-extern std::atomic_uint32_t g_input_neutral_frames;
-extern std::atomic_bool g_input_hooks_enabled;
-extern std::atomic_bool g_input_iat_hooks_ready;
-extern std::atomic_bool g_direct_input_hook_ready;
-extern std::mutex g_input_hook_mutex;
-extern std::vector<IatPatch> g_iat_patches;
-extern POINT g_frozen_cursor_position;
-using GetAsyncKeyStateFn = SHORT(WINAPI*)(int);
-using GetKeyStateFn = SHORT(WINAPI*)(int);
-using GetKeyboardStateFn = BOOL(WINAPI*)(PBYTE);
-using GetCursorPosFn = BOOL(WINAPI*)(LPPOINT);
-using SetCursorPosFn = BOOL(WINAPI*)(int, int);
-using ClipCursorFn = BOOL(WINAPI*)(const RECT*);
-using DirectInput8CreateFn = HRESULT(WINAPI*)(
-   HINSTANCE,
-   DWORD,
-   REFIID,
-   LPVOID*,
-   void*);
-extern GetAsyncKeyStateFn g_original_get_async_key_state;
-extern GetKeyStateFn g_original_get_key_state;
-extern GetKeyboardStateFn g_original_get_keyboard_state;
-extern GetCursorPosFn g_original_get_cursor_pos;
-extern SetCursorPosFn g_original_set_cursor_pos;
-extern ClipCursorFn g_original_clip_cursor;
-extern DirectInput8CreateFn g_original_direct_input8_create;
-
 extern UiSettings g_settings;
 extern std::mutex g_settings_mutex;
 extern std::atomic_int32_t g_virtual_slot_count;
-extern std::shared_mutex g_name_table_mutex;
-extern std::unordered_map<uint32_t, std::string> g_sigil_names;
-extern std::unordered_map<uint32_t, std::string> g_trait_names;
-extern bool g_names_are_english;
-extern std::mutex g_inventory_snapshot_mutex;
-extern std::vector<InventoryItem> g_inventory_snapshot;
-extern std::mutex g_gem_protection_mutex;
-extern std::mutex g_gem_protection_transition_mutex;
-extern std::unordered_map<uint32_t, uint64_t> g_mod_owned_protections;
-extern std::atomic_bool g_gem_protection_reconcile_pending;
 
 int GetVirtualSlotCount() noexcept;
 int GetExpandedInternalSlotCount() noexcept;
@@ -473,8 +382,6 @@ bool TryGetLocalContext1Binding(uintptr_t status, uint32_t character_hash, Local
 bool TryGetLocalContext1BindingByCharacter(uint32_t character_hash, LocalContext1Binding& binding) noexcept;
 bool SafeResolveCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status) noexcept;
 bool SafeResolveSelectedCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status, StatusIdentity& identity) noexcept;
-bool SafeCanEditCharacter(uint32_t character_hash) noexcept;
-void MarkInventoryDirty() noexcept;
 void CommitAuthorizedStatus(uintptr_t status, const StatusIdentity& identity, uint64_t generation, const std::array<uint32_t, kVirtualSlotCapacity>& slots);
 bool TryGetAuthorizedSelection(uintptr_t status, const StatusIdentity& identity, std::array<uint32_t, kVirtualSlotCapacity>& slots);
 bool HasMatchingAuthorizedSelection(uintptr_t status, const StatusIdentity& identity, const std::array<uint32_t, kVirtualSlotCapacity>& slots);
@@ -487,37 +394,13 @@ bool SafeNotifyStatusDirty(uintptr_t manager, uint32_t character_hash, uint32_t 
 bool ReadByte(uintptr_t address, uint8_t& value) noexcept;
 bool WriteByte(uintptr_t address, uint8_t value);
 
-void RestoreInputIatHooks();
-void RestoreDirectInputInstanceHooks() noexcept;
-void ResetDirectInputInstanceHooks() noexcept;
-bool InstallInputIatHooks();
-void UpdateInputCaptureBarrier();
-
 void LoadSettingsAndSelections(bool activate_selection_ownership);
-bool ApplyPendingVirtualSlotCount();
-int RequestPendingVirtualSlotCount(int slot_count);
-int GetPendingVirtualSlotCount();
-void SaveUiSettings();
-void SaveCharacterSelection(uint32_t character_hash);
-void LoadManagedProtectionSlots();
-void SaveManagedProtectionSlots();
-bool ReloadNameTable(std::string_view language);
 bool LoadCompatibilityTable(const std::filesystem::path& path);
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash);
-std::string LookupName(const std::unordered_map<uint32_t, std::string>& table, uint32_t hash, const char* prefix);
 
 std::array<uint32_t, kVirtualSlotCapacity> GetSelection(uint32_t character_hash);
-void ScheduleReconcileApply(uint32_t character_hash);
-void PumpReconcileApplyQueue();
 uint32_t RequestHotApply(uint32_t character_hash);
 void ProcessPendingHotApply();
-bool SetSelection(uint32_t character_hash, int virtual_slot, uint32_t inventory_slot_id);
-bool ApplyPresetSelections(const GBFR20_PresetCharacterSelection* selections, uint32_t selection_count, GBFR20_PresetSlotResult* slot_results, uint32_t slot_result_capacity, uint32_t* slot_result_count);
-uintptr_t ResolveGemAddress(uint32_t slot_id);
-bool RefreshInventorySnapshot();
-void ScheduleGemProtectionReconcile() noexcept;
-void ReconcileGemProtection();
-void SetGemProtectionDetour(uintptr_t system_data, uint32_t slot_id, bool protected_value);
 
 const CharacterTemplate* FindCharacterTemplate(uint32_t character_hash) noexcept;
 const TemplateGemSlot* FindTemplateSlot(uint32_t character_hash, int virtual_slot) noexcept;

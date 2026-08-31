@@ -231,28 +231,11 @@ bool TryCopySelectedVirtualGem(
       return false;
 
    // Template slots synthesize a GemData from the built-in loadout table
-   // instead of referencing a physical inventory copy.
-   if (IsTemplateSlotId(selected_slot_id))
-      return TryCopyTemplateGem(
-         identity.character_hash, selected_slot_id, output);
-
-   try
-   {
-      const uintptr_t source_address = ResolveGemAddress(selected_slot_id);
-      GemData source{};
-      return source_address != 0 && SafeReadGem(source_address, source) &&
-         source.slot_id == selected_slot_id &&
-         source.worn_by == kUnwornCharacterHash &&
-         (source.flags & kGemInvalidFlag) == 0 &&
-         IsCharacterCompatible(
-            GetRequiredCharacterHash(source.gem_id),
-            identity.character_hash) &&
-         SafeCopyToOutput(source, output);
-   }
-   catch (...)
-   {
+   // instead of referencing a physical inventory copy. There is no
+   // inventory-backed virtual slot path in this mod.
+   if (!IsTemplateSlotId(selected_slot_id))
       return false;
-   }
+   return TryCopyTemplateGem(identity.character_hash, selected_slot_id, output);
 }
 
 uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
@@ -281,8 +264,6 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
    if (slot_index < kNativeInternalSlotCount || slot_index >= expanded_slot_count)
    {
       const uint8_t result = g_get_gem_hook.call<uint8_t>(status, slot_index, output);
-      if (from_trait_apply_loop && slot_index == 0)
-         MarkInventoryDirty();
       return result;
    }
    if (g_shutting_down.load(std::memory_order_acquire) || !valid_identity ||
@@ -498,7 +479,6 @@ void OnStatusOwnerCharacterLoop(safetyhook::Context& context)
    for (uint32_t index = count; index < g_status_owner_character_hashes.size(); ++index)
       g_status_owner_character_hashes[index].store(0, std::memory_order_release);
    g_status_owner_character_count.store(count, std::memory_order_release);
-   ReconcileGemProtection();
 }
 
 uint64_t BuildLifecycleSignature(
@@ -594,8 +574,6 @@ namespace
 void RollbackGameplayHookInstallation() noexcept
 {
    g_hooks_ready.store(false, std::memory_order_release);
-   if (g_set_gem_protection_hook)
-      (void)g_set_gem_protection_hook.disable();
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
@@ -604,7 +582,6 @@ void RollbackGameplayHookInstallation() noexcept
       (void)g_get_gem_hook.disable();
 
    while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_protection_calls.load(std::memory_order_acquire) != 0 ||
           g_active_mid_calls.load(std::memory_order_acquire) != 0)
       SwitchToThread();
 
@@ -629,7 +606,6 @@ void RollbackGameplayHookInstallation() noexcept
             g_game_layout.trait_category_original_limit);
    }
 
-   g_set_gem_protection_hook.reset();
    g_status_owner_tick_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
@@ -645,10 +621,6 @@ void ShutdownHooks()
 {
    g_shutting_down.store(true, std::memory_order_release);
    g_hooks_ready.store(false, std::memory_order_release);
-   g_input_capture_requested.store(false, std::memory_order_release);
-   g_input_capture_effective.store(false, std::memory_order_release);
-   g_input_capture_requested_devices.store(0, std::memory_order_release);
-   g_input_capture_effective_devices.store(0, std::memory_order_release);
    g_native_apply_call_active.store(false, std::memory_order_release);
    g_active_apply_status.store(0, std::memory_order_release);
    g_pending_refresh.store(false, std::memory_order_release);
@@ -663,15 +635,10 @@ void ShutdownHooks()
    g_natural_bind_owner_status_address.store(0, std::memory_order_release);
    g_tls_local_context1_binding = {};
 
-   RestoreInputIatHooks();
-   RestoreDirectInputInstanceHooks();
-
    if (g_local_context1_bind_return_hook)
       (void)g_local_context1_bind_return_hook.disable();
    if (g_local_context1_bind_call_hook)
       (void)g_local_context1_bind_call_hook.disable();
-   if (g_set_gem_protection_hook)
-      (void)g_set_gem_protection_hook.disable();
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
@@ -680,9 +647,7 @@ void ShutdownHooks()
       (void)g_get_gem_hook.disable();
 
    while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_protection_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_mid_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_input_calls.load(std::memory_order_acquire) != 0)
+          g_active_mid_calls.load(std::memory_order_acquire) != 0)
       SwitchToThread();
 
    if (g_image_base != 0 && g_layout_ready.load(std::memory_order_acquire))
@@ -708,13 +673,11 @@ void ShutdownHooks()
                g_game_layout.trait_category_loop_limit_immediate_rva,
             g_game_layout.trait_category_original_limit);
    }
-   g_set_gem_protection_hook.reset();
    g_status_owner_tick_hook.reset();
    g_local_context1_bind_return_hook.reset();
    g_local_context1_bind_call_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
-   ResetDirectInputInstanceHooks();
    ResetGameLayout();
    {
       std::unique_lock lock(g_authorization_mutex);
@@ -752,23 +715,6 @@ bool InstallHooks()
    {
       RollbackGameplayHookInstallation();
       SetRuntimeMessage("Failed to install the GemData getter hook.", true);
-      return false;
-   }
-
-   const uint64_t protection_hook_started =
-      BeginStartupPhase("gem-protection-hook");
-   g_set_gem_protection_hook = safetyhook::create_inline(
-      reinterpret_cast<void*>(
-         g_image_base + g_game_layout.set_gem_protection_rva),
-      reinterpret_cast<void*>(&SetGemProtectionDetour));
-   CompleteStartupPhase(
-      "gem-protection-hook",
-      protection_hook_started,
-      static_cast<bool>(g_set_gem_protection_hook));
-   if (!g_set_gem_protection_hook)
-   {
-      RollbackGameplayHookInstallation();
-      SetRuntimeMessage("Failed to install the native sigil-protection hook.", true);
       return false;
    }
 
@@ -822,7 +768,6 @@ bool InstallHooks()
    }
 
    g_hooks_ready.store(true, std::memory_order_release);
-   ScheduleGemProtectionReconcile();
    SetRuntimeMessage(
       "Native hook installation completed with " +
          std::to_string(GetVirtualSlotCount()) +

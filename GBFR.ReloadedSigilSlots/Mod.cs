@@ -78,7 +78,7 @@ public sealed class Mod : IMod
 
             long nativeStarted = BeginStartupPhase("native-core");
             NativeCore.Configure(modDirectory);
-            bool hooksReady = NativeCore.Initialize(Log, enableInputHooks: false);
+            bool hooksReady = NativeCore.Initialize(Log);
             CompleteStartupPhase("native-core", nativeStarted, hooksReady);
             if (hooksReady)
             {

@@ -6,64 +6,6 @@
 namespace gbfr::native
 {
 std::unordered_map<uint32_t, uint32_t> g_required_character_by_gem;
-std::shared_mutex g_name_table_mutex;
-std::unordered_map<uint32_t, std::string> g_sigil_names;
-std::unordered_map<uint32_t, std::string> g_trait_names;
-bool g_names_are_english = false;
-
-namespace
-{
-void LoadNameTable(const std::filesystem::path& path)
-{
-   std::ifstream stream(path, std::ios::binary);
-   if (!stream)
-   {
-      Log("Name table is missing: " + path.filename().string());
-      return;
-   }
-
-   std::string line;
-   while (std::getline(stream, line))
-   {
-      if (!line.empty() && line.back() == '\r')
-         line.pop_back();
-      if (line.size() < 12 || line[1] != '\t')
-         continue;
-      const size_t second_tab = line.find('\t', 2);
-      if (second_tab == std::string::npos)
-         continue;
-      uint32_t hash = 0;
-      const std::string_view hash_text(line.data() + 2, second_tab - 2);
-      const auto conversion = std::from_chars(
-         hash_text.data(), hash_text.data() + hash_text.size(), hash, 16);
-      if (conversion.ec != std::errc{} || hash == 0)
-         continue;
-      std::string text = line.substr(second_tab + 1);
-      if (line[0] == 'S')
-         g_sigil_names[hash] = std::move(text);
-      else if (line[0] == 'T')
-         g_trait_names[hash] = std::move(text);
-   }
-}
-}
-
-bool ReloadNameTable(std::string_view language)
-{
-   const std::string normalized_language = language == "en" ? "en" : "zh-CN";
-   const std::filesystem::path path =
-      g_module_directory / ("GBFR-ExtraSigilSlots.names." + normalized_language + ".tsv");
-   if (!std::filesystem::exists(path))
-   {
-      Log("Name table is missing: " + path.filename().string());
-      return false;
-   }
-   std::unique_lock lock(g_name_table_mutex);
-   g_sigil_names.clear();
-   g_trait_names.clear();
-   LoadNameTable(path);
-   g_names_are_english = normalized_language == "en";
-   return true;
-}
 
 bool LoadCompatibilityTable(const std::filesystem::path& path)
 {
@@ -117,18 +59,5 @@ uint32_t GetRequiredCharacterHash(uint32_t gem_hash)
 {
    const auto iterator = g_required_character_by_gem.find(gem_hash);
    return iterator == g_required_character_by_gem.end() ? 0 : iterator->second;
-}
-
-std::string LookupName(
-   const std::unordered_map<uint32_t, std::string>& table,
-   uint32_t hash,
-   const char* prefix)
-{
-   if (hash == 0)
-      return "-";
-   const auto iterator = table.find(hash);
-   if (iterator != table.end())
-      return iterator->second;
-   return std::string(prefix) + ToUpperHex(hash);
 }
 }
