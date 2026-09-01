@@ -83,6 +83,7 @@ GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
 |---|---|
 | `docs/tool-extract-exclusives.ps1` | 从 compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
 | `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据 → 生成 `kDefaultTemplates[]` 数组文本 |
+| [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出）——**运行时不依赖**，仅开发工具 |
 
 **改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）→ 运行脚本输出到临时文件 → 替换 `template_loadout.cpp` 中 `constexpr CharacterTemplate kDefaultTemplates[] = { ... };` 段（自动定位起止替换）。
 

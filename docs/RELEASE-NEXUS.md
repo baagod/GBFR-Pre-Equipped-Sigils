@@ -133,6 +133,7 @@
 
 - **派生自 [GBFR Extra Sigil Slots](https://www.nexusmods.com/granbluefantasyrelink/mods/657)（作者 Hiyajomaho-num9）**——原始 Hook 架构、语义布局解析与兼容表。经作者许可发布。
 - [本 mod 源码仓库](https://github.com/baagod/GBFR-ReloadedSigilSlots)
+- 数据核实参考社区工具链：[Nenkai/relink-modding](https://nenkai.github.io/relink-modding/)（官方 ID 表）与 [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools)（解包/导出）。
 - [原版源码仓库](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)
 
 ## 权限（Permissions）
