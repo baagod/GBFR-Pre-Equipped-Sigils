@@ -182,10 +182,42 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
      ```powershell
      Select-String -Path README.md,GBFR.ReloadedSigilSlots\README.md,GBFR.ReloadedSigilSlots\ModConfig.json,docs\*.md -Pattern "0\.3\.2"
      ```
-     命中处全部更新（常见：MAINTENANCE 头部/构建注释、RELEASE-NEXUS 信息表/上传清单）；
-  4. 改配装/功能时同步 RELEASE-NEXUS 描述模板里的配装表与摘要；
+     命中处全部更新（常见：MAINTENANCE 头部/构建注释、mod README、ModConfig）；
+  4. 改配装/功能时同步 mod README（`GBFR.ReloadedSigilSlots/README.md`）与 Nexus 页面描述（见 §11）；
   5. 提交 → 推送（`-c credential.helper="!gh auth git-credential"`）→ 部署（游戏退出后复制 dist 包）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
   （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
 - **推送**：`git -c credential.helper="!gh auth git-credential" push origin main`
   （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检查 gh token 的 Contents: Read and write 权限）。
+
+## 11. 发布与 Nexus 后续维护
+
+**已发布**（v0.3.2，2026-09-01）：https://www.nexusmods.com/granbluefantasyrelink/mods/823
+
+发布信息（发布/更新时以本表与 mod README 为准）：
+
+| 项 | 值 |
+|---|---|
+| 名称 | GBFR Pre-Equipped Sigils |
+| 分类 | Miscellaneous |
+| 标签 | AI-Generated Content / Cheating / Gameplay |
+| 主文件 | `dist/GBFR-Pre-Equipped-Sigils-<version>.zip` |
+| 源码 | https://github.com/baagod/GBFR-Pre-Equipped-Sigils |
+
+**发布后维护流程**（每次发布新版本依次执行）：
+
+1. **升版本**：改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`，
+   按 §10 扫描全文档旧版本号残留（README、MAINTENANCE 头部、构建注释）。
+2. **构建**：`build-release.ps1` → 产出 `dist/GBFR-Pre-Equipped-Sigils-<version>.zip`。
+3. **部署验证**：游戏退出 → 复制 `dist\GBFR.ReloadedSigilSlots` 到 `Mods\` → 按 §6 验证清单实测。
+4. **更新 Nexus 文件页**：上传新 zip；Nexus 只认最新文件版本，旧版自动归档到历史。
+   上传时保持名称/分类/标签/权限不变（见上表）。
+5. **同步页面描述**：Nexus 描述与 `GBFR.ReloadedSigilSlots/README.md` 同源——
+   改配装后必须两处同步（配装表、摘要、截图位置）。
+6. **截图**：一律游戏内真实截图，发布后上传到 Images 区（不要 AI 生成图）。
+7. **游戏更新后**：先本机回归（§6）；若 layout 解析失败（日志出现 layout failed），
+   在页面顶部加"不兼容版本"警告并停更，不要静默失效。
+8. **提交推送**：按 §10 的提交/推送模板执行，把版本号与发布记录同步到仓库。
+
+> 备注：RELEASE-NEXUS.md 已删除（其内容并入本手册 §11 与 mod README）。
+> 下次发布直接用本手册，不再维护独立发布手册。
