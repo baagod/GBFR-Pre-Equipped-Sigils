@@ -38,9 +38,9 @@ $chars = @(
 $common = @(
     @{ Gem = '04AC2281'; T1 = 'B5FF9FD3'; T2 = $null },   # slot 2: Inspire V+ + war spirit (war T filled per char)
     @{ Gem = '335DA2A5'; T1 = 'E69A4694'; T2 = '95F3FA86' }, # slot 3: Guts V+ + Autorevive
-    @{ Gem = 'B1CCC211'; T1 = 'B6E31F76'; T2 = '8B3BF60C' }, # slot 4: Steadfast V+ + Improved Dodging
+    @{ Gem = 'B1CCC211'; T1 = 'B6E31F76'; T2 = 'D2C8E10A' }, # slot 4: Steadfast V+ + 明镜止水 (Perfect Dodge)
     @{ Gem = '297D03F7'; T1 = '74AA75D6'; T2 = '24883AF3' }, # slot 5: 刚健Ⅴ＋ + 药水携带数 (Sturdy V+ + Potion Hoarder)
-    @{ Gem = '35637B96'; T1 = 'E0ABFDFE'; T2 = '7CCFF74F' }  # slot 6: 守护Ⅴ＋ + HP吸收 (Guardian V+ + HP Drain)
+    @{ Gem = '35637B96'; T1 = 'E0ABFDFE'; T2 = '8B3BF60C' }  # slot 6: 守护Ⅴ＋ + 躲避性能 (Guardian V+ + Improved Dodging)
 )
 
 $sb = [System.Text.StringBuilder]::new()
@@ -53,9 +53,9 @@ foreach ($c in $chars) {
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[0].Gem), 0x$($common[0].T1), 15, 0x$($c.War), 15, 15}, // slot2 Inspire V+ + war spirit)")
     # slots 3-5
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[1].Gem), 0x$($common[1].T1), 15, 0x$($common[1].T2), 15, 15}, // slot3 Guts V+ + Autorevive)")
-    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[2].Gem), 0x$($common[2].T1), 15, 0x$($common[2].T2), 15, 15}, // slot4 Steadfast V+ + Improved Dodging)")
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[2].Gem), 0x$($common[2].T1), 15, 0x$($common[2].T2), 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)")
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[3].Gem), 0x$($common[3].T1), 15, 0x$($common[3].T2), 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)")
-    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[4].Gem), 0x$($common[4].T1), 15, 0x$($common[4].T2), 15, 15}, // slot6 Guardian V+ + HP Drain)")
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[4].Gem), 0x$($common[4].T1), 15, 0x$($common[4].T2), 15, 15}, // slot6 Guardian V+ + Improved Dodging)")
     [void]$sb.AppendLine('   }},')
 }
 [void]$sb.AppendLine('};')
