@@ -4,7 +4,7 @@ namespace gbfr::native
 {
 namespace
 {
-// v0.3 built-in template loadout table: all 29 playable characters.
+// v0.3 built-in template loadout table: all playable characters.
 //
 // Template slots synthesize a GemData directly into the game's trait
 // calculation; no inventory copy is required. The selected slot id stored in

@@ -77,7 +77,7 @@ GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
-**v0.3 起覆盖全部 29 名角色**（v0.3.3 起每角色 6 槽），数据由生成脚本维护，不要手写 hash：
+**v0.3 起覆盖全角色**（v0.3.3 起每角色 6 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
 |---|---|
@@ -163,7 +163,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 - 配装表编译期内置；"配置化（外置配装表 + 每角色开关）"是明确的下一步方向，
   实现时注意：hash 仍需查表、兼容 fail-closed。
-- 当前已覆盖全部 29 名角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
+- 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效 → 日志出现 layout failed → 等上游
   方案或重新逆向。
 
