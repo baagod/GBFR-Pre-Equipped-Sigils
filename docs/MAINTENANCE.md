@@ -77,7 +77,7 @@ GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
-**v0.3 起覆盖全部 29 名角色**（每角色 5 槽），数据由生成脚本维护，不要手写 hash：
+**v0.3 起覆盖全部 29 名角色**（v0.3.3 起每角色 6 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
 |---|---|
@@ -103,7 +103,7 @@ TemplateGemSlot{
 **规则**：
 - 每角色一个 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 起**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 与 `FindTemplateSlot` 依赖此约定）。
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 5），由 `tool-gen-loadout.ps1` 生成时同步输出。
+- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 6），由 `tool-gen-loadout.ps1` 生成时同步输出。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
@@ -148,7 +148,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 → 启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 5）。
+- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 6）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管层 4 空格。
 

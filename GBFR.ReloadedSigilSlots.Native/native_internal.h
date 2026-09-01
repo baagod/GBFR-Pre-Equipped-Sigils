@@ -57,7 +57,7 @@ struct ResolvedGameLayout
 };
 
 inline constexpr int kNativeInternalSlotCount = 13;
-inline constexpr int kTemplateSlotCount = 5;
+inline constexpr int kTemplateSlotCount = 6;
 inline constexpr int kVirtualSlotCapacity = 24;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
