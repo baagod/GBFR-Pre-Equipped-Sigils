@@ -1,67 +1,15 @@
 # Nexus Mods 发布手册（GBFR Reloaded Sigil Slots）
 
 > 面向对象：发布本 mod 到 Nexus Mods 的操作者 / AI。
-> 状态：**未发布**。发布前必须完成第 1 节"前置许可"步骤。
+> 状态：**已获原作者许可**（Hiyajomaho-num9 已同意发布）。尚未发布；截图待游戏内获取后补充。
 
 ---
 
-## 1. 前置：许可问题（法律门槛，必须先做）
+## 1. 前置：许可（已获授权）
 
 本 mod 派生自 [GBFR Extra Sigil Slots](https://www.nexusmods.com/granbluefantasyrelink/mods/657)
 （Nexus）/ [cajoxorize366-oss/GBFR-Extra-Sigil-Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（GitHub，作者 Hiyajomaho-num9）。
-**原仓库无 LICENSE 文件（默认保留所有权利）**，因此发布修改版前必须获得原作者许可。
-
-### 1.1 发送入口（二选一）
-
-- **GitHub Issue（推荐，可留档）**：https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots/issues/new
-  标题：`Permission request: publish a slimmed derivative (GBFR Reloaded Sigil Slots)`
-- **Nexus 私信**：https://www.nexusmods.com/granbluefantasyrelink/mods/657 页面 Message 按钮（需登录）
-
-### 1.2 申请模板（中文，直接复制）
-
-**标题：请求允许发布精简派生版（GBFR Reloaded Sigil Slots）**
-
-你好！
-
-我基于你的 GBFR Extra Sigil Slots（0.8.6）做了一个精简版派生 mod（GBFR Reloaded Sigil Slots）：
-
-- 删除了 F8 选择器 UI、Overlay Broker、输入捕获和预设机制；
-- 改为 **内置模板配装表自动注入**（全部 29 名角色各 5 个虚拟槽：角色觉醒＋含两个专属词条、激昂＋角色战气、豪胆＋自动复活、不动＋躲避性能、刚健＋药水携带数），运行时合成因子，**不依赖库存、不写存档**；
-- 代码从 ~9000 行精简到 ~4000 行，仅保留核心 Hook、语义布局解析与 fail-closed 安全机制，已在本机 ER 2.0.5 验证正常（全部角色战斗注入确认）。
-
-**源码仓库（可直接审阅）**：https://github.com/baagod/GBFR-ReloadedSigilSlots
-
-**如实说明**：代码由 AI 助手在人类指导下编写（需求设计、配装内容、游戏内验证与文档由人类主导），完整 git 提交历史与维护文档可查。你的机制与工程化设计是我们保留的核心基础。
-
-想请问：**是否可以允许我将其发布到 Nexus Mods？** 发布时我会在页面明确注明派生来源和你的署名（Credit），并保持"允许修改、要求注明来源"的开放权限。
-
-你的仓库交接文档写明欢迎后续维护者接手，希望得到你的许可。无论是否允许都感谢你的工作！🙏
-
-### 1.2b 补充消息（仓库上线后的续发，追加在原对话里）
-
-**场景**：申请已发出，之后源码仓库上线，需要补充链接时，在原私信对话中追加以下内容（不要新开一条私信）：
-
-**中文版：**
-
-> 你好！补充一下：我们的源码仓库已经上线，你可以直接审阅代码、git 提交历史与维护文档：
->
-> https://github.com/baagod/GBFR-ReloadedSigilSlots
->
-> 之前提到的精简情况与 AI 辅助开发说明都可以在仓库里核实。再次感谢你的时间！🙏
-
-**English version:**
-
-> Hello! Just a follow-up: our source repository is now live, where you can review the code, the full git history and the maintenance docs:
->
-> https://github.com/baagod/GBFR-ReloadedSigilSlots
->
-> Everything mentioned earlier (the slimming, the AI-assisted development disclosure) can be verified there. Thanks again for your time! 🙏
-
-### 1.3 发送后
-
-1. 保存回复内容（截图或链接）——发布页 Credit 区要引用；
-2. 拿到许可后按第 2–4 节填写发布信息；
-3. 若 2–4 周无回复：可再跟进一次；仍无回复则自行判断（页面注明"作者未明确授权，如有异议请联系我下架"）。
+**发布许可已由原作者同意**，发布页 Credit 区保留署名即可，无需再申请。
 
 ---
 
@@ -161,8 +109,7 @@ Nexus 官方政策（[Generative AI Categorisation & Tagging](https://forums.nex
 1. 上传时选择 **AI-Generated Content** 标签（Generative AI Usage 分类下）；
 2. 描述开头保留"AI 使用声明"段（见第 3 节模板）；
 3. 截图一律用游戏内真实截图（避免触发 AI Media 标签）；
-4. 描述文本发布前**必须由你人工审校确认**；
-5. 许可申请模板（第 1.2 节）已包含 AI 辅助开发披露。
+4. 描述文本发布前**必须由你人工审校确认**。
 
 ---
 
@@ -179,18 +126,17 @@ Nexus 官方政策（[Generative AI Categorisation & Tagging](https://forums.nex
 | 存档（Archiving） | 允许 | 社区惯例 |
 | 捐赠积分（Donation Points） | 按个人意愿（可不开） | — |
 
-> 说明：Nexus 发布即代表你声明"你拥有发布该内容的权利"。**必须先完成第 1 节许可步骤再上传。**
+> 说明：Nexus 发布即代表你声明"你拥有发布该内容的权利"。**已获原作者许可（见第 1 节）。**
 
 ---
 
 ## 5. 发布操作清单
 
-1. 完成第 1 节许可并获得回复；
-2. 准备游戏内截图（血条 buff、训练场、日志）；
-3. 登录 Nexus → Upload → 填写第 2 节信息表 + 第 3 节描述 + 第 4 节权限 + **AI-Generated Content 标签**；
-4. 上传 `GBFR-ReloadedSigilSlots-0.3.2.zip`；
-5. 发布后检查：页面渲染正常、AI 声明与 Credit 区正确、权限徽章正确；
-6. 在根 README 与 ModConfig 的 `ProjectUrl` 补上 Nexus 页面地址。
+1. 准备游戏内截图（血条 buff、训练场、日志）；
+2. 登录 Nexus → Upload → 填写第 2 节信息表 + 第 3 节描述 + 第 4 节权限 + **AI-Generated Content 标签**；
+3. 上传 `GBFR-ReloadedSigilSlots-0.3.2.zip`；
+4. 发布后检查：页面渲染正常、AI 声明与 Credit 区正确、权限徽章正确；
+5. 在根 README 与 ModConfig 的 `ProjectUrl` 补上 Nexus 页面地址。
 
 ## 6. 后续更新流程（交给 AI）
 
