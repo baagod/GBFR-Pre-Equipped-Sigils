@@ -19,7 +19,7 @@
 |---|---|
 | 名称（Mod Name） | GBFR Pre-Equipped Sigils |
 | 摘要（Summary） | 全角色预配装 5 个虚拟因子槽位及对应因子，不依赖库存、不写存档。 |
-| 分类（Category） | `Gameplay Effects` 或 `Cheats`（如实标注为增强/作弊类） |
+| 分类（Category） | GBFR 仅三个分类可选：`Miscellaneous`（**选这个**）/ `Model` / `Weapons` |
 | 标签（Tags） | `Reloaded-II` `Sigils` `Pre-Equipped` `QoL` `Gameplay` `Cheat` |
 | 版本 | 0.3.2 |
 | 游戏版本 | Granblue Fantasy: Relink（ER 2.0.5） |
