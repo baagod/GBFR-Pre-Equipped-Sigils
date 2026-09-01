@@ -2,6 +2,8 @@
 
 派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots) 的《碧蓝幻想：Relink》自动配装虚拟因子槽位 Mod（ER 2.0.5）：**全部角色自动获得 5 个虚拟因子槽**，运行时合成因子注入，**零库存、零存档、零配置**。
 
+**下载**：[Nexus 页面](https://www.nexusmods.com/granbluefantasyrelink/mods/823)
+
 ## 模板配装
 
 5 个虚拟槽全部词条 15 级，不占用本体 12 槽。
