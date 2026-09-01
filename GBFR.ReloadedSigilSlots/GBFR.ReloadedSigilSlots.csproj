@@ -18,7 +18,6 @@
   <ItemGroup>
     <None Include="ModConfig.json" CopyToOutputDirectory="Always" />
     <None Include="README.md" CopyToOutputDirectory="Always" />
-    <None Include="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="Always" />
     <None Include="..\GBFR.ReloadedSigilSlots.Native\bin\$(Configuration)\GBFR.ReloadedSigilSlots.Native.dll"
           Link="GBFR.ReloadedSigilSlots.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
