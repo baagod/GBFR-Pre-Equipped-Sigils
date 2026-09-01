@@ -83,10 +83,6 @@
 - [本 mod 源码仓库](https://github.com/baagod/GBFR-Pre-Equipped-Sigils)
 - 数据核实参考社区工具链：[Nenkai/relink-modding](https://nenkai.github.io/relink-modding/)（官方 ID 表）与 [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools)（解包/导出）。
 - [原版源码仓库](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)
-
-## 权限（Permissions）
-
-- 按第 4 节填写后，此处会自动显示 Nexus 的权限徽章。
 ```
 
 ---
