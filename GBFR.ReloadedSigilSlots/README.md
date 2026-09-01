@@ -1,14 +1,16 @@
 # GBFR Reloaded Sigil Slots
 
-《碧蓝幻想：Relink》自动配装虚拟因子槽位 mod（Endless Ragnarok 2.0.5）。
+派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（**已获原作许可发布**）的《碧蓝幻想：Relink》预配装虚拟因子槽位 Mod（ER 2.0.5），无需库存、不写存档、启动即生效。再分发修改时请保留来源与署名。
 
-> 📖 技术维护文档（架构/数据流/雷区/操作指南，面向 AI 接手者）：[docs/MAINTENANCE.md](../docs/MAINTENANCE.md)
+运行需 [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II) 1.30.3 以上，解压到 `Mods` 目录启用即可。
 
-独立 Reloaded-II mod，派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（Hiyajomaho-num9）。不需要库存里有任何因子，启动即自动生效。
+**仓库**：https://github.com/baagod/GBFR-ReloadedSigilSlots
 
-## 模板配装（v0.3：全部 29 名角色）
+## 功能
 
-每个角色自动获得 5 个虚拟槽（不占用本体 12 槽，全部词条 15 级）：
+每个角色自动获得 5 个虚拟槽，全部词条 15 级，不占用本体 12 槽位。
+
+额外词条真实生效（作弊级），在线游玩时风险自负。
 
 | 槽位 | 因子 | 词条 |
 |---|---|---|
@@ -17,18 +19,3 @@
 | 3 | 豪胆Ⅴ＋ | 豪胆 + 自动复活 |
 | 4 | 不动Ⅴ＋ | 不动 + 躲避性能 |
 | 5 | 刚健Ⅴ＋ | 刚健 + 药水携带数 |
-
-## 安装
-
-1. 安装 [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II)（1.30.3 以上）；
-2. 把 mod 文件夹解压到 Reloaded-II 的 `Mods` 目录；
-3. 启用 mod 后启动游戏（Launcher 或 Steam + Deploy ASI 均可）。
-
-## 注意事项
-
-- 不写存档、不修改库存；离线使用无碍，**在线游玩时额外词条是真实生效的战斗效果（作弊级），风险自负**；
-- 仅支持游戏版本 2.0.5；不支持的版本会安全失败（不装 Hook、不碰存档）。
-
-## 许可证说明
-
-本 mod 派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（作者 Hiyajomaho-num9），**已获原作者许可发布**。再分发修改版时请保留派生来源与署名。
