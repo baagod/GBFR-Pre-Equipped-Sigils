@@ -16,7 +16,7 @@ $managedProject = Join-Path $root 'GBFR.ReloadedSigilSlots\GBFR.ReloadedSigilSlo
 $managedOutput = Join-Path $root "GBFR.ReloadedSigilSlots\bin\$Configuration"
 $distRoot = Join-Path $root 'dist'
 $packageDir = Join-Path $distRoot 'GBFR.ReloadedSigilSlots'
-$zipPath = Join-Path $distRoot "GBFR-ReloadedSigilSlots-$Version.zip"
+$zipPath = Join-Path $distRoot "GBFR-Pre-Equipped-Sigils-$Version.zip"
 
 $msbuild = $null
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'

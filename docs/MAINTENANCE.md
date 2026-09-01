@@ -1,8 +1,8 @@
-# GBFR Reloaded Sigil Slots — AI 接手维护手册
+# GBFR Pre-Equipped Sigils — AI 接手维护手册
 
 > 面向对象：后续接管本项目的 AI agent / 开发者。
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是**技术维护**文档。
-> 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-ReloadedSigilSlots
+> 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
 > 当前版本：0.3.2。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 
@@ -117,7 +117,7 @@ TemplateGemSlot{
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.2
-# 产物: dist\GBFR-ReloadedSigilSlots-<version>.zip
+# 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
 - 部署：**游戏必须退出**，把 `dist\GBFR.ReloadedSigilSlots` 整个文件夹复制到

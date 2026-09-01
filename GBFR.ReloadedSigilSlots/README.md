@@ -1,10 +1,10 @@
-# GBFR Reloaded Sigil Slots
+# GBFR Pre-Equipped Sigils
 
 派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots)（**已获原作许可发布**）的《碧蓝幻想：Relink》预配装虚拟因子槽位 Mod（ER 2.0.5），无需库存、不写存档、启动即生效。再分发修改时请保留来源与署名。
 
 运行需 [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II) 1.30.3 以上，解压到 `Mods` 目录启用即可。
 
-**仓库**：https://github.com/baagod/GBFR-ReloadedSigilSlots
+**仓库**：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 
 ## 功能
 
