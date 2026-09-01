@@ -17,10 +17,10 @@
 
 | 字段 | 值 |
 |---|---|
-| 名称（Mod Name） | `GBFR Pre-Equipped Sigils` |
-| 摘要（Summary） | `自动配装虚拟因子槽位：全部 29 名角色各 5 个虚拟槽（运行时合成因子），不依赖库存、不写存档、无界面。` |
+| 名称（Mod Name） | GBFR Pre-Equipped Sigils |
+| 摘要（Summary） | 全角色预配装 5 个虚拟因子槽位及对应因子，不依赖库存、不写存档。 |
 | 分类（Category） | `Gameplay Effects` 或 `Cheats`（如实标注为增强/作弊类） |
-| 标签（Tags） | `Reloaded-II` `Sigils` `Auto Loadout` `QoL` `Gameplay` `Cheat` |
+| 标签（Tags） | `Reloaded-II` `Sigils` `Pre-Equipped` `QoL` `Gameplay` `Cheat` |
 | 版本 | 0.3.2 |
 | 游戏版本 | Granblue Fantasy: Relink（ER 2.0.5） |
 | 依赖 | [Reloaded-II](https://github.com/Reloaded-II/Reloaded-II) 1.30.3+（写在 Mod Dependencies） |
@@ -34,7 +34,7 @@
 > 说明：Nexus 页面可中英双语；此中文版为正式版，英文版发布前由 AI 翻译、你人工确认后再用。
 
 ```markdown
-# GBFR Pre-Equipped Sigils（预配装因子）
+# GBFR Pre-Equipped Sigils
 
 通过 **运行时合成因子** 自动给角色套用固定配装，不需要库存物品、不修改存档。直接把合成因子注入本地状态计算的词条链路（与游戏 12 个本体槽同一套机制，额外扩展 5 个虚拟槽）。
 
@@ -132,7 +132,7 @@ Nexus 官方政策（[Generative AI Categorisation & Tagging](https://forums.nex
 
 ## 5. 发布操作清单
 
-1. 准备游戏内截图（血条 buff、训练场、日志）；
+1. ~~准备游戏内截图~~（**暂缓**：先发布，发布后补传真实截图）；
 2. 登录 Nexus → Upload → 填写第 2 节信息表 + 第 3 节描述 + 第 4 节权限 + **AI-Generated Content 标签**；
 3. 上传 `GBFR-Pre-Equipped-Sigils-0.3.2.zip`；
 4. 发布后检查：页面渲染正常、AI 声明与 Credit 区正确、权限徽章正确；
