@@ -42,6 +42,7 @@ $common = @(
     @{ Gem = '297D03F7'; T1 = '74AA75D6'; T2 = '24883AF3' }, # slot 5: 刚健Ⅴ＋ + 药水携带数 (Sturdy V+ + Potion Hoarder)
     @{ Gem = '35637B96'; T1 = 'E0ABFDFE'; T2 = '8B3BF60C' }, # slot 6: 守护Ⅴ＋ + 躲避性能 (Guardian V+ + Improved Dodging)
     @{ Gem = '49434696'; T1 = 'BF78FBFC'; T2 = '887AE0B0'; LV = 20 }  # slot 7: 可怕的漆黑钳蟹因子 Lv20 (event sigil; trait2 = 不选择)
+    @{ Gem = '1E2EBC39'; T1 = '57AB5B10'; T2 = '318D12E9' }  # slot 8: 追击Ⅴ＋ + 迅捷能力Ⅴ＋ (Pursuit V+ + Swift Ability V+)
 )
 
 $sb = [System.Text.StringBuilder]::new()
@@ -58,6 +59,7 @@ foreach ($c in $chars) {
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[3].Gem), 0x$($common[3].T1), 15, 0x$($common[3].T2), 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)")
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[4].Gem), 0x$($common[4].T1), 15, 0x$($common[4].T2), 15, 15}, // slot6 Guardian V+ + Improved Dodging)")
     [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[5].Gem), 0x$($common[5].T1), $($common[5].LV), 0x$($common[5].T2), 0, $($common[5].LV)}, // slot7 可怕的漆黑钳蟹因子 Lv$($common[5].LV) (event sigil)")
+    [void]$sb.AppendLine("      TemplateGemSlot{0x$($common[6].Gem), 0x$($common[6].T1), 15, 0x$($common[6].T2), 15, 15}, // slot8 Pursuit V+ + Swift Ability V+")
     [void]$sb.AppendLine('   }},')
 }
 [void]$sb.AppendLine('};')

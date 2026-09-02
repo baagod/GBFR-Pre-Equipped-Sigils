@@ -77,7 +77,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
-**v0.3 起覆盖全角色**（v0.3.4 起每角色 7 槽），数据由生成脚本维护，不要手写 hash：
+**v0.3 起覆盖全角色**（v0.3.5 起每角色 7 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
 |---|---|
@@ -182,7 +182,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   （数组 + `kTemplateSlotCount` 常量同步更新）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表）→ 模板表加
   `CharacterTemplate` 条目 → 编译 → 部署 → 验证。
-- **升版本**（如 0.3.2 → 0.3.4）：
+- **升版本**（如 0.3.2 → 0.3.5）：
   1. 改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
   2. 重新构建（`build-release.ps1`）；
   3. **扫描全文档旧版本号残留**（必须）：
