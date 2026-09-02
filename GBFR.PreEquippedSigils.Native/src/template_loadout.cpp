@@ -18,6 +18,16 @@ namespace
 //   slot 4: 不动Ⅴ＋           (不动 + 明镜止水)
 //   slot 5: 刚健Ⅴ＋           (刚健 + 药水携带数)
 //   slot 6: 守护Ⅴ＋           (守护 + 躲避性能)
+//   slot 7: 可怕的漆黑钳蟹因子 Lv20 (event sigil, single trait)
+//
+// IMPORTANT: a "no second trait" gem must use trait2 = kUnwornCharacterHash
+// (0x887AE0B0, the "not selected" sentinel the game understands), NOT 0.
+// trait2 = 0 renders an extra empty Lv1 entry in the game's full-sigil list
+// (observed 2026-09-02 on ER 2.0.5; fixed after checking the in-game modifier
+// which maps "不选择" to 0x887AE0B0). trait1_level and sigil_level are
+// independent: the former is the trait effect level, the latter the sigil's
+// list display level (event sigils show "-" when equipped but Lv20 in the
+// full list).
 //
 // Djeeta (姬塔) shares Gran's captain exclusives (captain compatibility).
 // Regenerate with docs/tool-gen-loadout.ps1 after changing the per-character
@@ -30,6 +40,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x0D21B430, { // character
       TemplateGemSlot{0x4F01D6CA, 0x6EBFA176, 15, 0xF1D5DBD0, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -38,6 +49,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x18E2F9F9, { // character
       TemplateGemSlot{0x9ADA3E00, 0x3BFED918, 15, 0xF8496336, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -46,6 +58,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x1BB37EF0, { // character
       TemplateGemSlot{0x895ABBF6, 0x26956F25, 15, 0x1DE14C65, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -54,6 +67,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x22E437E5, { // character
       TemplateGemSlot{0xE19B1965, 0x8CDF9382, 15, 0xD1012D8C, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -62,6 +76,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x25D46F4B, { // character
       TemplateGemSlot{0xD8A464F1, 0x9ACE140B, 15, 0x7B5B081D, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -70,6 +85,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x296471BE, { // character
       TemplateGemSlot{0x6AAE4B8F, 0x77C809F5, 15, 0x9230E3F5, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -78,6 +94,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x2A26B1B2, { // character
       TemplateGemSlot{0x52A6E299, 0xCD030268, 15, 0xA38510E2, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -86,6 +103,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xA4ACBA76, { // character
       TemplateGemSlot{0x52A6E299, 0xCD030268, 15, 0xA38510E2, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -94,6 +112,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x2EBE91D5, { // character
       TemplateGemSlot{0x673C5D8F, 0x2E65A774, 15, 0x16EFF868, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -102,6 +121,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x4D0A60C3, { // character
       TemplateGemSlot{0xE2B380E5, 0xB48EEF48, 15, 0x11AAE5F5, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -110,6 +130,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x627BCB0D, { // character
       TemplateGemSlot{0xAB835493, 0x86CBCDC4, 15, 0x05FA4599, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -118,6 +139,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x646C3168, { // character
       TemplateGemSlot{0x5A360EA8, 0x30773197, 15, 0x47384248, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -126,6 +148,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x718E1A14, { // character
       TemplateGemSlot{0xB8C44D5E, 0xD40D1E9B, 15, 0x15806DFC, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -134,6 +157,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x74DD4C79, { // character
       TemplateGemSlot{0xA8A0CBFF, 0x06719232, 15, 0xED8D8AD8, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -142,6 +166,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x978E4B18, { // character
       TemplateGemSlot{0xCE16D68B, 0x5463232F, 15, 0x451D814C, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -150,6 +175,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x9A8AF295, { // character
       TemplateGemSlot{0x95CC3CB8, 0xD176D262, 15, 0x461A8E07, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -158,6 +184,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0x9B15CFB1, { // character
       TemplateGemSlot{0x23953FD4, 0x7D75D904, 15, 0xBE3404B9, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -166,6 +193,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xA3A3CB2F, { // character
       TemplateGemSlot{0xAF8E7E7E, 0x93A2093C, 15, 0x7AD0C010, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -174,6 +202,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xAA66178A, { // character
       TemplateGemSlot{0x02B1F8C0, 0xEC3CF174, 15, 0xAF513A9D, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -182,6 +211,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xBAD16E3B, { // character
       TemplateGemSlot{0x8ECBB0A3, 0xE85FF8E0, 15, 0x8572B8AF, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -190,6 +220,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xBDEF7181, { // character
       TemplateGemSlot{0x02472C43, 0xE60A735C, 15, 0x6FF05223, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -198,6 +229,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xC3FFD418, { // character
       TemplateGemSlot{0xB441275D, 0xD908223D, 15, 0x7351D602, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -206,6 +238,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xC8616284, { // character
       TemplateGemSlot{0x9BD1CC24, 0x23D0F67F, 15, 0xC2A4C7A9, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -214,6 +247,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xDD7A151E, { // character
       TemplateGemSlot{0x1BBE919C, 0xAA83F548, 15, 0x921B6B0C, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -222,6 +256,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xE7053919, { // character
       TemplateGemSlot{0x1A57AEF1, 0x29B07BEB, 15, 0xA63B89CD, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -230,6 +265,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xF0EB77EF, { // character
       TemplateGemSlot{0xE4F986D9, 0x7440E869, 15, 0xCD124165, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -238,6 +274,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xFC6CDF7B, { // character
       TemplateGemSlot{0x119B24A8, 0x0CD6C625, 15, 0xA3B49220, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -246,6 +283,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
    { 0xFD3BE362, { // character
       TemplateGemSlot{0xAEEF8343, 0x9A9DC170, 15, 0x522E2388, 15, 15}, // slot1 awakening+ (2 exclusives)
@@ -254,6 +292,7 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
       TemplateGemSlot{0xB1CCC211, 0xB6E31F76, 15, 0xD2C8E10A, 15, 15}, // slot4 Steadfast V+ + Perfect Dodge)
       TemplateGemSlot{0x297D03F7, 0x74AA75D6, 15, 0x24883AF3, 15, 15}, // slot5 Sturdy V+ + Potion Hoarder)
       TemplateGemSlot{0x35637B96, 0xE0ABFDFE, 15, 0x8B3BF60C, 15, 15}, // slot6 Guardian V+ + Improved Dodging)
+      TemplateGemSlot{0x49434696, 0xBF78FBFC, 20, 0x887AE0B0, 0, 20}, // slot7 鍙€曠殑婕嗛粦閽宠煿鍥犲瓙 Lv20 (event sigil)
    }},
 };
 

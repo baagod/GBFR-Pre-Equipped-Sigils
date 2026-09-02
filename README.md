@@ -1,12 +1,12 @@
 # GBFR Pre-Equipped Sigils
 
-派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots) 的《碧蓝幻想：Relink》预配装因子 Mod（ER 2.0.5）：**全角色自动获得 6 个虚拟因子槽**，运行时合成因子注入，**零库存、零存档、零配置**。
+派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots) 的《碧蓝幻想：Relink》预配装因子 Mod（ER 2.0.5）：**全角色自动获得 7 个虚拟因子槽**，运行时合成因子注入，**零库存、零存档、零配置**。
 
 **下载**：[Nexus 页面](https://www.nexusmods.com/granbluefantasyrelink/mods/823)
 
 ## 模板配装
 
-6 个虚拟槽全部词条 15 级，不占用本体 12 槽。
+7 个虚拟槽（词条 15 级 + 漆黑钳蟹 Lv20），不占用本体 12 槽。
 
 | 槽位 | 因子 | 词条 |
 |---|---|---|
@@ -16,6 +16,7 @@
 | 4 | 不动Ⅴ＋ | 不动 + 明镜止水 |
 | 5 | 刚健Ⅴ＋ | 刚健 + 药水携带数 |
 | 6 | 守护Ⅴ＋ | 守护 + 躲避性能 |
+| 7 | 可怕的漆黑钳蟹因子 (Lv20) | 活动限定：伤害上限+5% / 防御+2% / 追击 / 伤害+2% |
 
 ## 文档入口
 

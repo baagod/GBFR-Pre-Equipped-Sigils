@@ -77,7 +77,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
-**v0.3 起覆盖全角色**（v0.3.3 起每角色 6 槽），数据由生成脚本维护，不要手写 hash：
+**v0.3 起覆盖全角色**（v0.3.4 起每角色 7 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
 |---|---|
@@ -93,17 +93,24 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 TemplateGemSlot{
    0x335DA2A5, // gem_id: 物品 hash（S 行）。游戏按它查 master 表拿显示名；词条效果吃的是下面两个 hash（已实验验证）
    0xE69A4694, // trait1: 主词条 hash（T 行）
-   15,         // trait1_level: Ⅴ＋ = 15
-   0x95F3FA86, // trait2: 副词条 hash（0 = 单词条）
+   15,         // trait1_level: Ⅴ＋ = 15（漆黑钳蟹 = 20）
+   0x95F3FA86, // trait2: 副词条 hash。**无副词条必须用 0x887AE0B0（"不选择"哨兵），不能用 0**！
    15,         // trait2_level
-   15,         // sigil_level: 物品显示等级
+   15,         // sigil_level: 物品显示等级（漆黑钳蟹 = 20；装备后事件因子显示 "-"、全列表显示 20）
 },
 ```
+
+> ⚠️ **踩过的坑（2026-09-02，ER 2.0.5）**："单词条因子"（如漆黑的钳蟹因子 Lv20）把
+> `trait2` 写成 `0` 会在游戏"全部因子列表"里**多渲染一个空的 Lv1 条目**。
+> 正确写法是 `trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自从游戏内修改器
+> 观察到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —— 与注入的
+> `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）。
+> 该坑只在**首个单词条因子**（槽 7）出现，其他槽位均有真实 trait2，不受影响。
 
 **规则**：
 - 每角色一个 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 起**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 与 `FindTemplateSlot` 依赖此约定）。
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 6），由 `tool-gen-loadout.ps1` 生成时同步输出。
+- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 7），由 `tool-gen-loadout.ps1` 生成时同步输出。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
@@ -148,7 +155,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 → 启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 6）。
+- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 7）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管层 4 空格。
 
@@ -175,7 +182,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   （数组 + `kTemplateSlotCount` 常量同步更新）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表）→ 模板表加
   `CharacterTemplate` 条目 → 编译 → 部署 → 验证。
-- **升版本**（如 0.3.2 → 0.3.3）：
+- **升版本**（如 0.3.2 → 0.3.4）：
   1. 改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
   2. 重新构建（`build-release.ps1`）；
   3. **扫描全文档旧版本号残留**（必须）：
