@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
-$comp = 'D:\Games\Relink\GBFR.ReloadedSigilSlots\GBFR.ReloadedSigilSlots.Native\GBFR-ReloadedSigilSlots.compatibility.tsv'
-$names = 'D:\Games\Relink\GBFR.ReloadedSigilSlots\docs\gbfr-sigil-hashes.zh-CN.tsv'
+$comp = 'D:\Games\Relink\GBFR.PreEquippedSigils\GBFR.PreEquippedSigils.Native\GBFR-Pre-Equipped-Sigils.compatibility.tsv'
+$names = 'D:\Games\Relink\GBFR.PreEquippedSigils\docs\gbfr-sigil-hashes.zh-CN.tsv'
 
 $nameMap = @{}
 $traitMap = @{}

@@ -56,7 +56,7 @@ void Log(const std::string& message)
       time.wSecond,
       time.wMilliseconds);
    const std::string line =
-      std::string("[") + timestamp + "] [GBFR ReloadedSigilSlots Native] " + message + "\n";
+      std::string("[") + timestamp + "] [GBFR Pre-Equipped Sigils Native] " + message + "\n";
    OutputDebugStringA(line.c_str());
    if (const GBFR20_LogCallback callback = g_log_callback.load(std::memory_order_acquire);
        callback != nullptr)

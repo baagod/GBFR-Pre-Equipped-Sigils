@@ -2,10 +2,10 @@ using System.Diagnostics;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 
-namespace GBFR.ReloadedSigilSlots;
+namespace GBFR.PreEquippedSigils;
 
 /// <summary>
-/// Thin Reloaded-II shell for GBFR.ReloadedSigilSlots.
+/// Thin Reloaded-II shell for GBFR.PreEquippedSigils.
 /// There is no overlay UI, input capture, preset store or Overlay Broker:
 /// the native core installs its own hooks via SafetyHook and applies the
 /// built-in template loadout automatically. This shell only hosts the
@@ -13,7 +13,7 @@ namespace GBFR.ReloadedSigilSlots;
 /// </summary>
 public sealed class Mod : IMod
 {
-    private const string ModId = "GBFR.ReloadedSigilSlots";
+    private const string ModId = "GBFR.PreEquippedSigils";
     private const string LogTag = "GBFR Pre-Equipped Sigils"; // user-facing log prefix only (ModId stays technical)
     private const int TickIntervalMilliseconds = 250;
 
@@ -61,7 +61,7 @@ public sealed class Mod : IMod
             {
                 _fileLog?.Dispose();
                 _fileLog = new StreamWriter(
-                    Path.Combine(modDirectory, "ReloadedSigilSlots.Reloaded.log"),
+                    Path.Combine(modDirectory, "GBFR.PreEquippedSigils.Reloaded.log"),
                     append: false)
                 {
                     AutoFlush = true,

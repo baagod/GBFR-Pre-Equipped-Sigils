@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace GBFR.ReloadedSigilSlots;
+namespace GBFR.PreEquippedSigils;
 
 /// <summary>
 /// Minimal native-core facade. Only the functions the thin mod shell actually
@@ -16,7 +16,7 @@ internal static unsafe partial class NativeCore
 {
     internal const int AbiVersion = 15;
 
-    private const string LibraryName = "GBFR.ReloadedSigilSlots.Native.dll";
+    private const string LibraryName = "GBFR.PreEquippedSigils.Native.dll";
     private static readonly object ResolverLock = new();
     private static readonly object NativeLogLock = new();
     private static string? _libraryPath;

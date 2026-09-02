@@ -15,7 +15,7 @@
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
-    <ProjectName>GBFR.ReloadedSigilSlots.Native</ProjectName>
+    <ProjectName>GBFR.PreEquippedSigils.Native</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -38,7 +38,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <TargetName>GBFR.ReloadedSigilSlots.Native</TargetName>
+    <TargetName>GBFR.PreEquippedSigils.Native</TargetName>
     <TargetExt>.dll</TargetExt>
     <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>

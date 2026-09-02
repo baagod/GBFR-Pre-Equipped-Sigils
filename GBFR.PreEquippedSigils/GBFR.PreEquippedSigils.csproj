@@ -2,8 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
-    <AssemblyName>GBFR.ReloadedSigilSlots</AssemblyName>
-    <RootNamespace>GBFR.ReloadedSigilSlots</RootNamespace>
+    <AssemblyName>GBFR.PreEquippedSigils</AssemblyName>
+    <RootNamespace>GBFR.PreEquippedSigils</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -18,11 +18,11 @@
   <ItemGroup>
     <None Include="ModConfig.json" CopyToOutputDirectory="Always" />
     <None Include="README.md" CopyToOutputDirectory="Always" />
-    <None Include="..\GBFR.ReloadedSigilSlots.Native\bin\$(Configuration)\GBFR.ReloadedSigilSlots.Native.dll"
-          Link="GBFR.ReloadedSigilSlots.Native.dll"
+    <None Include="..\GBFR.PreEquippedSigils.Native\bin\$(Configuration)\GBFR.PreEquippedSigils.Native.dll"
+          Link="GBFR.PreEquippedSigils.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.ReloadedSigilSlots.Native\GBFR-ReloadedSigilSlots.compatibility.tsv"
-          Link="GBFR-ReloadedSigilSlots.compatibility.tsv"
+    <None Include="..\GBFR.PreEquippedSigils.Native\GBFR.PreEquippedSigils.compatibility.tsv"
+          Link="GBFR.PreEquippedSigils.compatibility.tsv"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

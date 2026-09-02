@@ -25,7 +25,7 @@ void Initialize()
 
    g_module_directory = std::filesystem::path(module_path.data()).parent_path();
    g_compatibility_path =
-      g_module_directory / L"GBFR-ReloadedSigilSlots.compatibility.tsv";
+      g_module_directory / L"GBFR.PreEquippedSigils.compatibility.tsv";
 
    const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');

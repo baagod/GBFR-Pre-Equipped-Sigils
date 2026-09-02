@@ -23,12 +23,12 @@ docs/
   gbfr-sigil-hashes.zh-CN.tsv        hash 查询表（S=物品/gem_id，T=词条/trait，仅参考不打包）
   gbfr-sigil-hashes.en.tsv           同上（英文）
   MAINTENANCE.md                     本手册
-GBFR.ReloadedSigilSlots/             C# 托管层（Reloaded-II 插件壳）
+GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
   NativeCore.cs                      原生门面：加载/ABI 校验/日志回调/Tick/Shutdown/消息读取
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   ModConfig.json                     ModId/版本/描述（发布信息）
-GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
+GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的 C ABI（v15，6 个导出 + GemData 结构）
   native_internal.h                  内部状态/声明/常量（模板槽常量、预检字节等）
   src/
@@ -76,7 +76,7 @@ GBFR.ReloadedSigilSlots.Native/      C++ 原生核心
 
 ## 4. 模板配装表（日常维护核心）
 
-文件：`GBFR.ReloadedSigilSlots.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
+文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
 **v0.3 起覆盖全角色**（v0.3.3 起每角色 6 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
@@ -120,7 +120,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
-- 部署：**游戏必须退出**，把 `dist\GBFR.ReloadedSigilSlots` 整个文件夹复制到
+- 部署：**游戏必须退出**，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到
   Reloaded-II 的 `Mods\`（覆盖/先删旧目录）。改名后**必须**同步：
   - `runtime.cpp` 的 `g_config_path` / `g_compatibility_path`
   - csproj 的 `<None Include=...>` 复制项
@@ -130,7 +130,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 6. 验证清单（每次改动后必须）
 
 1. 编译：**0 警告 0 错误**（third_party 的 C4834 已在 vcxproj 单独压制）。
-2. 日志 `ReloadedSigilSlots.Reloaded.log`（mod 目录）：
+2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
    - `Installed N built-in template loadout selection(s); inventory-independent.`
    - `Native hook installation completed with N virtual slots; ...`
    - 进战斗：`Live battle Trait contribution confirmed for 0xE7053919: N/N ...`
@@ -180,10 +180,10 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   2. 重新构建（`build-release.ps1`）；
   3. **扫描全文档旧版本号残留**（必须）：
      ```powershell
-     Select-String -Path README.md,GBFR.ReloadedSigilSlots\README.md,GBFR.ReloadedSigilSlots\ModConfig.json,docs\*.md -Pattern "0\.3\.2"
+     Select-String -Path README.md,GBFR.PreEquippedSigils\README.md,GBFR.PreEquippedSigils\ModConfig.json,docs\*.md -Pattern "0\.3\.2"
      ```
      命中处全部更新（常见：MAINTENANCE 头部/构建注释、mod README、ModConfig）；
-  4. 改配装/功能时同步 mod README（`GBFR.ReloadedSigilSlots/README.md`）与 Nexus 页面描述（见 §11）；
+  4. 改配装/功能时同步 mod README（`GBFR.PreEquippedSigils/README.md`）与 Nexus 页面描述（见 §11）；
   5. 提交 → 推送（`-c credential.helper="!gh auth git-credential"`）→ 部署（游戏退出后复制 dist 包）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
   （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
@@ -209,10 +209,10 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 1. **升版本**：改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`，
    按 §10 扫描全文档旧版本号残留（README、MAINTENANCE 头部、构建注释）。
 2. **构建**：`build-release.ps1` → 产出 `dist/GBFR-Pre-Equipped-Sigils-<version>.zip`。
-3. **部署验证**：游戏退出 → 复制 `dist\GBFR.ReloadedSigilSlots` 到 `Mods\` → 按 §6 验证清单实测。
+3. **部署验证**：游戏退出 → 复制 `dist\GBFR.PreEquippedSigils` 到 `Mods\` → 按 §6 验证清单实测。
 4. **更新 Nexus 文件页**：上传新 zip；Nexus 只认最新文件版本，旧版自动归档到历史。
    上传时保持名称/分类/标签/权限不变（见上表）。
-5. **同步页面描述**：Nexus 描述与 `GBFR.ReloadedSigilSlots/README.md` 同源——
+5. **同步页面描述**：Nexus 描述与 `GBFR.PreEquippedSigils/README.md` 同源——
    改配装后必须两处同步（配装表、摘要、截图位置）。
 6. **截图**：一律游戏内真实截图，发布后上传到 Images 区（不要 AI 生成图）。
 7. **游戏更新后**：先本机回归（§6）；若 layout 解析失败（日志出现 layout failed），

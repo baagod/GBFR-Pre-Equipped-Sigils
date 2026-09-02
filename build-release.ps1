@@ -11,11 +11,11 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = $PSScriptRoot
-$nativeProject = Join-Path $root 'GBFR.ReloadedSigilSlots.Native\GBFR.ReloadedSigilSlots.Native.vcxproj'
-$managedProject = Join-Path $root 'GBFR.ReloadedSigilSlots\GBFR.ReloadedSigilSlots.csproj'
-$managedOutput = Join-Path $root "GBFR.ReloadedSigilSlots\bin\$Configuration"
+$nativeProject = Join-Path $root 'GBFR.PreEquippedSigils.Native\GBFR.PreEquippedSigils.Native.vcxproj'
+$managedProject = Join-Path $root 'GBFR.PreEquippedSigils\GBFR.PreEquippedSigils.csproj'
+$managedOutput = Join-Path $root "GBFR.PreEquippedSigils\bin\$Configuration"
 $distRoot = Join-Path $root 'dist'
-$packageDir = Join-Path $distRoot 'GBFR.ReloadedSigilSlots'
+$packageDir = Join-Path $distRoot 'GBFR.PreEquippedSigils'
 $zipPath = Join-Path $distRoot "GBFR-Pre-Equipped-Sigils-$Version.zip"
 
 $msbuild = $null
@@ -91,8 +91,8 @@ New-Item -ItemType Directory -Path $packageDir | Out-Null
 Copy-Item -Path (Join-Path $managedOutput '*') -Destination $packageDir -Recurse -Force
 
 foreach ($requiredFile in @(
-    'GBFR.ReloadedSigilSlots.dll',
-    'GBFR.ReloadedSigilSlots.Native.dll'
+    'GBFR.PreEquippedSigils.dll',
+    'GBFR.PreEquippedSigils.Native.dll'
 )) {
     $requiredPath = Join-Path $packageDir $requiredFile
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
@@ -101,9 +101,9 @@ foreach ($requiredFile in @(
 }
 
 foreach ($excludedFile in @(
-    'GBFR.ReloadedSigilSlots.pdb',
-    'GBFR-ReloadedSigilSlotsConfig.ini',
-    'GBFR-ReloadedSigilSlotsConfig.pending',
+    'GBFR.PreEquippedSigils.pdb',
+    'GBFR.PreEquippedSigilsConfig.ini',
+    'GBFR.PreEquippedSigilsConfig.pending',
     'GBFR-ExtraSigilSlotsNumConfig.ini',
     'GBFR-ExtraSigilSlotsNumConfig.pending',
     'GBFR-ExtraSigilSlots.presets.json',
@@ -135,8 +135,8 @@ if ($legacyArtifact) {
 
 $packagedConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
     Where-Object {
-        $_.Name -ieq 'GBFR-ReloadedSigilSlotsConfig.ini' -or
-        $_.Name -ieq 'GBFR-ReloadedSigilSlotsConfig.pending'
+        $_.Name -ieq 'GBFR.PreEquippedSigilsConfig.ini' -or
+        $_.Name -ieq 'GBFR.PreEquippedSigilsConfig.pending'
     } |
     Select-Object -First 1
 if ($packagedConfig) {
