@@ -14,6 +14,7 @@ namespace GBFR.ReloadedSigilSlots;
 public sealed class Mod : IMod
 {
     private const string ModId = "GBFR.ReloadedSigilSlots";
+    private const string LogTag = "GBFR Pre-Equipped Sigils"; // user-facing log prefix only (ModId stays technical)
     private const int TickIntervalMilliseconds = 250;
 
     private readonly object _logLock = new();
@@ -103,7 +104,7 @@ public sealed class Mod : IMod
 
     private void Log(string message)
     {
-        string line = $"[{DateTime.Now:HH:mm:ss.fff}] [{ModId}] {message}";
+        string line = $"[{DateTime.Now:HH:mm:ss.fff}] [{LogTag}] {message}";
         ILogger? logger;
         lock (_logLock)
         {
