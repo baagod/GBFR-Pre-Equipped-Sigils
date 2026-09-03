@@ -242,12 +242,13 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - 改名成功：工程/ModId/DLL/日志/兼容表 = GBFR.PreEquippedSigils；ModName/日志前缀 = GBFR Pre-Equipped Sigils；仓库 = GBFR-Pre-Equipped-Sigils。
 
 ### 市场情报（Nexus 竞品，2026-09-03）
+**转化率口径：Total views ÷ Unique DLs（数值越小 = 转化越好），如 823 = 1,278÷117 = 10.92；勿与 Unique÷Views 混用。**
 - 632 Sigils Ultra：Unique 1,242 / End 24 / 转化 8.6%（7月发布，"超强"路线）。
 - 687 OP Sigils：Unique 744 / End 21 / 转化 8.5%（超强）。
 - 819 Master Traits Super：Unique 188 / End 4（专精超强）。
 - 770 Fediel PowerUp：Unique 460 / End 8（角色强化）。
-- **我（823）**：Unique 115 / End 2 / **转化 9.6%（全场最高）**；Views 1,196（曝光低于竞品——瓶颈在曝光，转化已证明）。
-- 657 原版：转化 11.78%（首个扩展槽、无竞品期）——目标：预设优化转化率追上/超过。
+- **我（823）**：Unique 117 / End 2 / Total 157 / Views 1,278（发布第 3 天实时抓取）——**转化 10.92**，追平原版 11.78（差 0.86）。
+- 657 原版：Unique 1,489 / End 28 / Total 3,153 / Views 17,534 / 转化 11.78（首个扩展槽、无竞品期）——目标：预设优化转化率追上/超过（已基本达成）。
 
 ### 用户反馈
 - 韩国玩家（漆黑钳蟹因子）——已实现（槽 8）+ 回复。
