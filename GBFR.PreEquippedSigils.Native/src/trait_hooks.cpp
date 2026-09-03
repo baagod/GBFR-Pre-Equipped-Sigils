@@ -417,7 +417,7 @@ void ScheduleSelectedStatusRebind()
 
 namespace
 {
-void RollbackGameplayHookInstallation() noexcept
+void DisableGameplayHooksAndRestore() noexcept
 {
    g_hooks_ready.store(false, std::memory_order_release);
    if (g_status_owner_tick_hook)
@@ -478,48 +478,7 @@ void ShutdownHooks()
    g_observed_status_context.store(-1, std::memory_order_release);
    g_status_owner_manager_address.store(0, std::memory_order_release);
 
-   if (g_status_owner_tick_hook)
-      (void)g_status_owner_tick_hook.disable();
-   if (g_trait_fetch_hook)
-      (void)g_trait_fetch_hook.disable();
-   if (g_get_gem_hook)
-      (void)g_get_gem_hook.disable();
-
-   while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_mid_calls.load(std::memory_order_acquire) != 0)
-      SwitchToThread();
-
-   if (g_image_base != 0 && g_layout_ready.load(std::memory_order_acquire))
-   {
-      uint8_t apply_loop_limit = 0;
-      if (ReadByte(
-             g_image_base +
-                g_game_layout.trait_apply_loop_limit_immediate_rva,
-             apply_loop_limit) &&
-          apply_loop_limit == static_cast<uint8_t>(GetExpandedInternalSlotCount()))
-         WriteByte(
-            g_image_base +
-               g_game_layout.trait_apply_loop_limit_immediate_rva,
-            g_game_layout.trait_apply_original_limit);
-      uint8_t loop_limit = 0;
-      if (ReadByte(
-             g_image_base +
-                g_game_layout.trait_category_loop_limit_immediate_rva,
-             loop_limit) &&
-          loop_limit == static_cast<uint8_t>(GetExpandedInternalSlotCount()))
-         WriteByte(
-            g_image_base +
-               g_game_layout.trait_category_loop_limit_immediate_rva,
-            g_game_layout.trait_category_original_limit);
-   }
-   g_status_owner_tick_hook.reset();
-   g_trait_fetch_hook.reset();
-   g_get_gem_hook.reset();
-   ResetGameLayout();
-   {
-      std::unique_lock lock(g_authorization_mutex);
-      g_authorized_statuses.clear();
-   }
+   DisableGameplayHooksAndRestore();
 }
 
 bool InstallHooks()
@@ -546,7 +505,7 @@ bool InstallHooks()
       "gem-data-getter-hook", gem_hook_started, static_cast<bool>(g_get_gem_hook));
    if (!g_get_gem_hook)
    {
-      RollbackGameplayHookInstallation();
+      DisableGameplayHooksAndRestore();
       SetRuntimeMessage("Failed to install the GemData getter hook.", true);
       return false;
    }
@@ -560,7 +519,7 @@ bool InstallHooks()
       "trait-fetch-hook", trait_hook_started, static_cast<bool>(g_trait_fetch_hook));
    if (!g_trait_fetch_hook)
    {
-      RollbackGameplayHookInstallation();
+      DisableGameplayHooksAndRestore();
       SetRuntimeMessage("Failed to install the trait fetch-path hook.", true);
       return false;
    }
@@ -574,7 +533,7 @@ bool InstallHooks()
       "status-owner-hook", owner_hook_started, static_cast<bool>(g_status_owner_tick_hook));
    if (!g_status_owner_tick_hook)
    {
-      RollbackGameplayHookInstallation();
+      DisableGameplayHooksAndRestore();
       SetRuntimeMessage("Failed to install the status owner-thread trace hook.", true);
       return false;
    }
@@ -594,7 +553,7 @@ bool InstallHooks()
       "trait-loop-limit-patches", loop_patch_started, loop_patches_ready);
    if (!loop_patches_ready)
    {
-      RollbackGameplayHookInstallation();
+      DisableGameplayHooksAndRestore();
       SetRuntimeMessage(
          "Failed to patch both native trait loop limits; changes were rolled back.", true);
       return false;
