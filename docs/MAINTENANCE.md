@@ -211,6 +211,14 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 | 主文件 | `dist/GBFR-Pre-Equipped-Sigils-<version>.zip` |
 | 源码 | https://github.com/baagod/GBFR-Pre-Equipped-Sigils |
 
+> **AI 标签口径（2026-08-01 Nexus 新政）**：AI 标签分三档——`AI-Generated Content`（含
+> AI 生成的**代码**、UI、语音、对话、翻译、音乐、游戏内资产）/ `AI Media`（AI 推广图、
+> 缩略图、视频、页面描述等 mod 外媒体）/ `AI-Assisted`（轻微使用）。规则：**主要靠 AI
+> 制作的 mod 必须打 AI-Generated Content**；打 AI-Assisted 的，审核方可要求证明开发
+> "人类主导"。本 mod 代码由 AI 编写（README 已公开声明）→ **必须保持 AI-Generated
+> Content，勿降为 AI-Assisted**（选了可能被要求证明人类主导，风险单向）；截图均为
+> 游戏内实拍、无 AI 图 → 无需 AI Media。宁可偏重，不可偏低。
+
 **发布后维护流程**（每次发布新版本依次执行）：
 
 1. **升版本**：改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`，
