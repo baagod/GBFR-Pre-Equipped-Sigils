@@ -28,7 +28,6 @@ std::atomic_uint32_t g_last_apply_character_hash{0};
 std::atomic_uint32_t g_last_apply_expected_count{0};
 std::atomic_uint32_t g_last_apply_injected_count{0};
 std::atomic_int g_apply_result{0};
-std::atomic_int g_last_consumed_apply_result{0};
 
 namespace
 {

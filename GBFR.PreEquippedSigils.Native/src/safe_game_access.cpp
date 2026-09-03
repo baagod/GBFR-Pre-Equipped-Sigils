@@ -237,8 +237,6 @@ bool SafeResolveStatusByMapKey(
             return false;
       }
 
-      if (node == sentinel)
-         return false;
       status = *reinterpret_cast<const uintptr_t*>(node + 0x30);
       return status != 0;
    }

@@ -93,7 +93,6 @@ void ConsumeApplyResult()
    const int result = g_apply_result.exchange(ApplyResultNone, std::memory_order_acq_rel);
    if (result == ApplyResultNone)
       return;
-   g_last_consumed_apply_result.store(result, std::memory_order_release);
    const uint64_t generation = g_last_apply_generation.load(std::memory_order_acquire);
    const uint32_t character_hash =
       g_last_apply_character_hash.load(std::memory_order_acquire);

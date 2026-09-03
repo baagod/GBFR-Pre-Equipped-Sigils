@@ -9,8 +9,6 @@ SafetyHookInline g_get_gem_hook;
 SafetyHookMid g_trait_fetch_hook;
 SafetyHookMid g_status_owner_tick_hook;
 
-std::atomic<uint32_t> g_last_character_hash{0};
-std::atomic<int32_t> g_last_context_mode{-1};
 std::atomic_uint64_t g_status_owner_manager_address{0};
 std::atomic_uint32_t g_status_owner_thread_id{0};
 std::atomic_uint64_t g_status_owner_tick_count{0};
@@ -20,34 +18,9 @@ std::atomic_uint32_t g_active_getter_calls{0};
 std::atomic_uint32_t g_active_mid_calls{0};
 thread_local uint64_t g_tls_apply_generation = 0;
 thread_local NaturalContributionFrame g_tls_natural_contribution{};
-std::atomic_uint64_t g_natural_bind_attempts{0};
-std::atomic_uint64_t g_natural_bind_successes{0};
-std::atomic_uint64_t g_natural_bind_status_address{0};
-std::atomic_uint32_t g_natural_bind_character_hash{0};
-std::atomic_int32_t g_natural_bind_context{-1};
-std::atomic_uint32_t g_natural_bind_expected_count{0};
-std::atomic_uint32_t g_natural_bind_injected_count{0};
-std::atomic_int32_t g_natural_bind_result{NaturalBindNone};
-std::atomic_uint32_t g_natural_bind_owner_key{0};
-std::atomic_uint64_t g_natural_bind_owner_status_address{0};
 
 namespace
 {
-void PublishNaturalBindDiagnostic(
-   uintptr_t status,
-   const StatusIdentity& identity,
-   uint32_t expected,
-   uint32_t injected,
-   NaturalBindResult result) noexcept
-{
-   g_natural_bind_status_address.store(status, std::memory_order_release);
-   g_natural_bind_character_hash.store(identity.character_hash, std::memory_order_release);
-   g_natural_bind_context.store(identity.context_mode, std::memory_order_release);
-   g_natural_bind_expected_count.store(expected, std::memory_order_release);
-   g_natural_bind_injected_count.store(injected, std::memory_order_release);
-   g_natural_bind_result.store(result, std::memory_order_release);
-}
-
 uint32_t CountSelectedSlots(
    const std::array<uint32_t, kVirtualSlotCapacity>& selection) noexcept
 {
@@ -67,24 +40,15 @@ void BeginNaturalContributionTracking(
    if (expected == 0)
       return;
 
-   PublishNaturalBindDiagnostic(
-      status, identity, expected, 0, NaturalBindInProgress);
    if (identity.context_mode != 1)
-   {
-      PublishNaturalBindDiagnostic(
-         status, identity, expected, 0, NaturalBindContextRejected);
       return;
-   }
 
-   g_natural_bind_attempts.fetch_add(1, std::memory_order_acq_rel);
    g_tls_natural_contribution.status = status;
    g_tls_natural_contribution.identity = identity;
    g_tls_natural_contribution.slots = selection;
    g_tls_natural_contribution.expected = expected;
    g_tls_natural_contribution.next_slot = kNativeInternalSlotCount;
    g_tls_natural_contribution.active = true;
-   g_natural_bind_owner_key.store(0, std::memory_order_release);
-   g_natural_bind_owner_status_address.store(status, std::memory_order_release);
 }
 
 void TrackNaturalContributionResult(
@@ -101,12 +65,6 @@ void TrackNaturalContributionResult(
        g_tls_natural_contribution.identity.context_mode != identity.context_mode ||
        g_tls_natural_contribution.next_slot != slot_index)
    {
-      PublishNaturalBindDiagnostic(
-         status,
-         identity,
-         g_tls_natural_contribution.expected,
-         g_tls_natural_contribution.injected,
-         NaturalBindSequenceRejected);
       g_tls_natural_contribution = {};
       return;
    }
@@ -115,12 +73,6 @@ void TrackNaturalContributionResult(
    {
       if (!copied)
       {
-         PublishNaturalBindDiagnostic(
-            status,
-            identity,
-            g_tls_natural_contribution.expected,
-            g_tls_natural_contribution.injected,
-            NaturalBindCopyRejected);
          g_tls_natural_contribution = {};
          return;
       }
@@ -138,12 +90,6 @@ void TrackNaturalContributionResult(
       SafeReadStatusIdentity(status, final_identity) &&
       final_identity.character_hash == identity.character_hash &&
       final_identity.context_mode == identity.context_mode;
-   PublishNaturalBindDiagnostic(
-      status,
-      identity,
-      expected,
-      injected,
-      final_valid ? NaturalBindSucceeded : NaturalBindFinalValidationRejected);
    if (final_valid)
    {
       uint64_t generation =
@@ -155,7 +101,6 @@ void TrackNaturalContributionResult(
          identity,
          generation,
          g_tls_natural_contribution.slots);
-      g_natural_bind_successes.fetch_add(1, std::memory_order_acq_rel);
       SetRuntimeMessage(
          "Live battle Trait contribution confirmed for 0x" +
             ToUpperHex(identity.character_hash) + ": " +
@@ -248,11 +193,6 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
    const bool valid_identity =
       SafeReadStatusIdentity(reinterpret_cast<uintptr_t>(status), identity) &&
       identity.context_mode >= 0 && identity.context_mode <= 5;
-   if (valid_identity)
-   {
-      g_last_character_hash.store(identity.character_hash, std::memory_order_release);
-      g_last_context_mode.store(identity.context_mode, std::memory_order_release);
-   }
 
    const int expanded_slot_count = GetExpandedInternalSlotCount();
    if (slot_index < kNativeInternalSlotCount || slot_index >= expanded_slot_count)
@@ -346,9 +286,6 @@ void OnTraitFetch(safetyhook::Context& context)
        SafeReadStatusIdentity(status, identity) &&
        identity.context_mode >= 0 && identity.context_mode <= 2)
    {
-      g_last_character_hash.store(identity.character_hash, std::memory_order_release);
-      g_last_context_mode.store(identity.context_mode, std::memory_order_release);
-
       uint64_t active_generation = 0;
       bool tracks_pending_apply = false;
       std::array<uint32_t, kVirtualSlotCapacity> selection{};
@@ -474,7 +411,6 @@ void ScheduleSelectedStatusRebind()
 
    RequestHotApply(character_hash);
    g_lifecycle_signature_attempts.fetch_add(1, std::memory_order_acq_rel);
-   g_lifecycle_rebind_attempts.fetch_add(1, std::memory_order_acq_rel);
    g_lifecycle_rebind_not_before_ms.store(
       GetTickCount64() + 1000, std::memory_order_release);
 }
@@ -541,8 +477,6 @@ void ShutdownHooks()
    g_observed_status_address.store(0, std::memory_order_release);
    g_observed_status_context.store(-1, std::memory_order_release);
    g_status_owner_manager_address.store(0, std::memory_order_release);
-   g_natural_bind_owner_key.store(0, std::memory_order_release);
-   g_natural_bind_owner_status_address.store(0, std::memory_order_release);
 
    if (g_status_owner_tick_hook)
       (void)g_status_owner_tick_hook.disable();

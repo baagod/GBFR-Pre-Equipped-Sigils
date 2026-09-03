@@ -160,20 +160,6 @@ struct AuthorizedStatus
    std::array<uint32_t, kVirtualSlotCapacity> slots{};
 };
 
-enum NaturalBindResult : int32_t
-{
-   NaturalBindNone = 0,
-   NaturalBindSucceeded = 1,
-   NaturalBindInProgress = 2,
-   NaturalBindContextRejected = -1,
-   NaturalBindOwnerRejected = -2,
-   NaturalBindStatusRejected = -3,
-   NaturalBindSelectionRejected = -4,
-   NaturalBindSequenceRejected = -5,
-   NaturalBindFinalValidationRejected = -6,
-   NaturalBindCopyRejected = -7,
-};
-
 struct NaturalContributionFrame
 {
    uintptr_t status = 0;
@@ -264,13 +250,10 @@ extern std::atomic_int32_t g_edit_session_state;
 extern std::atomic_uint32_t g_observed_character_hash;
 extern std::atomic_uint64_t g_observed_status_address;
 extern std::atomic_int32_t g_observed_status_context;
-extern std::atomic_uint32_t g_lifecycle_rebind_attempts;
 extern std::atomic_uint64_t g_lifecycle_rebind_signature;
 extern std::atomic_uint32_t g_lifecycle_signature_attempts;
 extern std::atomic_uint64_t g_lifecycle_rebind_not_before_ms;
 
-extern std::atomic<uint32_t> g_last_character_hash;
-extern std::atomic<int32_t> g_last_context_mode;
 extern std::atomic_uint64_t g_status_owner_manager_address;
 extern std::atomic_uint32_t g_status_owner_thread_id;
 extern std::atomic_uint64_t g_status_owner_tick_count;
@@ -295,21 +278,10 @@ extern std::atomic_uint32_t g_last_apply_character_hash;
 extern std::atomic_uint32_t g_last_apply_expected_count;
 extern std::atomic_uint32_t g_last_apply_injected_count;
 extern std::atomic_int g_apply_result;
-extern std::atomic_int g_last_consumed_apply_result;
 extern std::atomic_uint32_t g_active_getter_calls;
 extern std::atomic_uint32_t g_active_mid_calls;
 extern thread_local uint64_t g_tls_apply_generation;
 extern thread_local NaturalContributionFrame g_tls_natural_contribution;
-extern std::atomic_uint64_t g_natural_bind_attempts;
-extern std::atomic_uint64_t g_natural_bind_successes;
-extern std::atomic_uint64_t g_natural_bind_status_address;
-extern std::atomic_uint32_t g_natural_bind_character_hash;
-extern std::atomic_int32_t g_natural_bind_context;
-extern std::atomic_uint32_t g_natural_bind_expected_count;
-extern std::atomic_uint32_t g_natural_bind_injected_count;
-extern std::atomic_int32_t g_natural_bind_result;
-extern std::atomic_uint32_t g_natural_bind_owner_key;
-extern std::atomic_uint64_t g_natural_bind_owner_status_address;
 
 int GetVirtualSlotCount() noexcept;
 int GetExpandedInternalSlotCount() noexcept;
@@ -318,9 +290,7 @@ uint64_t BeginStartupPhase(std::string_view phase);
 void CompleteStartupPhase(std::string_view phase, uint64_t started_at_ms, bool succeeded);
 void SetRuntimeMessage(std::string message, bool is_error);
 std::string GetRuntimeMessage(bool& is_error);
-std::string WideToUtf8(std::wstring_view text);
 std::string ToUpperHex(uint32_t value);
-std::string ToLowerAscii(std::string value);
 
 bool SafeReadPointer(uintptr_t address, uintptr_t& value) noexcept;
 bool SafeReadUiSelectedCharacterHash(uint32_t& character_hash) noexcept;

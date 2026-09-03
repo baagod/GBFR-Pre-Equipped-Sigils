@@ -1,6 +1,5 @@
 #include "../native_internal.h"
 
-#include <cctype>
 #include <cstdio>
 #include <iomanip>
 #include <sstream>
@@ -28,7 +27,6 @@ std::atomic_int32_t g_edit_session_state{EditSessionUnknownLocked};
 std::atomic_uint32_t g_observed_character_hash{0};
 std::atomic_uint64_t g_observed_status_address{0};
 std::atomic_int32_t g_observed_status_context{-1};
-std::atomic_uint32_t g_lifecycle_rebind_attempts{0};
 std::atomic_uint64_t g_lifecycle_rebind_signature{0};
 std::atomic_uint32_t g_lifecycle_signature_attempts{0};
 std::atomic_uint64_t g_lifecycle_rebind_not_before_ms{0};
@@ -102,32 +100,10 @@ std::string GetRuntimeMessage(bool& is_error)
    return g_runtime_message;
 }
 
-std::string WideToUtf8(std::wstring_view text)
-{
-   if (text.empty())
-      return {};
-   const int size = WideCharToMultiByte(
-      CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
-   if (size <= 0)
-      return {};
-   std::string result(static_cast<size_t>(size), '\0');
-   WideCharToMultiByte(
-      CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size, nullptr, nullptr);
-   return result;
-}
-
 std::string ToUpperHex(uint32_t value)
 {
    std::ostringstream stream;
    stream << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << value;
    return stream.str();
-}
-
-std::string ToLowerAscii(std::string value)
-{
-   std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character) {
-      return static_cast<char>(std::tolower(character));
-   });
-   return value;
 }
 }
