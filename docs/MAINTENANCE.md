@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是**技术维护**文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.3.2。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
+> 当前版本：0.3.5（已发布 Nexus）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 
 ---
 
@@ -77,7 +77,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的 `kDefaultTemplates[]`。
-**v0.3 起覆盖全角色**（v0.3.5 起每角色 7 槽），数据由生成脚本维护，不要手写 hash：
+**v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手写 hash：
 
 | 工具 | 作用 |
 |---|---|
@@ -199,7 +199,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ## 11. 发布与 Nexus 后续维护
 
-**已发布**（v0.3.2，2026-09-01）：https://www.nexusmods.com/granbluefantasyrelink/mods/823
+**已发布**（v0.3.5，2026-09-03）：https://www.nexusmods.com/granbluefantasyrelink/mods/823
 
 发布信息（发布/更新时以本表与 mod README 为准）：
 
@@ -228,3 +228,35 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 > 备注：RELEASE-NEXUS.md 已删除（其内容并入本手册 §11 与 mod README）。
 > 下次发布直接用本手册，不再维护独立发布手册。
+
+## 12. 会话交接情报（2026-09-03，供新会话 AI 快速对齐）
+
+### 当前状态
+- **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/漆黑的钳蟹因子 Lv20/追击+迅捷能力）。
+- **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
+
+### 已验证（实测通过）
+- 主控 + AI 角色都吃注入（明镜止水/守护/HP吸收/追击/迅捷）——卸主槽因子测试确认。
+- 单词条因子 trait2 必须 = 0x887AE0B0（不是 0！）——0 会渲染空 Lv1 条目（见 §4 注释）。
+- 改名成功：工程/ModId/DLL/日志/兼容表 = GBFR.PreEquippedSigils；ModName/日志前缀 = GBFR Pre-Equipped Sigils；仓库 = GBFR-Pre-Equipped-Sigils。
+
+### 市场情报（Nexus 竞品，2026-09-03）
+- 632 Sigils Ultra：Unique 1,242 / End 24 / 转化 8.6%（7月发布，"超强"路线）。
+- 687 OP Sigils：Unique 744 / End 21 / 转化 8.5%（超强）。
+- 819 Master Traits Super：Unique 188 / End 4（专精超强）。
+- 770 Fediel PowerUp：Unique 460 / End 8（角色强化）。
+- **我（823）**：Unique 115 / End 2 / **转化 9.6%（全场最高）**；Views 1,196（曝光低于竞品——瓶颈在曝光，转化已证明）。
+- 657 原版：转化 11.78%（首个扩展槽、无竞品期）——目标：预设优化转化率追上/超过。
+
+### 用户反馈
+- 韩国玩家（漆黑钳蟹因子）——已实现（槽 7）+ 回复。
+- 玩家问"能否与 657 共存"——回复"会冲突（同 hook），这是 657 的 drop-in replacement"。
+
+### 未来方向（未做）
+- 0.3.6：模板丰富（玩家毕业配装清单提及：狂战士/斯巴达/伤害上限/天星系等通用输出——但**别加"属性克制转换/War Elemental+"（极品掉落=作弊争议）**）。
+- 坚持"合理扩展槽"路线（不做"超强数值"——687/819 是竞品，不撞车）。
+- Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌意"作弊者"）。
+
+### 备注
+- 竞品数字由 Jina Reader 抓取（可能有轻微误差），仅作参考。
+- 所有"槽位/版本/下载"改动后同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1。
