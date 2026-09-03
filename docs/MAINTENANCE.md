@@ -105,12 +105,12 @@ TemplateGemSlot{
 > 正确写法是 `trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自从游戏内修改器
 > 观察到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —— 与注入的
 > `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）。
-> 该坑只在**首个单词条因子**（槽 7）出现，其他槽位均有真实 trait2，不受影响。
+> 该坑只在**首个单词条因子**（槽 8）出现，其他槽位均有真实 trait2，不受影响。
 
 **规则**：
 - 每角色一个 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 起**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 与 `FindTemplateSlot` 依赖此约定）。
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 7），由 `tool-gen-loadout.ps1` 生成时同步输出。
+- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 8），由 `tool-gen-loadout.ps1` 生成时同步输出。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
@@ -155,7 +155,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 → 启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 7）。
+- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 8）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管层 4 空格。
 
@@ -233,7 +233,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ### 当前状态
 - **Nexus 页面**：https://www.nexusmods.com/granbluefantasyrelink/mods/823
-- **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/漆黑的钳蟹因子 Lv20/追击+迅捷能力）。
+- **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/追击+迅捷能力/漆黑的钳蟹因子 Lv20）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 已验证（实测通过）
@@ -250,7 +250,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - 657 原版：转化 11.78%（首个扩展槽、无竞品期）——目标：预设优化转化率追上/超过。
 
 ### 用户反馈
-- 韩国玩家（漆黑钳蟹因子）——已实现（槽 7）+ 回复。
+- 韩国玩家（漆黑钳蟹因子）——已实现（槽 8）+ 回复。
 - 玩家问"能否与 657 共存"——回复"会冲突（同 hook），这是 657 的 drop-in replacement"。
 
 ### 未来方向（未做）
