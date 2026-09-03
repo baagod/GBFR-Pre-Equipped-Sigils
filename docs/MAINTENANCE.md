@@ -123,15 +123,12 @@ TemplateGemSlot{
 环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.2
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.5
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
 - 部署：**游戏必须退出**，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到
-  Reloaded-II 的 `Mods\`（覆盖/先删旧目录）。改名后**必须**同步：
-  - `runtime.cpp` 的 `g_config_path` / `g_compatibility_path`
-  - csproj 的 `<None Include=...>` 复制项
-  - 已安装目录的旧文件
+  Reloaded-II 的 `Mods\`（覆盖/先删旧目录）。
 - 版本号：同步改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`。
 
 ## 6. 验证清单（每次改动后必须）
@@ -182,16 +179,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   （数组 + `kTemplateSlotCount` 常量同步更新）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表）→ 模板表加
   `CharacterTemplate` 条目 → 编译 → 部署 → 验证。
-- **升版本**（如 0.3.2 → 0.3.5）：
-  1. 改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
-  2. 重新构建（`build-release.ps1`）；
-  3. **扫描全文档旧版本号残留**（必须）：
-     ```powershell
-     Select-String -Path README.md,GBFR.PreEquippedSigils\README.md,GBFR.PreEquippedSigils\ModConfig.json,docs\*.md -Pattern "0\.3\.2"
-     ```
-     命中处全部更新（常见：MAINTENANCE 头部/构建注释、mod README、ModConfig）；
-  4. 改配装/功能时同步 mod README（`GBFR.PreEquippedSigils/README.md`）与 Nexus 页面描述（见 §11）；
-  5. 提交 → 推送（`-c credential.helper="!gh auth git-credential"`）→ 部署（游戏退出后复制 dist 包）。
+- **升版本**：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
   （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
 - **推送**：`git -c credential.helper="!gh auth git-credential" push origin main`
@@ -234,27 +222,19 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
    在页面顶部加"不兼容版本"警告并停更，不要静默失效。
 8. **提交推送**：按 §10 的提交/推送模板执行，把版本号与发布记录同步到仓库。
 
-> 备注：RELEASE-NEXUS.md 已删除（其内容并入本手册 §11 与 mod README）。
-> 下次发布直接用本手册，不再维护独立发布手册。
+> 备注：RELEASE-NEXUS.md 已删除，发布直接用本手册。
 
 ## 12. 会话交接情报（2026-09-03，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **Nexus 页面**：https://www.nexusmods.com/granbluefantasyrelink/mods/823
 - **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/追击+迅捷能力/漆黑的钳蟹因子 Lv20）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 已验证（实测通过）
 - 主控 + AI 角色都吃注入（明镜止水/守护/HP吸收/追击/迅捷）——卸主槽因子测试确认。
-- 单词条因子 trait2 必须 = 0x887AE0B0（不是 0！）——0 会渲染空 Lv1 条目（见 §4 注释）。
-- 改名成功：工程/ModId/DLL/日志/兼容表 = GBFR.PreEquippedSigils；ModName/日志前缀 = GBFR Pre-Equipped Sigils；仓库 = GBFR-Pre-Equipped-Sigils。
 
 ### 市场情报（Nexus 竞品，2026-09-03）
 **转化率口径：Total views ÷ Unique DLs（数值越小 = 转化越好），如 823 = 1,329÷125 = 10.63；勿与 Unique÷Views 混用。**
-- 632 Sigils Ultra：Unique 1,242 / End 24 / 转化 8.6%（7月发布，"超强"路线）。
-- 687 OP Sigils：Unique 744 / End 21 / 转化 8.5%（超强）。
-- 819 Master Traits Super：Unique 188 / End 4（专精超强）。
-- 770 Fediel PowerUp：Unique 460 / End 8（角色强化）。
 - **我（823）**：Unique 125 / End 2 / Total 171 / Views 1,329（发布第 3 天实时抓取）——**转化 10.63**，追平原版 11.78（差 1.15）。
 - 657 原版：Unique 1,489 / End 28 / Total 3,153 / Views 17,534 / 转化 11.78（首个扩展槽、无竞品期）——目标：预设优化转化率追上/超过（已基本达成）。
 
