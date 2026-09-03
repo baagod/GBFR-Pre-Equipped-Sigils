@@ -1,6 +1,7 @@
 **/bin/
 **/obj/
 dist/
+.codegraph/
 .tmp-*/
 .vs/
 *.user
