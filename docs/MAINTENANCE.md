@@ -232,6 +232,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 会话交接情报（2026-09-03，供新会话 AI 快速对齐）
 
 ### 当前状态
+- **Nexus 页面**：https://www.nexusmods.com/granbluefantasyrelink/mods/823
 - **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/漆黑的钳蟹因子 Lv20/追击+迅捷能力）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
