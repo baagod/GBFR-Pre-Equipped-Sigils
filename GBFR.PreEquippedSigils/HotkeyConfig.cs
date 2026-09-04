@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using GBFR.PreEquippedSigils.Configuration;
 
 namespace GBFR.PreEquippedSigils;
@@ -48,5 +49,8 @@ public sealed class HotkeyConfig : Configurable<HotkeyConfig>
     [DefaultValue(OverlayHotkey.F8)]
     public OverlayHotkey MenuHotkey { get; set; } = OverlayHotkey.F8;
 
+    // Derived value: keep it out of the config JSON and the launcher property grid.
+    [JsonIgnore]
+    [Browsable(false)]
     public int VirtualKey => (int)MenuHotkey;
 }
