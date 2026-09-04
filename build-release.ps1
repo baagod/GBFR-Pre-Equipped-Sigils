@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.3.6'
+    [string]$Version = '0.4.0'
 )
 
 $ErrorActionPreference = 'Stop'

@@ -235,7 +235,8 @@ export default function App() {
   // here and never leaks to the game window.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
-    const match = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
+    const match = (e: KeyboardEvent) =>
+      (e.keyCode || e.which) === hideKey || e.key === "Escape"
     const onKeyDown = (e: KeyboardEvent) => {
       if (!match(e)) return
       clearTimeout(timer)

@@ -32,8 +32,6 @@ var (
 	procGetWindowLong                = user32.NewProc("GetWindowLongW")
 	procSetWindowLong                = user32.NewProc("SetWindowLongW")
 	procSetLayeredWindowAttributes  = user32.NewProc("SetLayeredWindowAttributes")
-	procSetWindowPos                = user32.NewProc("SetWindowPos")
-	procKeybdEvent                  = user32.NewProc("keybd_event")
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
 	procCreateMutexW               = kernel32.NewProc("CreateMutexW")
 	procGetLastError               = kernel32.NewProc("GetLastError")
@@ -50,17 +48,9 @@ func ensureSingleInstance() (release func()) {
 		title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
 		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
 		if hwnd != 0 {
-			procShowWindow.Call(hwnd, 5)            // SW_SHOW
-			procShowWindow.Call(hwnd, 9) // SW_RESTORE`n`t`t`t`t`tprocSetWindowLong.Call(hwnd, -20, (procGetWindowLong.Call(hwnd, -20))[0]|0x80000)`n`t`t`t`t`tprocSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)`n`t`t`t`t`tprocPostMessageW.Call(hwnd, 0x8010, 0, 0)`n`t`t`t`t`tgo func() {`n`t`t`t`t`t`ttime.Sleep(150 * time.Millisecond)`n`t`t`t`t`t`tprocSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)`n`t`t`t`t`t}()`n`t`t`t`t`tprocKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
-			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
+			procShowWindow.Call(hwnd, 5) // SW_SHOW
+			procPostMessageW.Call(hwnd, 0x8010, 0, 0)
 			procSetForegroundWindow.Call(hwnd)
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002) // internal show (repaint-safe)
-			procKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
-			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
-			procSetForegroundWindow.Call(hwnd)
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002)
 		}
 		os.Exit(0)
 	}
@@ -190,11 +180,7 @@ func main() {
 					procSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)
 				}()
 			}
-			procKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
-			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
 			procSetForegroundWindow.Call(hwnd)
-			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002)
 		}()
 	})
 	menu := application.NewMenu()

@@ -227,6 +227,10 @@ internal static class Hotkey
                 {
                     try
                     {
+                        // Wait for the key to be released before activating so
+                        // the same key's key-up never lands on the launcher
+                        // window (it would be treated as an in-tool hide).
+                        WaitForKeyRelease(_virtualKey);
                         TryLaunchTool(_log ?? (_ => { }));
                     }
                     catch
@@ -317,6 +321,20 @@ internal static class Hotkey
         catch
         {
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Polls until the given virtual key is no longer down (max 400ms) so the
+    /// hotkey's key-up event is consumed while the game still owns the input.
+    /// </summary>
+    private static void WaitForKeyRelease(int vk)
+    {
+        for (int i = 0; i < 40; i++)
+        {
+            if ((GetAsyncKeyState(vk) & 0x8000) == 0)
+                return;
+            Thread.Sleep(10);
         }
     }
 
