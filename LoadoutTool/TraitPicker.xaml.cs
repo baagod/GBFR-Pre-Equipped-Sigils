@@ -71,9 +71,9 @@ public partial class TraitPicker : UserControl
         string keyword = Picker.Text.Trim();
         _view.Filter = keyword.Length == 0
             ? null
-            : (Func<object, bool>)(item =>
+            : item =>
                 item is string name &&
-                name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                name.Contains(keyword, StringComparison.OrdinalIgnoreCase);
         _view.Refresh();
     }
 
