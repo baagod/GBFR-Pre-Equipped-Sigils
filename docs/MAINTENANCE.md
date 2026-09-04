@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是**技术维护**文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.3.5（已发布 Nexus）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
+> 当前版本：0.3.6（T1 配置化已本地构建，Nexus 尚未发布；0.3.5 已发布 Nexus）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 
 ---
 
@@ -123,7 +123,7 @@ TemplateGemSlot{
 环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.5
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.6
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
@@ -227,7 +227,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 会话交接情报（2026-09-03，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **版本**：v0.3.5（已发布 Nexus，823）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/追击+迅捷能力/漆黑的钳蟹因子 Lv20）。
+- **版本**：v0.3.6（本地构建：ABI v16 + 配置化 T1，实测通过后待发布 Nexus；Nexus 现行 0.3.5）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/追击+迅捷能力/漆黑的钳蟹因子 Lv20）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 已验证（实测通过）

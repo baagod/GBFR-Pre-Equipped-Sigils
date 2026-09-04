@@ -1,11 +1,11 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.3.5'
+    [string]$Version = '0.3.6'
 )
 
 $ErrorActionPreference = 'Stop'
