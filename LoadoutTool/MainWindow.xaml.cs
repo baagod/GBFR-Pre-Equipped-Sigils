@@ -71,6 +71,8 @@ public partial class MainWindow : FluentWindow
         AddSlot();
     }
 
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
     private void AddSlot()
     {
         _slots.Add(new LoadoutSlot());

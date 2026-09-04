@@ -32,7 +32,9 @@
                                 <TextBox Width="92" Text="{Binding Level2, UpdateSourceTrigger=PropertyChanged}"
                                          Margin="0,0,8,0" VerticalContentAlignment="Center" />
                                 <ui:Button Content="−" Width="34" Height="30" Click="RemoveSlot_Click"
-                                           Tag="{Binding}" />
+                                           Tag="{Binding}"
+                                           Background="#C42B1C" BorderBrush="#C42B1C" Foreground="White"
+                                           FontSize="18" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>
@@ -45,7 +47,9 @@
             <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="Gray" />
         </StackPanel>
 
-        <ui:Button Grid.Row="2" Content="保存并生效" Click="Save_Click"
-                   Margin="0,10,0,0" HorizontalAlignment="Right" Width="140" Height="34" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <ui:Button Content="关闭" Click="Close_Click" Width="90" Height="34" Margin="0,0,8,0" />
+            <ui:Button Content="保存并生效" Click="Save_Click" Width="140" Height="34" />
+        </StackPanel>
     </Grid>
 </ui:FluentWindow>

@@ -5,6 +5,9 @@
         <TextBox x:Name="Input" TextChanged="Input_TextChanged"
                  GotKeyboardFocus="Input_GotKeyboardFocus"
                  LostKeyboardFocus="Input_LostKeyboardFocus" />
+        <TextBlock x:Name="Placeholder" Text="搜索因子并筛选列表"
+                   Foreground="Gray" IsHitTestVisible="False"
+                   Margin="4,0,0,0" VerticalAlignment="Center" />
         <Popup x:Name="Dropdown" PlacementTarget="{Binding ElementName=Input}"
                Placement="Bottom" StaysOpen="True" AllowsTransparency="True"
                Focusable="False" ClipToBounds="False">

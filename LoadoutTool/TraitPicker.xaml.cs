@@ -6,9 +6,9 @@ using System.Windows.Input;
 namespace LoadoutTool;
 
 /// <summary>
-/// Searchable trait picker: clicking opens the full list, typing filters it by
-/// "contains" (e.g. "白龙" shows "白龙 xxx" entries), clicking an entry fills
-/// the text box.
+/// Search-only trait picker: the text box is a filter (never a value), the
+/// value can only be chosen from the filtered list (mirrors the in-game sigil
+/// picker: click to open, type to filter, click an entry to select).
 /// </summary>
 public partial class TraitPicker : UserControl
 {
@@ -42,9 +42,11 @@ public partial class TraitPicker : UserControl
 
     private void Input_TextChanged(object sender, TextChangedEventArgs e)
     {
+        // Typing only filters the list; it never becomes the value.
         RefreshOptions();
-        if (!_pickingOption && SelectedTrait != Input.Text)
-            SelectedTrait = Input.Text;
+        Placeholder.Visibility = Input.Text.Length == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void RefreshOptions()
@@ -69,8 +71,12 @@ public partial class TraitPicker : UserControl
 
     private void Input_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
-        if (!_pickingOption)
-            Dropdown.IsOpen = false;
+        if (_pickingOption)
+            return;
+        Dropdown.IsOpen = false;
+        // Revert invalid free text back to the selected value.
+        if (Input.Text != SelectedTrait)
+            Input.Text = SelectedTrait;
     }
 
     private void Options_MouseDown(object sender, MouseButtonEventArgs e)
@@ -84,9 +90,8 @@ public partial class TraitPicker : UserControl
             return;
         _pickingOption = true;
         SelectedTrait = selected;
-        OnSelectedTraitChanged();
+        Input.Text = selected;
         _pickingOption = false;
         Dropdown.IsOpen = false;
-        Input.Focus();
     }
 }
