@@ -1,253 +1,261 @@
-# GBFR Pre-Equipped Sigils 鈥?AI 鎺ユ墜缁存姢鎵嬪唽
+# GBFR Pre-Equipped Sigils — AI 接手维护手册
 
-> 闈㈠悜瀵硅薄锛氬悗缁帴绠℃湰椤圭洰鐨?AI agent / 寮€鍙戣€呫€?
-> 闃呰鍓嶆彁锛氬厛璇?`README.md`锛堢敤鎴峰悜璇存槑锛夈€傛湰鎵嬪唽鏄?*鎶€鏈淮鎶?*鏂囨。銆?
-> 椤圭洰浣嶇疆锛氭湰浠撳簱鏍圭洰褰曘€傛簮鐮侊細https://github.com/baagod/GBFR-Pre-Equipped-Sigils
-> 娓告垙鐗堟湰锛欸ranblue Fantasy: Relink Endless Ragnarok **2.0.5**銆?
-> 褰撳墠鐗堟湰锛?.3.6锛圱1 閰嶇疆鍖栧凡鏈湴鏋勫缓锛孨exus 灏氭湭鍙戝竷锛?.3.5 宸插彂甯?Nexus锛夈€傛淳鐢熻嚜 GBFR Extra Sigil Slots锛圚iyajomaho-num9锛夛紝宸插ぇ骞呯簿绠€銆?
-
+> 面向对象：后续接管本项目的 AI agent / 开发者。
+> 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
+> 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
+> 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
+> 当前版本：0.4.0（0.3.5 已发布 Nexus；0.4.0 = 配装编辑器重构 + 双语 + 托盘完善，Nexus 发布中）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 ---
 
-## 1. 涓€鍙ヨ瘽璇存槑
+## 1. 一句话说明
 
-娓告垙鍘熺敓鍙绠?12 涓彲瑙佸洜瀛愭Ы锛堝唴閮?trait 寰幆涓婇檺 13锛夈€傛湰 mod 鎶婂惊鐜笂闄愭墿鍒?
-`13 + kTemplateSlotCount`锛屽苟 Hook 鍥犲瓙璇诲彇鍑芥暟锛氬綋娓告垙璇㈤棶绗?13 鍙疯捣鐨勮櫄鎷熸Ы鏃讹紝
-鎸?*鍐呯疆妯℃澘琛?*鐜板満鍚堟垚涓€浠?GemData 浜ょ粰娓告垙銆?*涓嶅啓瀛樻。銆佷笉渚濊禆搴撳瓨銆佷笉鏀?
-`GemData.WORN_BY`**锛涙垬鏂楁暟鍊兼槸鐪熷疄鐨勬湰鍦版晥鏋滐紙鍦ㄧ嚎 = 浣滃紛绾э紝椋庨櫓鑷礋锛夈€?
+游戏原生只计的12 个可见因子槽（内的trait 循环上限 13）。本 mod 把循环上限扩的
+`13 + kTemplateSlotCount`，并 Hook 因子读取函数：当游戏询问的13 号起的虚拟槽时，
+的*内置模板的*现场合成一的GemData 交给游戏的*不写存档、不依赖库存、不的
+`GemData.WORN_BY`**；战斗数值是真实的本地效果（在线 = 作弊级，风险自负）的
 
-## 2. 鐩綍缁撴瀯涓庢枃浠惰亴璐?
+## 2. 目录结构与文件职的
 
 ```
-build-release.ps1                    鏋勫缓+鎵撳寘鑴氭湰锛圡SBuild native 鈫?dotnet managed 鈫?zip锛?
+build-release.ps1                    构建+打包脚本（MSBuild native 的dotnet managed 的zip的
 docs/
-  gbfr-sigil-hashes.zh-CN.tsv        hash 鏌ヨ琛紙S=鐗╁搧/gem_id锛孴=璇嶆潯/trait锛屼粎鍙傝€冧笉鎵撳寘锛?
-  gbfr-sigil-hashes.en.tsv           鍚屼笂锛堣嫳鏂囷級
-  MAINTENANCE.md                     鏈墜鍐?
-GBFR.PreEquippedSigils/             C# 鎵樼灞傦紙Reloaded-II 鎻掍欢澹筹級
-  Mod.cs                             鐢熷懡鍛ㄦ湡銆佹棩蹇楋紙鏃堕棿鎴筹級銆?50ms 缁存寔 Tick
-  NativeCore.cs                      鍘熺敓闂ㄩ潰锛氬姞杞?ABI 鏍￠獙/鏃ュ織鍥炶皟/Tick/Shutdown/娑堟伅璇诲彇
-  NativeCore.Interop.cs              P/Invoke 澹版槑锛堝繀椤讳笌 native_api.h 鍚屾锛?
-  ModConfig.json                     ModId/鐗堟湰/鎻忚堪锛堝彂甯冧俊鎭級
-GBFR.PreEquippedSigils.Native/      C++ 鍘熺敓鏍稿績
-  native_api.h                       鍐荤粨鐨?C ABI锛坴15锛? 涓鍑?+ GemData 缁撴瀯锛?
-  native_internal.h                  鍐呴儴鐘舵€?澹版槑/甯搁噺锛堟ā鏉挎Ы甯搁噺銆侀妫€瀛楄妭绛夛級
+  gbfr-sigil-hashes.zh-CN.tsv        hash 查询表（S=物品/gem_id，T=词条/trait，仅参考不打包的
+  gbfr-sigil-hashes.en.tsv           同上（英文）
+  MAINTENANCE.md                     本手的
+GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
+  Mod.cs                             生命周期、日志（时间戳）的50ms 维持 Tick
+  NativeCore.cs                      原生门面：加的ABI 校验/日志回调/Tick/Shutdown/消息读取
+  NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步的
+  ModConfig.json                     ModId/版本/描述（发布信息）
+GBFR.PreEquippedSigils.Native/      C++ 原生核心
+  native_api.h                       冻结的C ABI（v15的 个导的+ GemData 结构的
+  native_internal.h                  内部状的声明/常量（模板槽常量、预检字节等）
   src/
-    dllmain.cpp                      DLL 鍏ュ彛锛堜粎瀛樻ā鍧楀彞鏌勶紝loader-lock-safe锛?
-    exports.cpp                      6 涓?C 瀵煎嚭瀹炵幇
-    runtime.cpp                      鍒濆鍖栭『搴忕紪鎺?+ 闃舵鏃ュ織
-    runtime_state.cpp                鍏ㄥ眬鍘熷瓙/Log锛堝甫鏃堕棿鎴筹級/phase 鏈哄埗/娑堟伅缂撳啿
-    layout_resolver.cpp              鈽呰涔夊竷灞€瑙ｆ瀽锛?.0.5 閿氱偣锛屾渶楂橀闄╋級
-    safe_game_access.cpp             鈽匰EH 瀹夊叏鍐呭瓨璇诲啓銆佺姸鎬侀噸寤恒€佹巿鏉冩彁浜?
-    trait_hooks.cpp                  鈽呮敞鍏ユ牳蹇冿細getter detour銆乶atural bind銆乭ot-apply 瑙﹀彂
-    selection_store.cpp              瑙掕壊閫夋嫨瀛樺偍銆乭ot-apply 闃熷垪锛坓eneration 鏈哄埗锛?
-    name_tables.cpp                  鍏煎琛ㄥ姞杞斤紙199 鏉¤鑹查檺鍒舵槧灏勶紝缂哄け鍗?fail-closed锛?
-    template_loadout.cpp             鈽呪槄閰嶈琛ㄢ€斺€旀棩甯哥淮鎶ゅ敮涓€瑕佹敼鐨勬枃浠?
+    dllmain.cpp                      DLL 入口（仅存模块句柄，loader-lock-safe的
+    exports.cpp                      6 的C 导出实现
+    runtime.cpp                      初始化顺序编的+ 阶段日志
+    runtime_state.cpp                全局原子/Log（带时间戳）/phase 机制/消息缓冲
+    layout_resolver.cpp              ★语义布局解析的.0.5 锚点，最高风险）
+    safe_game_access.cpp             ★SEH 安全内存读写、状态重建、授权提的
+    trait_hooks.cpp                  ★注入核心：getter detour、natural bind、hot-apply 触发
+    selection_store.cpp              角色选择存储、hot-apply 队列（generation 机制的
+    name_tables.cpp                  兼容表加载（199 条角色限制映射，缺失的fail-closed的
+    template_loadout.cpp             ★★配装表——日常维护唯一要改的文的
 ```
 
-`鈽卄 = 楂橀闄╁尯锛岄櫎闈炴槑纭换鍔￠渶瑕侊紝涓嶈鍔ㄣ€?
+`★` = 高风险区，除非明确任务需要，不要动的
 
-## 3. 鏍稿績鏁版嵁娴?
+## 3. 核心数据的
 
 ```
-鍚姩:
-  Reloaded-II 鈫?Mod.cs 鈫?NativeCore.Initialize 鈫?exports.GBFR20_Initialize
-    鈫?runtime.Initialize:
-        executable-validation (蹇呴』 granblue_fantasy_relink.exe)
-        compatibility-table     (compatibility.tsv, 199 鏉? 澶辫触鍗冲仠姝?
-        semantic-layout-resolution (layout_resolver, 澶辫触鍗冲仠姝?
+启动:
+  Reloaded-II 的Mod.cs 的NativeCore.Initialize 的exports.GBFR20_Initialize
+    的runtime.Initialize:
+        executable-validation (必须 granblue_fantasy_relink.exe)
+        compatibility-table     (compatibility.tsv, 199 的 失败即停的
+        semantic-layout-resolution (layout_resolver, 失败即停的
         template-selection-install (InstallDefaultTemplateSelections
-                                      鈫?鎶?0xFE000000+i 鍚堟垚妲?id 鍐欏叆瑙掕壊閫夋嫨)
-        native-hook-install    (4 涓?hook + 2 澶勫惊鐜笂闄?patch)
+                                      的的0xFE000000+i 合成的id 写入角色选择)
+        native-hook-install    (4 的hook + 2 处循环上的patch)
 
-杩愯:
-  娓告垙鐘舵€侀噸寤?鈫?GetGemDataByIndexDetour(slot 13..12+count)
-    鈫?TryLoadVirtualTraitSelection 鈫?TryCopySelectedVirtualGem
-        鈫?IsTemplateSlotId(0xFE000000+) 鈫?TryCopyTemplateGem
-            鈫?浠?kDefaultTemplates 鍙?(gem_id, trait1/2, 绛夌骇)
-            鈫?缁勮 GemData(worn_by=0x887AE0B0 鏈澶? flags=0) 鈫?SafeCopyToOutput
-    鈫?natural bind 杩借釜: injected==expected 涓?identity 涓€鑷?鈫?CommitAuthorizedStatus
-    鈫?鏃ュ織 "Live battle Trait contribution confirmed for 0x...: N/N"
+运行:
+  游戏状态重的的GetGemDataByIndexDetour(slot 13..12+count)
+    的TryLoadVirtualTraitSelection 的TryCopySelectedVirtualGem
+        的IsTemplateSlotId(0xFE000000+) 的TryCopyTemplateGem
+            的的kDefaultTemplates 的(gem_id, trait1/2, 等级)
+            的组装 GemData(worn_by=0x887AE0B0 未装的 flags=0) 的SafeCopyToOutput
+    的natural bind 追踪: injected==expected 的identity 一的的CommitAuthorizedStatus
+    的日志 "Live battle Trait contribution confirmed for 0x...: N/N"
 
-缁存寔 (Mod.cs 250ms Tick 鈫?GBFR20_Tick):
+维持 (Mod.cs 250ms Tick 的GBFR20_Tick):
   UpdateEditSessionState / ValidateAuthorizedStatuses /
   ScheduleSelectedStatusRebind / ProcessPendingHotApply / ConsumeApplyResult
-  锛坔ot-apply 浜х敓 "Generation N ... copied N/N" 鏃ュ織锛岄獙璇佽澶囩晫闈?璁粌鍦鸿矾寰勶級
+  （hot-apply 产生 "Generation N ... copied N/N" 日志，验证装备界的训练场路径）
 ```
 
-## 4. 妯℃澘閰嶈琛紙鏃ュ父缁存姢鏍稿績锛?
+## 4. 模板配装表（日常维护核心的
 
-鏂囦欢锛歚GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 鐨?`kDefaultTemplates[]`銆?
-**v0.3 璧疯鐩栧叏瑙掕壊**锛坴0.3.5 璧锋瘡瑙掕壊 8 妲斤級锛屾暟鎹敱鐢熸垚鑴氭湰缁存姢锛屼笉瑕佹墜鍐?hash锛?
+文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kDefaultTemplates[]`的
+**v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手的hash的
 
-| 宸ュ叿 | 浣滅敤 |
+| 工具 | 作用 |
 |---|---|
-| `docs/tool-extract-exclusives.ps1` | 浠?compatibility.tsv + 鍚嶅瓧琛ㄦ彁鍙栨瘡瑙掕壊涓撳睘鍥犲瓙锛堣閱掞紜 gem銆佷袱涓笓灞炶瘝鏉°€佹垬姘旇瘝鏉★級 |
-| `docs/tool-gen-loadout.ps1` | 鍐呭祵姣忚鑹蹭笓灞炴暟鎹?鈫?鐢熸垚 `kDefaultTemplates[]` 鏁扮粍鏂囨湰 |
-| [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 寮€鍙戞湡鏁版嵁鏍稿疄锛堝畼鏂?ID 琛?/ 瑙ｅ寘瀵煎嚭锛夆€斺€?*杩愯鏃朵笉渚濊禆**锛屼粎寮€鍙戝伐鍏?|
+| `docs/tool-extract-exclusives.ps1` | 的compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数的的生成 `kDefaultTemplates[]` 数组文本 |
+| [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官的ID 的/ 解包导出）—的*运行时不依赖**，仅开发工的|
 
-**鏀归厤瑁呯殑鏍囧噯娴佺▼**锛氭敼 `tool-gen-loadout.ps1` 閲岀殑鏁版嵁琛紙鎴栨敼閫氱敤妲藉畾涔夛級鈫?杩愯鑴氭湰杈撳嚭鍒颁复鏃舵枃浠?鈫?鏇挎崲 `template_loadout.cpp` 涓?`constexpr CharacterTemplate kDefaultTemplates[] = { ... };` 娈碉紙鑷姩瀹氫綅璧锋鏇挎崲锛夈€?
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）的运行脚本输出到临时文的的替换 `template_loadout.cpp` 的`constexpr CharacterTemplate kDefaultTemplates[] = { ... };` 段（自动定位起止替换）的
 
-缁撴瀯锛堟瘡妲戒竴涓?`TemplateGemSlot`锛夛細
+结构（每槽一的`TemplateGemSlot`）：
 
 ```cpp
 TemplateGemSlot{
-   0x335DA2A5, // gem_id: 鐗╁搧 hash锛圫 琛岋級銆傛父鎴忔寜瀹冩煡 master 琛ㄦ嬁鏄剧ず鍚嶏紱璇嶆潯鏁堟灉鍚冪殑鏄笅闈袱涓?hash锛堝凡瀹為獙楠岃瘉锛?
-   0xE69A4694, // trait1: 涓昏瘝鏉?hash锛圱 琛岋級
-   15,         // trait1_level: 鈪わ紜 = 15锛堟紗榛戦挸锜?= 20锛?
-   0x95F3FA86, // trait2: 鍓瘝鏉?hash銆?*鏃犲壇璇嶆潯蹇呴』鐢?0x887AE0B0锛?涓嶉€夋嫨"鍝ㄥ叺锛夛紝涓嶈兘鐢?0**锛?
+   0x335DA2A5, // gem_id: 物品 hash（S 行）。游戏按它查 master 表拿显示名；词条效果吃的是下面两的hash（已实验验证的
+   0xE69A4694, // trait1: 主词的hash（T 行）
+   15,         // trait1_level: Ⅴ＋ = 15（漆黑钳的= 20的
+   0x95F3FA86, // trait2: 副词的hash的*无副词条必须的0x887AE0B0的不选择"哨兵），不能的0**的
    15,         // trait2_level
-   15,         // sigil_level: 鐗╁搧鏄剧ず绛夌骇锛堟紗榛戦挸锜?= 20锛涜澶囧悗浜嬩欢鍥犲瓙鏄剧ず "-"銆佸叏鍒楄〃鏄剧ず 20锛?
+   15,         // sigil_level: 物品显示等级（漆黑钳的= 20；装备后事件因子显示 "-"、全列表显示 20的
 },
 ```
 
-> 鈿狅笍 **韪╄繃鐨勫潙锛?026-09-02锛孍R 2.0.5锛?*锛?鍗曡瘝鏉″洜瀛?锛堝婕嗛粦鐨勯挸锜瑰洜瀛?Lv20锛夋妸
-> `trait2` 鍐欐垚 `0` 浼氬湪娓告垙"鍏ㄩ儴鍥犲瓙鍒楄〃"閲?*澶氭覆鏌撲竴涓┖鐨?Lv1 鏉＄洰**銆?
-> 姝ｇ‘鍐欐硶鏄?`trait2 = 0x887AE0B0`锛堟父鎴忔湰浣撶殑"涓嶉€夋嫨"鍝ㄥ叺鍊硷紝鍙栬嚜浠庢父鎴忓唴淇敼鍣?
-> 瑙傚療鍒扮殑鏄犲皠锛涙湰浣撲簨浠跺洜瀛愯澶囧悗绛夌骇鏄剧ず "-"锛屽叏鍒楄〃閲屾槸 20 鈥斺€?涓庢敞鍏ョ殑
-> `trait1_level=20 / sigil_level=20` 涓€鑷达紝涓よ€呯嫭绔嬶紝閮戒笉鏄棶棰橈級銆?
-> 璇ュ潙瑕嗙洊**鎵€鏈夊崟璇嶆潯妲戒綅**锛堟垬姘旀Ы / 婵€鏄?/ 閽宠煿锛夛紝鍏朵粬妲戒綅鍧囨湁鐪熷疄 trait2锛屼笉鍙楀奖鍝嶃€?
+> ⚠️ **踩过的坑的026-09-02，ER 2.0.5的*的单词条因的（如漆黑的钳蟹因的Lv20）把
+> `trait2` 写成 `0` 会在游戏"全部因子列表"的*多渲染一个空的Lv1 条目**的
+> 正确写法的`trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自从游戏内修改的
+> 观察到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —的与注入的
+> `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）的
+> 该坑覆盖**所有单词条槽位**（战气槽 / 激的/ 钳蟹），其他槽位均有真实 trait2，不受影响的
 
-**瑙勫垯**锛?
-- 姣忚鑹蹭竴涓?`CharacterTemplate{ character_hash, slots[24] }`锛沗slots` 浠?0 璧?*杩炵画**锛岄亣 `gem_id==0` 瑙嗕负琛ㄧ粨鏉燂紙`InstallDefaultTemplateSelections` 涓?`FindTemplateSlot` 渚濊禆姝ょ害瀹氾級銆?
-- 鍚堟垚妲?id = `kTemplateSlotIdBase(0xFE000000) + 妲藉簭鍙穈锛屼笉浼氫笌鐪熷疄搴撳瓨妲戒綅鍐茬獊锛沗IsTemplateSlotId` 鍒ゅ畾銆?
-- **鍐呯疆妯℃澘妲芥暟锛堝嚭鍘傞璁撅級**锛歚native_internal.h` 鐨?`kTemplateSlotCount`锛堝綋鍓?9锛夊彧鍐冲畾"鏃犵帺瀹堕厤缃椂鐨勯粯璁ゆЫ鏁?锛涚帺瀹堕厤缃紙loadout.json锛夊彲浠绘剰 2+鍚敤妲斤紙鈮?2锛夛紝**涓嶅彈璇ュ父閲忕害鏉?*銆備粎褰撲慨鏀瑰唴缃粯璁わ紙妯℃澘琛級鏃堕渶鍚屾璇ュ父閲忋€?
-- 瑙掕壊涓撳睘鐗╁搧锛堣閱掞紜/鎴樻皵锛夊彈 `compatibility.tsv` 闄愬埗锛歚TryCopyTemplateGem` 浼氱敤
-  `GetRequiredCharacterHash(gem_id)` 鏍￠獙锛屼笓灞炲洜瀛愬彧鑳借缁欏搴旇鑹诧紙鍙ゅ叞/濮浜掗€氾紝濮鏉＄洰浣跨敤鍙ゅ叞涓撳睘锛夈€?
-- 璇嶆潯 hash 鏌ヨ锛歚docs/gbfr-sigil-hashes.zh-CN.tsv`锛圫=鐗╁搧銆乀=璇嶆潯锛汣trl+F 鎼滃悕瀛楋級銆?
-- 瑙掕壊 hash锛堣鑹插悕 鈫?hash锛夛細瑙?`UiLocalization.cs` 鐨勫巻鍙茬増鏈垨 compatibility.tsv 鐨?
-  character_key 鍒楋紱甯哥敤锛氬彜鍏?`2A26B1B2`銆佸К濉?`A4ACBA76`銆佸闇叉 `E7053919`銆?
-  鑺欏姵 `646C3168`銆佽彶杩焹灏?`74DD4C79`銆?
+**规则**的
+- 每角色一的`CharacterTemplate{ character_hash, slots[24] }`；`slots` 的0 的*连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 的`FindTemplateSlot` 依赖此约定）的
+- 合成的id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定的
+- **内置模板槽数（出厂预设）**：`native_internal.h` 的`kTemplateSlotCount`（当的9）只决定"无玩家配置时的默认槽的；玩家配置（loadout.json）可任意 2+启用槽（的2），**不受该常量约的*。仅当修改内置默认（模板表）时需同步该常量的
+- 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
+  `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）的
+- 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）的
+- 角色 hash（角色名 的hash）：的`UiLocalization.cs` 的历史版本或 compatibility.tsv 的
+  character_key 列；常用：古的`2A26B1B2`、姬的`A4ACBA76`、娜露梅 `E7053919`的
+  芙劳 `646C3168`、菲迪埃的`74DD4C79`的
 
-## 5. 鏋勫缓涓庨儴缃?
+## 5. 构建与部的
 
-鐜瑕佹眰锛歐indows x64銆乂S2022 Build Tools锛圡SVC v143 + Windows SDK锛夈€?NET 8 SDK銆?
+环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）的NET 8 SDK的
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 榛樿 Release/x64/0.3.6
-# 浜х墿: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.6
+# 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
-- 閮ㄧ讲锛?*娓告垙蹇呴』閫€鍑?*锛屾妸 `dist\GBFR.PreEquippedSigils` 鏁翠釜鏂囦欢澶瑰鍒跺埌
-  Reloaded-II 鐨?`Mods\`锛堣鐩?鍏堝垹鏃х洰褰曪級銆?
-- 鐗堟湰鍙凤細鍚屾鏀?`ModConfig.json` 鐨?`ModVersion` 涓?`build-release.ps1` 榛樿 `$Version`銆?
+- 部署的*游戏必须退的*，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到
+  Reloaded-II 的`Mods\`（覆的先删旧目录）的
+- 版本号：同步的`ModConfig.json` 的`ModVersion` 的`build-release.ps1` 默认 `$Version`的
 
-## 6. 楠岃瘉娓呭崟锛堟瘡娆℃敼鍔ㄥ悗蹇呴』锛?
+## 6. 验证清单（每次改动后必须的
 
-1. 缂栬瘧锛?*0 璀﹀憡 0 閿欒**锛坱hird_party 鐨?C4834 宸插湪 vcxproj 鍗曠嫭鍘嬪埗锛夈€?
-2. 鏃ュ織 `GBFR.PreEquippedSigils.Reloaded.log`锛坢od 鐩綍锛夛細
+1. 编译的*0 警告 0 错误**（third_party 的C4834 已在 vcxproj 单独压制）的
+2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
    - `Installed N built-in template loadout selection(s); inventory-independent.`
    - `Native hook installation completed with N virtual slots; ...`
-   - 杩涙垬鏂楋細`Live battle Trait contribution confirmed for 0xE7053919: N/N ...`
-   - 瑁呭鐣岄潰/璁粌鍦猴細`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
-3. 璁粌鍦哄疄娴嬭瘝鏉℃晥鏋滐紙濡傝豹鑳嗘繏姝讳笉姝汇€佽嚜鍔ㄥ娲昏嚜璧凤級+ 琛€鏉′笅 buff 鍥炬爣銆?
-4. 閲嶅惎娓告垙閰嶇疆淇濈暀銆?
+   - 进战斗：`Live battle Trait contribution confirmed for 0xE7053919: N/N ...`
+   - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
+3. 训练场实测词条效果（如豪胆濒死不死、自动复活自起）+ 血条下 buff 图标的
+4. 重启游戏配置保留的
 
-## 7. 闆峰尯锛坒ail-closed 涓庡畨鍏ㄨ竟鐣岋紝绂佹鍓婂急锛?
+## 7. 雷区（fail-closed 与安全边界，禁止削弱的
 
-- `layout_resolver.cpp`锛氬敮涓€璇箟閿氱偣銆乧all/RIP 鎺ㄥ銆佺簿纭瓧鑺傞妫€銆傝В鏋愪笉瀹屾暣/澶氶噸鍖归厤/
-  鏍￠獙涓嶈繃 鈫?**鏁村 gameplay hook 涓嶅畨瑁?*锛坒ail-closed锛夛紝涓嶉檷绾?鎵句釜鍍忕殑灏?Hook"銆?
-- `trait_hooks.cpp`锛歞etour 鐨?TLS/generation/identity/context/expected/injected 鏍￠獙椤哄簭锛?
-  natural bind 鐨勬巿鏉冩彁浜わ紙`CommitAuthorizedStatus`锛変笌 `ValidateAuthorizedStatuses`銆?
-- `safe_game_access.cpp`锛氭墍鏈夋父鎴忓唴瀛樿鍙栧繀椤昏蛋 SEH 瀹夊叏鍖呰涓庡湴鍧€鑼冨洿妫€鏌ャ€?
-- `compatibility.tsv` 缂哄け鎴栨潯鐩暟 != 199 鈫?鍚姩澶辫触锛坒ail-closed锛夈€?
-- ABI锛歚native_api.h`锛堝鍑虹鍚嶃€乸acking銆乣GBFR20_ABI_VERSION=15`锛変笌
-  `NativeCore.Interop.cs`銆乣NativeCore.cs` 鐨?`AbiVersion` 蹇呴』涓€鑷达紱鏀瑰姩闇€涓夋柟鍚屾 + 鐗堟湰鍙烽€掑銆?
-- **鍙€夐厤缃?*锛欼NI 浣撶郴宸插垹闄わ紱鏃?`loadout.json` 鏃舵Ы鏁?= `kTemplateSlotCount` 甯搁噺锛坄native_internal.h`锛屽綋鍓?9 = 瑙夐啋锛?鎴樻皵 + 7 閫氱敤锛夛紱鏈夐厤缃椂 = 2 + 鍚敤妲芥暟锛堢敱 `LoadoutConfig` 瑙ｆ瀽鏍￠獙銆乵time 250ms 鐑簲鐢級銆?
-- 绗笁鏂?`third_party/`锛坰afetyhook銆乑ydis锛夊彧鍙崌绾ф浛鎹紝涓嶅彲鎵嬫敼銆?
-- 淇濇寔涓婃父 3 绌烘牸缂╄繘椋庢牸锛坣ative锛夛紝鎵樼灞?4 绌烘牸銆?
+- `layout_resolver.cpp`：唯一语义锚点、call/RIP 推导、精确字节预检。解析不完整/多重匹配/
+  校验不过 的**整套 gameplay hook 不安的*（fail-closed），不降的找个像的的Hook"的
+- `trait_hooks.cpp`：detour 的TLS/generation/identity/context/expected/injected 校验顺序的
+  natural bind 的授权提交（`CommitAuthorizedStatus`）与 `ValidateAuthorizedStatuses`的
+- `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查的
+- `compatibility.tsv` 缺失或条目数 != 199 的启动失败（fail-closed）的
+- ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
+  `NativeCore.Interop.cs`、`NativeCore.cs` 的`AbiVersion` 必须一致；改动需三方同步 + 版本号递增的
+- **可选配的*：INI 体系已删除；的`loadout.json` 时槽的= `kTemplateSlotCount` 常量（`native_internal.h`，当的9 = 觉醒的战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）的
+- 第三的`third_party/`（safetyhook、Zydis）只可升级替换，不可手改的
+- 保持上游 3 空格缩进风格（native），托管的4 空格的
 
-## 8. 淇濈暀浣嗘槗琚鍒や负"姝讳唬鐮?鐨勬満鍒?
+## 8. 保留但易被误判为"死代的的机的
 
-| 鏈哄埗 | 浣嶇疆 | 浣滅敤 | 鍒犻櫎鍚庢灉 |
+| 机制 | 位置 | 作用 | 删除后果 |
 |---|---|---|---|
-| hot-apply锛圧equestHotApply / ProcessPendingHotApply / ScheduleSelectedStatusRebind锛?| selection_store / trait_hooks / exports.Tick | 涓诲姩閲嶅缓瑙掕壊鐘舵€侊紝浜х敓 Generation 纭鏃ュ織锛岃澶囩晫闈㈠嵆鏃剁敓鏁?| 澶卞幓楠岃瘉鏃ュ織锛涢儴鍒嗗満鏅敓鏁堝欢杩熷埌涓嬫鑷劧閲嶅缓銆?*涓嶅缓璁垹** |
-| EditSession 鐘舵€侊紙UpdateEditSessionState / SafeReadUiModes锛?| safe_game_access | hot-apply 鐨?context1 鍒嗘敮鍒ゆ嵁 | 涓?hot-apply 缁戝畾 |
+| hot-apply（RequestHotApply / ProcessPendingHotApply / ScheduleSelectedStatusRebind的| selection_store / trait_hooks / exports.Tick | 主动重建角色状态，产生 Generation 确认日志，装备界面即时生的| 失去验证日志；部分场景生效延迟到下次自然重建的*不建议删** |
+| EditSession 状态（UpdateEditSessionState / SafeReadUiModes的| safe_game_access | hot-apply 的context1 分支判据 | 的hot-apply 绑定 |
 
-## 9. 宸茬煡闄愬埗涓庢湭鏉ユ柟鍚?
+## 9. 已知限制与未来方的
 
-- 閰嶈琛ㄧ紪璇戞湡鍐呯疆锛?*閰嶇疆鍖栧凡瀹屾垚**锛?026-09-04锛夛細`loadout.json` + Wails v3 宸ュ叿锛坄loadouttool/`锛屾墭鐩?鍗曞疄渚?鑷姩淇濆瓨/姣忚瘝鏉℃渶澶х瓑绾э級+ RegisterHotKey 鐑敭锛堥粯璁?F1锛? ABI v16锛岃瑙?[docs/PLAN-loadout-config.md](PLAN-loadout-config.md)锛堣鍒掑凡鎵ц锛屽亸宸褰曡璇ユ枃妗ｅご閮級銆?
-- 褰撳墠宸茶鐩栧叏瑙掕壊锛涙墿灞曟柊瑙掕壊 = 鐢熸垚鍣ㄦ暟鎹〃鍔犳潯鐩?+ 鏌ヨ瑙掕壊瑙夐啋锛?鎴樻皵 hash銆?
-- 娓告垙鏇存柊鍚庨渶鍥炲綊锛歚layout_resolver` 閿氱偣鍙兘澶辨晥 鈫?鏃ュ織鍑虹幇 layout failed 鈫?绛変笂娓?
-  鏂规鎴栭噸鏂伴€嗗悜銆?
+- 配装表编译期内置的*配置化已完成**的026-09-04）：`loadout.json` + Wails v3 工具（`loadouttool/`，托的单实的自动保存/每词条最大等级）+ RegisterHotKey 热键（默的F1的 ABI v16，详的[docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）的
+- 当前已覆盖全角色；扩展新角色 = 生成器数据表加条的+ 查该角色觉醒的战气 hash的
+- 游戏更新后需回归：`layout_resolver` 锚点可能失效 的日志出现 layout failed 的等上的
+  方案或重新逆向的
 
-## 10. 甯哥敤鎿嶄綔閫熸煡锛堢粰鎺ユ墜 AI 鐨勬寚浠ゆā鏉匡級
+## 10. 常用操作速查（给接手 AI 的指令模板）
 
-- **鏀规煇瑙掕壊鏌愭Ы鐨勮瘝鏉?*锛氱紪杈?`template_loadout.cpp` 瀵瑰簲 `TemplateGemSlot` 鐨?
-  `trait1/trait2` hash 涓庣瓑绾э紙hash 鏌?`docs/gbfr-sigil-hashes.zh-CN.tsv`锛夆啋 缂栬瘧 鈫?閮ㄧ讲 鈫?楠岃瘉銆?
-- **鏀瑰嚭鍘傞粯璁わ紙妯℃澘琛級**锛歚tool-gen-loadout.ps1` 閫氱敤妲藉畾涔夎拷鍔?璋冩暣鏁版嵁 鈫?閲嶆柊鐢熸垚
-  锛堟暟缁?+ `kTemplateSlotCount` 甯搁噺鍚屾鏇存柊鈥斺€斾粎褰卞搷鏃犻厤缃椂鐨勯粯璁わ級鈫?缂栬瘧 鈫?閮ㄧ讲 鈫?楠岃瘉銆?
-- **鍔犺鑹?*锛氭煡璇ヨ鑹茶閱掞紜/鎴樻皵鐨?S/T hash锛坈ompatibility.tsv + 鍚嶅瓧琛級鈫?妯℃澘琛ㄥ姞
-  `CharacterTemplate` 鏉＄洰 鈫?缂栬瘧 鈫?閮ㄧ讲 鈫?楠岃瘉銆?
-- **鍗囩増鏈?*锛氳蛋 搂11 鍙戝竷娴佺▼锛堝惈鐗堟湰鍙峰悓姝ャ€佸叏鏂囨。鏃х増鏈彿娈嬬暀鎵弿銆丯exus 鎻忚堪鍚屾锛夈€?
-- **鎻愪氦**锛歚git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
-  锛堜笉瑕佹敼鍏ㄥ眬 git config锛夈€傛彁浜ゅ墠 `git status` 纭鏃?bin/obj/dist 娣峰叆銆?
-- **鎺ㄩ€?*锛歚git -c credential.helper="!gh auth git-credential" push origin main`
-  锛堜粨搴撳凡閰嶇疆鏈湴浠ｇ悊 127.0.0.1:7890锛涜嫢鎻愮ず 403锛屾鏌?gh token 鐨?Contents: Read and write 鏉冮檺锛夈€?
+- **改某角色某槽的词的*：编的`template_loadout.cpp` 对应 `TemplateGemSlot` 的
+  `trait1/trait2` hash 与等级（hash 的`docs/gbfr-sigil-hashes.zh-CN.tsv`）→ 编译 的部署 的验证的
+- **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追的调整数据 的重新生成
+  （数的+ `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）的编译 的部署 的验证的
+- **加角的*：查该角色觉醒＋/战气的S/T hash（compatibility.tsv + 名字表）的模板表加
+  `CharacterTemplate` 条目 的编译 的部署 的验证的
+- **升版的*：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）的
+- **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
+  （不要改全局 git config）。提交前 `git status` 确认的bin/obj/dist 混入的
+- **推的*：`git -c credential.helper="!gh auth git-credential" push origin main`
+  （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检的gh token 的Contents: Read and write 权限）的
 
-## 11. 鍙戝竷涓?Nexus 鍚庣画缁存姢
+## 11. 发布的Nexus 后续维护
 
-**宸插彂甯?*锛坴0.3.5锛?026-09-03锛夛細https://www.nexusmods.com/granbluefantasyrelink/mods/823
+**已发布**（v0.3.5，2026-09-03）：https://www.nexusmods.com/granbluefantasyrelink/mods/823
+**发布中**（v0.4.0，2026-09-05）：配装编辑器重构 + 中英双语 + 托盘完善（Nexus 隔离审核中——已提交源码链接与 VT 1/62 误报说明；待自动解除）。
 
-鍙戝竷淇℃伅锛堝彂甯?鏇存柊鏃朵互鏈〃涓?mod README 涓哄噯锛夛細
+发布信息（发的更新时以本表的mod README 为准）：
 
-| 椤?| 鍊?|
+| 的| 的|
 |---|---|
-| 鍚嶇О | GBFR Pre-Equipped Sigils |
-| 鍒嗙被 | Miscellaneous |
-| 鏍囩 | AI-Generated Content / Cheating / Gameplay |
-| 涓绘枃浠?| `dist/GBFR-Pre-Equipped-Sigils-<version>.zip` |
-| 婧愮爜 | https://github.com/baagod/GBFR-Pre-Equipped-Sigils |
+| 名称 | GBFR Pre-Equipped Sigils |
+| 分类 | Miscellaneous |
+| 标签 | AI-Generated Content / Cheating / Gameplay |
+| 主文的| `dist/GBFR-Pre-Equipped-Sigils-<version>.zip` |
+| 源码 | https://github.com/baagod/GBFR-Pre-Equipped-Sigils |
 
-> **AI 鏍囩鍙ｅ緞锛?026-08-01 Nexus 鏂版斂锛?*锛欰I 鏍囩鍒嗕笁妗ｂ€斺€擿AI-Generated Content`锛堝惈
-> AI 鐢熸垚鐨?*浠ｇ爜**銆乁I銆佽闊炽€佸璇濄€佺炕璇戙€侀煶涔愩€佹父鎴忓唴璧勪骇锛? `AI Media`锛圓I 鎺ㄥ箍鍥俱€?
-> 缂╃暐鍥俱€佽棰戙€侀〉闈㈡弿杩扮瓑 mod 澶栧獟浣擄級/ `AI-Assisted`锛堣交寰娇鐢級銆傝鍒欙細**涓昏闈?AI
-> 鍒朵綔鐨?mod 蹇呴』鎵?AI-Generated Content**锛涙墦 AI-Assisted 鐨勶紝瀹℃牳鏂瑰彲瑕佹眰璇佹槑寮€鍙?
-> "浜虹被涓诲"銆傛湰 mod 浠ｇ爜鐢?AI 缂栧啓锛圧EADME 宸插叕寮€澹版槑锛夆啋 **蹇呴』淇濇寔 AI-Generated
-> Content锛屽嬁闄嶄负 AI-Assisted**锛堥€変簡鍙兘琚姹傝瘉鏄庝汉绫讳富瀵硷紝椋庨櫓鍗曞悜锛夛紱鎴浘鍧囦负
-> 娓告垙鍐呭疄鎷嶃€佹棤 AI 鍥?鈫?鏃犻渶 AI Media銆傚畞鍙亸閲嶏紝涓嶅彲鍋忎綆銆?
+> **AI 标签口径的026-08-01 Nexus 新政的*：AI 标签分三档——`AI-Generated Content`（含
+> AI 生成的*代码**、UI、语音、对话、翻译、音乐、游戏内资产的 `AI Media`（AI 推广图的
+> 缩略图、视频、页面描述等 mod 外媒体）/ `AI-Assisted`（轻微使用）。规则：**主要的AI
+> 制作的mod 必须的AI-Generated Content**；打 AI-Assisted 的，审核方可要求证明开的
+> "人类主导"。本 mod 代码的AI 编写（README 已公开声明）→ **必须保持 AI-Generated
+> Content，勿降为 AI-Assisted**（选了可能被要求证明人类主导，风险单向）；截图均为
+> 游戏内实拍、无 AI 的的无需 AI Media。宁可偏重，不可偏低的
 
-**鍙戝竷鍚庣淮鎶ゆ祦绋?*锛堟瘡娆″彂甯冩柊鐗堟湰渚濇鎵ц锛夛細
+**发布后维护流的*（每次发布新版本依次执行）：
 
-1. **鍗囩増鏈?*锛氭敼 `ModConfig.json` 鐨?`ModVersion` 涓?`build-release.ps1` 榛樿 `$Version`锛?
-   鎸?搂10 鎵弿鍏ㄦ枃妗ｆ棫鐗堟湰鍙锋畫鐣欙紙README銆丮AINTENANCE 澶撮儴銆佹瀯寤烘敞閲婏級銆?
-2. **鏋勫缓**锛歚build-release.ps1` 鈫?浜у嚭 `dist/GBFR-Pre-Equipped-Sigils-<version>.zip`銆?
-3. **閮ㄧ讲楠岃瘉**锛氭父鎴忛€€鍑?鈫?澶嶅埗 `dist\GBFR.PreEquippedSigils` 鍒?`Mods\` 鈫?鎸?搂6 楠岃瘉娓呭崟瀹炴祴銆?
-4. **鏇存柊 Nexus 鏂囦欢椤?*锛氫笂浼犳柊 zip锛汵exus 鍙鏈€鏂版枃浠剁増鏈紝鏃х増鑷姩褰掓。鍒板巻鍙层€?
-   涓婁紶鏃朵繚鎸佸悕绉?鍒嗙被/鏍囩/鏉冮檺涓嶅彉锛堣涓婅〃锛夈€?
-5. **鍚屾椤甸潰鎻忚堪**锛歂exus 鎻忚堪涓?`GBFR.PreEquippedSigils/README.md` 鍚屾簮鈥斺€?
-   鏀归厤瑁呭悗蹇呴』涓ゅ鍚屾锛堥厤瑁呰〃銆佹憳瑕併€佹埅鍥句綅缃級銆?
-6. **鎴浘**锛氫竴寰嬫父鎴忓唴鐪熷疄鎴浘锛屽彂甯冨悗涓婁紶鍒?Images 鍖猴紙涓嶈 AI 鐢熸垚鍥撅級銆?
-7. **娓告垙鏇存柊鍚?*锛氬厛鏈満鍥炲綊锛埪?锛夛紱鑻?layout 瑙ｆ瀽澶辫触锛堟棩蹇楀嚭鐜?layout failed锛夛紝
-   鍦ㄩ〉闈㈤《閮ㄥ姞"涓嶅吋瀹圭増鏈?璀﹀憡骞跺仠鏇达紝涓嶈闈欓粯澶辨晥銆?
-8. **鎻愪氦鎺ㄩ€?*锛氭寜 搂10 鐨勬彁浜?鎺ㄩ€佹ā鏉挎墽琛岋紝鎶婄増鏈彿涓庡彂甯冭褰曞悓姝ュ埌浠撳簱銆?
+1. **升版的*：改 `ModConfig.json` 的`ModVersion` 的`build-release.ps1` 默认 `$Version`的
+   的§10 扫描全文档旧版本号残留（README、MAINTENANCE 头部、构建注释）的
+2. **构建**：`build-release.ps1` 的产出 `dist/GBFR-Pre-Equipped-Sigils-<version>.zip`的
+3. **部署验证**：游戏退的的复制 `dist\GBFR.PreEquippedSigils` 的`Mods\` 的的§6 验证清单实测的
+4. **更新 Nexus 文件的*：上传新 zip；Nexus 只认最新文件版本，旧版自动归档到历史的
+   上传时保持名的分类/标签/权限不变（见上表）的
+5. **同步页面描述**：Nexus 描述的`GBFR.PreEquippedSigils/README.md` 同源—的
+   改配装后必须两处同步（配装表、摘要、截图位置）的
+6. **截图**：一律游戏内真实截图，发布后上传的Images 区（不要 AI 生成图）的
+7. **游戏更新的*：先本机回归（的）；的layout 解析失败（日志出的layout failed），
+   在页面顶部加"不兼容版的警告并停更，不要静默失效的
+8. **提交推的*：按 §10 的提的推送模板执行，把版本号与发布记录同步到仓库的
 
-> 澶囨敞锛歊ELEASE-NEXUS.md 宸插垹闄わ紝鍙戝竷鐩存帴鐢ㄦ湰鎵嬪唽銆?
+> 备注：RELEASE-NEXUS.md 已删除，发布直接用本手册的
 
-## 12. 浼氳瘽浜ゆ帴鎯呮姤锛?026-09-03锛屼緵鏂颁細璇?AI 蹇€熷榻愶級
+## 12. 会话交接情报（2026-09-05，供新会话 AI 快速对齐）
 
-### 褰撳墠鐘舵€?
-- **鐗堟湰**锛歷0.3.6锛堟湰鍦版瀯寤猴細ABI v16 + 閰嶇疆鍖?T1/T2 **宸插畬鎴?*锛屽疄娴嬮€氳繃鍚庡緟鍙戝竷 Nexus锛汵exus 鐜拌 0.3.5锛夈€傛Ы浣?9锛堣閱掞紜 / 鎴樻皵鍗曡瘝鏉?/ 婵€鏄?/ 璞儐+鑷姩澶嶆椿 / 涓嶅姩+鏄庨暅姝㈡按 / 鍒氬仴+鑽按 / 瀹堟姢+韬查伩鎬ц兘 / 杩藉嚮+杩呮嵎鑳藉姏 / 婕嗛粦鐨勯挸锜瑰洜瀛?Lv20锛? 閰嶈宸ュ叿锛圵ails锛夈€?
-- **鍞竴鎬?*锛欸BFR 鍞竴"闆跺簱瀛橀閰嶈 + 杩愯鏃跺悎鎴?+ 涓嶇瀛樻。"鐨?mod锛涘師鐗堬紙657 Extra Sigil Slots锛夋湁搴撳瓨/UI/璺ㄨ鑹茬粦瀹氱棝鐐光€斺€旈渶宸紓鍖栵細"棰勯厤瑁?鍏ㄨ鑹?闆舵姌鑵?銆?
+### 当前状态
+- **版本**：v0.4.0（ABI v16 + 配装编辑器重构 + 中英双语 + 托盘完善；Nexus 发布中/待审核）。槽位 9（觉醒＋/战气/激昂/豪胆/不动/刚健/守护/追击/钳蟹）+ 固定 12 行编辑器（可自由选择任意因子）。
+- **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
-### 宸查獙璇侊紙瀹炴祴閫氳繃锛?
-- 涓绘帶 + AI 瑙掕壊閮藉悆娉ㄥ叆锛堟槑闀滄姘?瀹堟姢/HP鍚告敹/杩藉嚮/杩呮嵎锛夆€斺€斿嵏涓绘Ы鍥犲瓙娴嬭瘯纭銆?
+### 0.4.0 发布记录（2026-09-05）
+- 编辑器重构：固定 12 行（无增删）、空行"无"等级 0、副因子门控（选主才可选副）、每词条真实 maxLevel。
+- **中英双语**：界面 + 因子名（traits.json 字段变更为 `{ zh, en, hash, gem, maxLevel }`），语言切换持久化（localStorage）。
+- 托盘/窗口：三态激活（隐藏/最小化/遮挡）、隐藏恢复透明淡入（**解决 WebView2 恢复白闪**，Win32 WS_EX_LAYERED + alpha 渐入）、固定 760×800（禁最大化）、游戏因子图标（go:embed）。
+- 热键：mod 激活前等待按键释放（防止按键尾落到工具导致"弹出即隐藏"）；工具内 Esc 也可隐藏；mod 发布 `tool-hotkey.txt` 供工具同步键位。
+- 上限：MaxSlots 22 → **12**（工具 + 托管 LoadoutConfig 同步）。
+- 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 LoadoutTool.exe 等 9 文件。
 
-### 甯傚満鎯呮姤锛圢exus 绔炲搧锛?026-09-03~04锛?
-**杞寲鐜囧彛寰勶細Total views 梅 Unique DLs锛堟暟鍊艰秺灏?= 杞寲瓒婂ソ锛夛紝濡?823 = 1,329梅125 = 10.63锛涘嬁涓?Unique梅Views 娣风敤銆?*
-- **鎴戯紙823锛?*锛歎nique 125 / End 2 / Total 171 / Views 1,329锛堝彂甯冪 3 澶╁疄鏃舵姄鍙栵級鈥斺€?*杞寲 10.63**锛岃拷骞冲師鐗?11.78锛堝樊 1.15锛夈€?
-- **823 鏇存柊锛?026-09-04 05:19 鍙戝竷锛屼粛涓?0.3.5 鐗堬細鍚拷鍑?杩呮嵎鑳藉姏瀹屾暣 8 妲介厤缃?+ 妲?7/8 浜ゆ崲 + 娓呯悊鍚庢瀯寤猴級**锛氭枃浠朵笅杞?u=48 / t=49锛堝彂甯冩暟灏忔椂鍐咃級鈥斺€斾互鑰佺敤鎴锋洿鏂板洖娴佷负涓伙紝鎷夋柊浠嶅彈 Views 鏇濆厜鐡堕闄愬埗锛?*涓嬫鍙戝竷搴斿崌 0.3.6锛堟湰娆″悓鍚?0.3.5 瑕嗙洊锛岀敤鎴蜂晶鐪嬩笉鍑哄彉鍖栵級**銆?
-- 657 鍘熺増锛歎nique 1,489 / End 28 / Total 3,153 / Views 17,534 / 杞寲 11.78锛堥涓墿灞曟Ы銆佹棤绔炲搧鏈燂級鈥斺€旂洰鏍囷細棰勮浼樺寲杞寲鐜囪拷涓?瓒呰繃锛堝凡鍩烘湰杈炬垚锛夈€?
+### 已验证（实测通过的
+- 主控 + AI 角色都吃注入（明镜止的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认的
 
-### 鐢ㄦ埛鍙嶉
-- 闊╁浗鐜╁锛堟紗榛戦挸锜瑰洜瀛愶級鈥斺€斿凡瀹炵幇锛堟Ы 8锛? 鍥炲銆?
-- 鐜╁闂?鑳藉惁涓?657 鍏卞瓨"鈥斺€斿洖澶?浼氬啿绐侊紙鍚?hook锛夛紝杩欐槸 657 鐨?drop-in replacement"銆?
-- impact008锛?026-09-04锛夛細璇锋眰"杩呮嵎鑳藉姏/鎬掓稕/婵€鏄傞《婊?鐗堚€斺€?*鎷掔粷"椤堕厤/瓒呭己"**锛堜繚鎶ゅ钩琛★級锛屾帴鍙楀叾鐪熷疄璇夋眰锛堟€掓稕涓嶅湪妯℃澘銆佽瘝鏉″彲閫夋€э級鈫?褰掑叆閰嶇疆鍖栨柟鍚戯紱鍥炲璇濇湳 = "骞宠　 + 鍙厤缃?銆?
+### 市场情报（Nexus 竞品的026-09-03~04的
+**转化率口径：Total views ÷ Unique DLs（数值越的= 转化越好），的823 = 1,329÷125 = 10.63；勿的Unique÷Views 混用的*
+- **我（823的*：Unique 125 / End 2 / Total 171 / Views 1,329（发布第 3 天实时抓取）—的*转化 10.63**，追平原的11.78（差 1.15）的
+- **823 更新的026-09-04 05:19 发布，仍的0.3.5 版：含追的迅捷能力完整 8 槽配的+ 的7/8 交换 + 清理后构建）**：文件下的u=48 / t=49（发布数小时内）——以老用户更新回流为主，拉新仍受 Views 曝光瓶颈限制的*下次发布应升 0.3.6（本次同的0.3.5 覆盖，用户侧看不出变化）**的
+- 657 原版：Unique 1,489 / End 28 / Total 3,153 / Views 17,534 / 转化 11.78（首个扩展槽、无竞品期）——目标：预设优化转化率追的超过（已基本达成）的
 
-### 鏈潵鏂瑰悜锛堟湭鍋氾級
-- ~~閰嶇疆鍖杶~ **宸插畬鎴?*锛堣涓婏紱涓嶅啀閲嶅绔嬮」锛夈€傚悗缁柟鍚戯細棰勮闆嗕赴瀵岋紙鐙傛垬澹?鏂反杈?浼ゅ涓婇檺/澶╂槦绯荤瓑锛変綔涓?pre-loadout 妯℃澘锛涙瘡瑙掕壊寮€鍏?v2锛涚墿鍝佹潈濞佺粍鍚堣〃銆?
-- 鍧氭寔"鍚堢悊鎵╁睍妲?璺嚎锛堜笉鍋?瓒呭己鏁板€?椤堕厤"鈥斺€?87/819 鏄珵鍝侊紝涓嶆挒杞︼紱瀵圭帺瀹惰姹傜粺涓€璇濇湳鎷掔粷锛夈€?
-- Reddit 鍙嶈惀閿€涓ユ牸鈥斺€?*涓嶈涓诲姩鍦?Reddit 鑷崘**锛堢ぞ鍖烘晫鎰?浣滃紛鑰?锛夈€?
+### 用户反馈
+- 韩国玩家（漆黑钳蟹因子）——已实现（槽 8的 回复的
+- 玩家的能否的657 共存"——回的会冲突（的hook），这是 657 的drop-in replacement"的
+- impact008的026-09-04）：请求"迅捷能力/怒涛/激昂顶的版—的*拒绝"顶配/超强"**（保护平衡），接受其真实诉求（怒涛不在模板、词条可选性）的归入配置化方向；回复话术 = "平衡 + 可配的的
 
-### 澶囨敞
-- 绔炲搧鏁板瓧鐢?Jina Reader 鎶撳彇锛堝彲鑳芥湁杞诲井璇樊锛夛紝浠呬綔鍙傝€冦€?
-- 鎵€鏈?妲戒綅/鐗堟湰/涓嬭浇"鏀瑰姩鍚庡悓姝ワ細MAINTENANCE 澶撮儴銆丷EADME脳2銆丮odConfig銆乥uild-release.ps1銆?
+### 未来方向（未做）
+- ~~配置化~~ **已完的*（见上；不再重复立项）。后续方向：预设集丰富（狂战的斯巴的伤害上限/天星系等）作的pre-loadout 模板；每角色开的v2；物品权威组合表的
+- 坚持"合理扩展的路线（不的超强数的顶配"—的87/819 是竞品，不撞车；对玩家请求统一话术拒绝）的
+- Reddit 反营销严格—的*不要主动的Reddit 自荐**（社区敌的作弊的）的
+
+### 备注
+- 竞品数字的Jina Reader 抓取（可能有轻微误差），仅作参考的
+- 所的槽位/版本/下载"改动后同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1的
