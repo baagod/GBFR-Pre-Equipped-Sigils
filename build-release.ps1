@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
@@ -69,6 +69,25 @@ if ($LASTEXITCODE -ne 0) {
     throw "Managed build failed with exit code $LASTEXITCODE."
 }
 
+# Loadout editor tool: self-contained single-file WPF-UI exe.
+$resolvedRoot = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
+$toolProject = Join-Path $root 'LoadoutTool\LoadoutTool.csproj'
+$toolPublishDir = Join-Path $root 'LoadoutTool\publish'
+$toolPublishDir = [IO.Path]::GetFullPath($toolPublishDir)
+if (-not $toolPublishDir.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to publish the tool outside the repository: $toolPublishDir"
+}
+& dotnet publish $toolProject `
+    -c $Configuration `
+    -r win-x64 `
+    --self-contained true `
+    -p:PublishSingleFile=true `
+    -o $toolPublishDir `
+    --nologo
+if ($LASTEXITCODE -ne 0) {
+    throw "Loadout tool publish failed with exit code $LASTEXITCODE."
+}
+
 $resolvedRoot = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
 $resolvedDist = [IO.Path]::GetFullPath($distRoot).TrimEnd('\') + '\'
 if (-not $resolvedDist.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgnoreCase)) {
@@ -89,6 +108,12 @@ if (Test-Path -LiteralPath $zipPath) {
 }
 New-Item -ItemType Directory -Path $packageDir | Out-Null
 Copy-Item -Path (Join-Path $managedOutput '*') -Destination $packageDir -Recurse -Force
+
+$toolExe = Join-Path $toolPublishDir 'LoadoutTool.exe'
+if (-not (Test-Path -LiteralPath $toolExe -PathType Leaf)) {
+    throw "Loadout tool exe was not published: $toolExe"
+}
+Copy-Item -Path $toolExe -Destination $packageDir -Force
 
 foreach ($requiredFile in @(
     'GBFR.PreEquippedSigils.dll',

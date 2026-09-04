@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using GBFR.PreEquippedSigils.Configuration;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 
@@ -23,6 +24,7 @@ public sealed class Mod : IMod
     private System.Threading.Timer? _tickTimer;
     private bool _nativeCoreActive;
     private bool _disposed;
+    private HotkeyConfig? _hotkeyConfiguration;
 
     public Action Disposing => Dispose;
 
@@ -76,6 +78,7 @@ public sealed class Mod : IMod
                 Log($"Native core loaded without hooks: {NativeCore.GetRuntimeMessage()}");
             }
             LoadoutConfig.Initialize(modDirectory, Log);
+            InitializeHotkeyConfiguration(loader, modDirectory);
 
             _nativeCoreActive = true;
             _tickTimer = new System.Threading.Timer(
@@ -84,6 +87,7 @@ public sealed class Mod : IMod
                     try
                     {
                         LoadoutConfig.Tick(Log);
+                        Hotkey.Tick(Log);
                         NativeCore.Tick();
                     }
                     catch
@@ -102,6 +106,29 @@ public sealed class Mod : IMod
             Log($"Initialization failed: {exception}");
             Dispose();
         }
+    }
+
+    private void InitializeHotkeyConfiguration(IModLoader loader, string modDirectory)
+    {
+        try
+        {
+            string configDirectory = loader.GetModConfigDirectory(ModId);
+            HotkeyConfig configuration =
+                new Configurator(configDirectory).GetConfiguration<HotkeyConfig>(0);
+            configuration.ConfigurationUpdated += OnHotkeyConfigurationUpdated;
+            _hotkeyConfiguration = configuration;
+            Hotkey.Configure(modDirectory, configuration.VirtualKey);
+        }
+        catch (Exception exception)
+        {
+            Log($"Hotkey configuration unavailable: {exception.Message}");
+        }
+    }
+
+    private void OnHotkeyConfigurationUpdated(IUpdatableConfigurable configurable)
+    {
+        if (configurable is HotkeyConfig configuration)
+            Hotkey.UpdateHotkey(configuration.VirtualKey);
     }
 
     private void Log(string message)
