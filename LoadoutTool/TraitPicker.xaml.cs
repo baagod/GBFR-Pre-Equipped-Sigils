@@ -1,18 +1,15 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace LoadoutTool;
 
 /// <summary>
-/// Trait picker built on the standard editable ComboBox (its dropdown follows
-/// scrolling natively). Typing filters the list; only list items can become
-/// the value; invalid free text reverts on focus loss. Each picker owns an
-/// independent filtered view (the shared trait list must not leak filters).
+/// Simple in-layout picker: click opens the full trait list below the text box
+/// (inline, so scrolling works and nothing floats), typing filters it by
+/// "contains", clicking an entry fills the box. The value only ever comes from
+/// a list selection.
 /// </summary>
 public partial class TraitPicker : UserControl
 {
@@ -25,20 +22,10 @@ public partial class TraitPicker : UserControl
                 (d, _) => ((TraitPicker)d).OnSelectedTraitChanged()));
 
     private bool _pickingOption;
-    private bool _suppressFilter;
-    private readonly ListCollectionView _view;
 
     public TraitPicker()
     {
         InitializeComponent();
-        // Independent view per control: GetDefaultView(shared list) would share
-        // one view across all pickers and leak filters between them.
-        _view = new ListCollectionView(new List<string>(TraitData.Names));
-        Picker.ItemsSource = _view;
-        // The editable ComboBox's inner TextBox bubbles TextBase.TextChanged.
-        Picker.AddHandler(
-            TextBoxBase.TextChangedEvent,
-            new TextChangedEventHandler(Picker_TextChanged));
     }
 
     public string SelectedTrait
@@ -47,84 +34,67 @@ public partial class TraitPicker : UserControl
         set => SetValue(SelectedTraitProperty, value);
     }
 
-    private void SetText(string text)
-    {
-        _suppressFilter = true;
-        Picker.Text = text;
-        _suppressFilter = false;
-    }
-
     private void OnSelectedTraitChanged()
-    {
-        if (!_pickingOption && Picker.Text != SelectedTrait)
-            SetText(SelectedTrait);
-    }
-
-    private void Picker_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_suppressFilter)
-            return;
-        // While the user edits: filter but never let WPF rewrite the text.
-        string keyword = Picker.Text.Trim();
-        RefreshKeepText(keyword.Length == 0
-            ? null
-            : item =>
-                item is string name &&
-                name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// Applies a filter and keeps the edited text. An editable ComboBox resets
-    /// its Text to the first list item whenever the Items collection changes
-    /// and the current text is not an item (that is how the first trait
-    /// "7net" leaked into every picker). The reset happens asynchronously, so
-    /// the restore is posted to the dispatcher as well.
-    /// </summary>
-    private void RefreshKeepText(System.Predicate<object>? filter)
-    {
-        string previous = Picker.Text;
-        _view.Filter = filter;
-        _view.Refresh();
-        RestoreText(previous);
-        Dispatcher.BeginInvoke(
-            DispatcherPriority.Background,
-            new Action(() => RestoreText(previous)));
-    }
-
-    private void RestoreText(string text)
-    {
-        if (Picker.Text == text)
-            return;
-        _suppressFilter = true;
-        Picker.Text = text;
-        _suppressFilter = false;
-    }
-
-    private void Picker_DropDownOpened(object sender, EventArgs e)
-    {
-        // Opening the dropdown always shows the full trait list.
-        RefreshKeepText(null);
-    }
-
-    private void Picker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (Picker.SelectedItem is not string selected)
-            return;
-        _pickingOption = true;
-        SelectedTrait = selected;
-        SetText(selected);
-        _pickingOption = false;
-    }
-
-    private void Picker_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         if (_pickingOption)
             return;
-        // Revert invalid free text back to the selected value.
-        if (!ListContains(Picker.Text))
-            SetText(SelectedTrait);
+        if (Input.Text != SelectedTrait)
+            Input.Text = SelectedTrait;
+
+        Options.Visibility = Visibility.Collapsed;
     }
 
-    private static bool ListContains(string name) =>
-        !string.IsNullOrEmpty(name) && TraitData.Names.Contains(name);
+    private void Input_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        RefreshOptions(Input.Text.Trim());
+        Options.Visibility = Visibility.Visible;
+        Options.Focus();
+    }
+
+    private void Input_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        Placeholder.Visibility = Input.Text.Length == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (Options.Visibility == Visibility.Visible)
+            RefreshOptions(Input.Text.Trim());
+        // The value is only ever written by Options_SelectionChanged.
+    }
+
+    private void RefreshOptions(string filter)
+    {
+        var list = new List<string>();
+        foreach (string name in TraitData.Names)
+        {
+            if (filter.Length == 0 || name.Contains(filter, System.StringComparison.OrdinalIgnoreCase))
+                list.Add(name);
+        }
+        Options.ItemsSource = list;
+    }
+
+    private void Input_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_pickingOption)
+            return;
+        Options.Visibility = Visibility.Collapsed;
+        // Revert invalid free text back to the selected value.
+        if (!TraitData.Names.Contains(Input.Text))
+            Input.Text = SelectedTrait;
+    }
+
+    private void Options_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _pickingOption = true;
+    }
+
+    private void Options_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Options.SelectedItem is not string selected)
+            return;
+        _pickingOption = true;
+        SelectedTrait = selected;
+        Input.Text = selected;
+        _pickingOption = false;
+        Options.Visibility = Visibility.Collapsed;
+    }
 }
