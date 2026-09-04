@@ -69,23 +69,20 @@ if ($LASTEXITCODE -ne 0) {
     throw "Managed build failed with exit code $LASTEXITCODE."
 }
 
-# Loadout editor tool: self-contained single-file WPF-UI exe.
-$resolvedRoot = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
-$toolProject = Join-Path $root 'LoadoutTool\LoadoutTool.csproj'
-$toolPublishDir = Join-Path $root 'LoadoutTool\publish'
-$toolPublishDir = [IO.Path]::GetFullPath($toolPublishDir)
-if (-not $toolPublishDir.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Refusing to publish the tool outside the repository: $toolPublishDir"
-}
-& dotnet publish $toolProject `
-    -c $Configuration `
-    -r win-x64 `
-    --self-contained true `
-    -p:PublishSingleFile=true `
-    -o $toolPublishDir `
-    --nologo
+# Loadout editor tool: Wails v3 build (GUI subsystem, embedded frontend dist).
+$toolDir = Join-Path $root 'loadouttool'
+& npm --prefix (Join-Path $toolDir 'frontend') run build
 if ($LASTEXITCODE -ne 0) {
-    throw "Loadout tool publish failed with exit code $LASTEXITCODE."
+    throw "Tool frontend build failed with exit code $LASTEXITCODE."
+}
+Push-Location $toolDir
+try {
+    & go build -ldflags "-H windowsgui" -o LoadoutTool.exe .
+    if ($LASTEXITCODE -ne 0) {
+        throw "Tool build failed with exit code $LASTEXITCODE."
+    }
+} finally {
+    Pop-Location
 }
 
 $resolvedRoot = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
@@ -109,15 +106,18 @@ if (Test-Path -LiteralPath $zipPath) {
 New-Item -ItemType Directory -Path $packageDir | Out-Null
 Copy-Item -Path (Join-Path $managedOutput '*') -Destination $packageDir -Recurse -Force
 
-$toolExe = Join-Path $toolPublishDir 'LoadoutTool.exe'
+$toolExe = Join-Path $toolDir 'LoadoutTool.exe'
 if (-not (Test-Path -LiteralPath $toolExe -PathType Leaf)) {
-    throw "Loadout tool exe was not published: $toolExe"
+    throw "Loadout tool exe was not built: $toolExe"
 }
 Copy-Item -Path $toolExe -Destination $packageDir -Force
 
 foreach ($requiredFile in @(
     'GBFR.PreEquippedSigils.dll',
-    'GBFR.PreEquippedSigils.Native.dll'
+    'GBFR.PreEquippedSigils.Native.dll',
+    'LoadoutTool.exe',
+    'pre-loadout.json',
+    'traits.json'
 )) {
     $requiredPath = Join-Path $packageDir $requiredFile
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {

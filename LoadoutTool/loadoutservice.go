@@ -11,13 +11,46 @@ import (
 // (player configuration, same shape as the pre-loadout.json fallback).
 type LoadoutService struct{}
 
-// MinimiseApp hides the window to the taskbar; the process stays alive so the
-// in-game hotkey can bring the window back instantly. Invoked by Esc (and the
-// X button via the WM_CLOSE interceptor).
+// MinimiseApp hides the window to the tray; the process stays alive so the
+// in-game hotkey can bring the window back instantly. Invoked by the shared
+// hotkey inside the tool and the X button (via the WM_CLOSE interceptor).
 func (s *LoadoutService) MinimiseApp() {
 	if win != nil {
-		win.Minimise()
+		win.Hide()
 	}
+}
+
+// GetHotkey returns the configured menu hotkey as a virtual key code.
+// The mod persists it in HotkeyConfig.json (Reloaded-II configurable, enum
+// "MenuHotkey"). Missing/unparseable config falls back to F1 (0x70).
+func (s *LoadoutService) GetHotkey() (int, error) {
+	data, err := os.ReadFile(filepath.Join(exeDir(), "HotkeyConfig.json"))
+	if err != nil {
+		return 0x70, nil
+	}
+	var cfg struct {
+		MenuHotkey json.RawMessage `json:"MenuHotkey"`
+	}
+	if err := json.Unmarshal(data, &cfg); err != nil || len(cfg.MenuHotkey) == 0 {
+		return 0x70, nil
+	}
+	var numeric int
+	if err := json.Unmarshal(cfg.MenuHotkey, &numeric); err == nil {
+		return numeric, nil
+	}
+	var name string
+	if err := json.Unmarshal(cfg.MenuHotkey, &name); err == nil {
+		keyCodes := map[string]int{
+			"F1": 0x70, "F2": 0x71, "F3": 0x72, "F4": 0x73,
+			"F5": 0x74, "F6": 0x75, "F7": 0x76, "F8": 0x77,
+			"F9": 0x78, "F10": 0x79, "F11": 0x7A, "F12": 0x7B,
+			"Insert": 0x2D, "Delete": 0x2E, "Home": 0x24, "End": 0x23,
+		}
+		if vk, ok := keyCodes[name]; ok {
+			return vk, nil
+		}
+	}
+	return 0x70, nil
 }
 
 type loadoutSlot struct {

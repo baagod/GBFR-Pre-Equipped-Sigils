@@ -105,12 +105,12 @@ TemplateGemSlot{
 > 正确写法是 `trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自从游戏内修改器
 > 观察到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —— 与注入的
 > `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）。
-> 该坑只在**首个单词条因子**（槽 8）出现，其他槽位均有真实 trait2，不受影响。
+> 该坑覆盖**所有单词条槽位**（战气槽 / 激昂 / 钳蟹），其他槽位均有真实 trait2，不受影响。
 
 **规则**：
 - 每角色一个 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 起**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 与 `FindTemplateSlot` 依赖此约定）。
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 8），由 `tool-gen-loadout.ps1` 生成时同步输出。
+- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 9），由 `tool-gen-loadout.ps1` 生成时同步输出。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
@@ -152,7 +152,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 → 启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **无配置文件**：INI 体系已删除；槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 8）。
+- **可选配置**：INI 体系已删除；无 `loadout.json` 时槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 9 = 觉醒＋/战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管层 4 空格。
 
@@ -165,8 +165,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ## 9. 已知限制与未来方向
 
-- 配装表编译期内置；**配置化已立项**：见 [docs/PLAN-loadout-config.md](PLAN-loadout-config.md)
-  （loadout.json + WPF-UI 工具 + F8 热键 + ABI v16，已批准待实施；本节不再维护旧方案）。
+- 配装表编译期内置；**配置化已完成**（2026-09-04）：`loadout.json` + Wails v3 工具（`loadouttool/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）+ ABI v16，详见 [docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）。
 - 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效 → 日志出现 layout failed → 等上游
   方案或重新逆向。
@@ -227,7 +226,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 会话交接情报（2026-09-03，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **版本**：v0.3.6（本地构建：ABI v16 + 配置化 T1，实测通过后待发布 Nexus；Nexus 现行 0.3.5）。槽位 8（觉醒＋/激昂+战气/豪胆+自动复活/不动+明镜止水/刚健+药水/守护+躲避性能/追击+迅捷能力/漆黑的钳蟹因子 Lv20）。
+- **版本**：v0.3.6（本地构建：ABI v16 + 配置化 T1/T2 **已完成**，实测通过后待发布 Nexus；Nexus 现行 0.3.5）。槽位 9（觉醒＋ / 战气单词条 / 激昂 / 豪胆+自动复活 / 不动+明镜止水 / 刚健+药水 / 守护+躲避性能 / 追击+迅捷能力 / 漆黑的钳蟹因子 Lv20）+ 配装工具（Wails）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 已验证（实测通过）
@@ -245,10 +244,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - impact008（2026-09-04）：请求"迅捷能力/怒涛/激昂顶满"版——**拒绝"顶配/超强"**（保护平衡），接受其真实诉求（怒涛不在模板、词条可选性）→ 归入配置化方向；回复话术 = "平衡 + 可配置"。
 
 ### 未来方向（未做）
-- **配置化（2026-09-04 立项，待实施）**：实现计划见 **docs/PLAN-loadout-config.md**——
-  loadout.json（中文词条名）+ WPF-UI 工具（F8 热键拉起）+ ABI v16 + 运行时模板 + 热更新；
-  **不做预设/顶配**（保持平衡）；每角色开关 v2；物品权威组合表后补。
-- 0.3.6 如先做模板丰富（狂战士/斯巴达/伤害上限/天星系等通用输出），作为配置化第一套预设集——**别加"属性克制转换/War Elemental+"（极品掉落=作弊争议）**。
+- ~~配置化~~ **已完成**（见上；不再重复立项）。后续方向：预设集丰富（狂战士/斯巴达/伤害上限/天星系等）作为 pre-loadout 模板；每角色开关 v2；物品权威组合表。
 - 坚持"合理扩展槽"路线（不做"超强数值/顶配"——687/819 是竞品，不撞车；对玩家请求统一话术拒绝）。
 - Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌意"作弊者"）。
 

@@ -8,7 +8,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
-import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp } from "../bindings/loadouttool/loadoutservice"
+import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey } from "../bindings/loadouttool/loadoutservice"
 
 interface Slot {
   trait1: string
@@ -34,6 +34,7 @@ export default function App() {
   const [traits, setTraits] = useState<Trait[]>([])
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
+  const [hideKey, setHideKey] = useState(0x70) // F1 default
   // First render + first load must not write loadout.json: the preset stays
   // active until the user actually edits something.
   const skipSave = useRef(true)
@@ -50,25 +51,36 @@ export default function App() {
         const configJson = await LoadConfig()
         skipSave.current = true
         setSlots(JSON.parse(configJson).slots ?? [])
+        setHideKey(await GetHotkey())
       } catch (e) {
         setStatus(`加载失败：${e}`)
       }
     })()
   }, [])
 
-  // Fixed Escape minimises the tool to the taskbar (window stays alive). Esc
-  // pressed inside an input group or the combobox popup is left to the
-  // components themselves (clear/close popup).
+  // The hide key is the SAME key as the mod's menu hotkey (default F8):
+  // pressed in the tool it minimises the window; pressed in the game it
+  // brings the tool back. The hide is deferred until AFTER the key-up so
+  // the press is fully consumed here and never leaks to the game window.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return
-      const target = e.target as HTMLElement | null
-      if (target?.closest('[data-slot="input-group"], [data-slot="combobox-content"]')) return
-      void MinimiseApp()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const match = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (match(e)) e.preventDefault()
     }
-    document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
-  }, [])
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!match(e)) return
+      clearTimeout(timer)
+      timer = setTimeout(() => void MinimiseApp(), 150)
+    }
+    document.addEventListener("keydown", onKeyDown)
+    document.addEventListener("keyup", onKeyUp)
+    return () => {
+      document.removeEventListener("keydown", onKeyDown)
+      document.removeEventListener("keyup", onKeyUp)
+      clearTimeout(timer)
+    }
+  }, [hideKey])
 
   const maxOf = (name: string) => traits.find((t) => t.nameZh === name)?.maxLevel ?? 15
   const traitNames = traits.map((t) => t.nameZh)

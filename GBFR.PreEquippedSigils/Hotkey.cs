@@ -49,6 +49,9 @@ internal static class Hotkey
     [DllImport("user32.dll")]
     private static extern bool BringWindowToTop(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr CreateWindowEx(
         uint dwExStyle, string lpClassName, string lpWindowName,
@@ -221,7 +224,7 @@ internal static class Hotkey
     {
         // Single instance: bring the existing editor window to the front
         // (works for both minimised and hidden windows).
-        IntPtr existing = FindWindow(null, "GBFR 预配装配置");
+        IntPtr existing = FindWindow(null, "GBFR Pre-Equipped Sigils");
         if (existing == IntPtr.Zero && IsToolProcessRunning())
         {
             for (int attempt = 0; attempt < 60 && existing == IntPtr.Zero; attempt++)
@@ -265,12 +268,15 @@ internal static class Hotkey
     }
 
     /// <summary>
-    /// Reliable bring-to-front for hidden/minimised windows: temporary
-    /// TOPMOST activation defeats the foreground lock, then it is removed
-    /// again so the window does not stay on top.
+    /// Reliable bring-to-front for tray-hidden windows: first request an
+    /// internal show (WM_APP+0x10 -> WebView2 repaints correctly, unlike an
+    /// external SW_SHOW on a hidden window), then activate via temporary
+    /// TOPMOST which is removed again so the window does not stay on top.
     /// </summary>
     private static void ActivateWindow(IntPtr hWnd)
     {
+        PostMessage(hWnd, 0x8010, IntPtr.Zero, IntPtr.Zero);
+        Thread.Sleep(80);
         ShowWindow(hWnd, SwShow);
         ShowWindow(hWnd, SwRestore);
         BringWindowToTop(hWnd);

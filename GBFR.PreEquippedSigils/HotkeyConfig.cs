@@ -46,8 +46,8 @@ public sealed class HotkeyConfig : Configurable<HotkeyConfig>
     [Description(
         "Opens the loadout editor tool while the game is running. " +
         "Changes apply immediately. / 游戏中打开配装编辑器；修改实时生效。")]
-    [DefaultValue(OverlayHotkey.F8)]
-    public OverlayHotkey MenuHotkey { get; set; } = OverlayHotkey.F8;
+    [DefaultValue(OverlayHotkey.F1)]
+    public OverlayHotkey MenuHotkey { get; set; } = OverlayHotkey.F1;
 
     // Derived value: keep it out of the config JSON and the launcher property grid.
     [JsonIgnore]

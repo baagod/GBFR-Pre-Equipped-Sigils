@@ -1,8 +1,16 @@
-# 实现计划：配装配置化（loadout.json + WPF-UI 工具）
+# 实现计划：配装配置化（loadout.json + Wails 工具）
 
-> 状态：**已批准待实施**（2026-09-04 决策）
-> 关联：MAINTENANCE §9/§12（配置化=未来方向）、用户请求（自定义词条、槽位增删、每槽 1-2 词条）
-> 参考实现：https://github.com/BitterG/GBFR-PE-Patch-Tool （工具形态先例，Go+Web；本项目用 C# 栈）
+> 状态：**✅ 已实现**（2026-09-04 落地并实测通过；本文保留为历史计划）
+> 关联：MAINTENANCE §9/§12（配置化=已完成）、用户请求（自定义词条、槽位增删、每槽 1-2 词条）
+> 参考实现：https://github.com/BitterG/GBFR-PE-Patch-Tool （数据来源：traits.json 的 maxLevel 映射）
+
+> **与计划的偏差记录（实施后）**：
+> - UI 形态：**WPF-UI 换成 Wails v3（Go + React 19 + shadcn/Base UI）**——WPF ComboBox/Popup 在运行环境有 7net 解析 bug 无法修复。
+> - 工具入口：**RegisterHotKey（Windows 系统消息热键）** 替代 `SetWindowsHookEx(WH_KEYBOARD_LL)`——消息驱动零采样丢失；**默认键 F1**（计划 F8；F8 在游戏中轮询可靠、但统一 F1）；键位经 Reloaded-II 配置页（HotkeyConfig.json，enum F1-F12/Insert/Delete/Home/End）。
+> - 工具为**单实例 + 托盘常驻**（Esc/X 隐藏；游戏内热键秒弹）；**不做 mod 启动预热**——曾实现但在 mod Startup 期 `Process.Start` 触发 .NET fatal（InvalidProgram/UnmanagedCallersOnly 字样），已移除并记录教训。
+> - 默认 9 槽（觉醒＋/战气单词条/激昂 + 豪胆/不动/刚健/守护/追击/钳蟹）；配置文件 **pre-loadout.json**（原 builtin-loadout.json 改名）。
+> - 词条字典含 **每词条 maxLevel**（来源 BitterG `data/traits.json`，2026-09 采集 → `docs/gbfr-trait-maxlevels.json`），编辑器按真实上限 clamp。
+> - 发布包**内置** LoadoutTool.exe（`build-release.ps1` 直接打包 Wails 构建产物）。
 
 ---
 
