@@ -34,6 +34,8 @@ public partial class TraitPicker : UserControl
         set => SetValue(SelectedTraitProperty, value);
     }
 
+    private string Filter => Input.Text.Trim();
+
     private void OnSelectedTraitChanged()
     {
         if (!_pickingOption && Input.Text != SelectedTrait)
@@ -47,23 +49,25 @@ public partial class TraitPicker : UserControl
         Placeholder.Visibility = Input.Text.Length == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
+        // Only pop the dropdown while the user is actually typing in this box
+        // (programmatic initialization must never pop 16 pickers).
+        if (Input.IsKeyboardFocusWithin && Filter.Length > 0 && !Dropdown.IsOpen)
+            Dropdown.IsOpen = true;
     }
 
     private void RefreshOptions()
     {
         var list = new List<string>();
-        string keyword = Input.Text.Trim();
+        string filter = Filter;
         foreach (string name in TraitData.Names)
         {
-            if (keyword.Length == 0 || name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            if (filter.Length == 0 || name.Contains(filter, StringComparison.OrdinalIgnoreCase))
                 list.Add(name);
         }
         Options.ItemsSource = list;
-        if (keyword.Length > 0 && !Dropdown.IsOpen)
-            Dropdown.IsOpen = true;
     }
 
-    private void Input_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    private void Input_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         RefreshOptions();
         Dropdown.IsOpen = true;

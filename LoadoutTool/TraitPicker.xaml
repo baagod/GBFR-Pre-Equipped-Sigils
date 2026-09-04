@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <TextBox x:Name="Input" TextChanged="Input_TextChanged"
-                 GotKeyboardFocus="Input_GotKeyboardFocus"
+                 PreviewMouseDown="Input_PreviewMouseDown"
                  LostKeyboardFocus="Input_LostKeyboardFocus" />
         <TextBlock x:Name="Placeholder" Text="搜索因子并筛选列表"
                    Foreground="Gray" IsHitTestVisible="False"
