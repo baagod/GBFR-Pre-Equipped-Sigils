@@ -180,6 +180,7 @@ public sealed class Mod : IMod
 
         _tickTimer?.Dispose();
         _tickTimer = null;
+        Hotkey.Shutdown();
         if (_nativeCoreActive)
         {
             _nativeCoreActive = false;

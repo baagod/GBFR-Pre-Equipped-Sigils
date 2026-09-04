@@ -110,7 +110,7 @@ TemplateGemSlot{
 **规则**：
 - 每角色一个 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 起**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 与 `FindTemplateSlot` 依赖此约定）。
 - 合成槽 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **加槽位必须同步**：`native_internal.h` 的 `kTemplateSlotCount` 常量 = 槽数（循环上限 = 13 + 该值，当前 9），由 `tool-gen-loadout.ps1` 生成时同步输出。
+- **内置模板槽数（出厂预设）**：`native_internal.h` 的 `kTemplateSlotCount`（当前 9）只决定"无玩家配置时的默认槽数"；玩家配置（loadout.json）可任意 2+启用槽（≤22），**不受该常量约束**。仅当修改内置默认（模板表）时需同步该常量。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）。
@@ -174,8 +174,8 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 - **改某角色某槽的词条**：编辑 `template_loadout.cpp` 对应 `TemplateGemSlot` 的
   `trait1/trait2` hash 与等级（hash 查 `docs/gbfr-sigil-hashes.zh-CN.tsv`）→ 编译 → 部署 → 验证。
-- **加槽位**：`tool-gen-loadout.ps1` 通用槽定义追加 `TemplateGemSlot` 数据 → 重新生成
-  （数组 + `kTemplateSlotCount` 常量同步更新）→ 编译 → 部署 → 验证。
+- **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追加/调整数据 → 重新生成
+  （数组 + `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表）→ 模板表加
   `CharacterTemplate` 条目 → 编译 → 部署 → 验证。
 - **升版本**：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）。

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { MinusIcon, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
 import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey } from "../bindings/loadouttool/loadoutservice"
+
+const MAX_SLOTS = 22 // matches mod MaxSlots / native effective limit
 
 interface Slot {
   trait1: string
@@ -30,17 +32,63 @@ const GRID_COLS =
 const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
 
+/** Clamped numeric level input with a grey "/ max" suffix. */
+function LevelInput({
+  value,
+  max,
+  min = 1,
+  onLevel,
+}: {
+  value: number
+  max: number
+  min?: number
+  onLevel: (n: number) => void
+}) {
+  return (
+    <InputGroup className="w-20 shrink-0">
+      <InputGroupInput
+        type="number"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => {
+          const n = Math.max(min, Math.floor(Math.min(Number(e.target.value), max)))
+          onLevel(n)
+          if (e.target.value !== String(n)) e.target.value = String(n)
+        }}
+        className="py-0 pb-px text-center leading-[36px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      <InputGroupAddon align="inline-end" className="text-[#a0a0a0] tabular-nums">
+        / {max}
+      </InputGroupAddon>
+    </InputGroup>
+  )
+}
+
+function normalizeSlot(raw: unknown): Slot {
+  const s = (raw ?? {}) as Partial<Slot>
+  return {
+    trait1: typeof s.trait1 === "string" ? s.trait1 : "",
+    level1: Number.isFinite(s.level1) ? (s.level1 as number) : 15,
+    trait2: typeof s.trait2 === "string" ? s.trait2 : "",
+    level2: Number.isFinite(s.level2) ? (s.level2 as number) : (s.trait2 ? 15 : 0),
+    enabled: s.enabled !== false,
+  }
+}
+
 export default function App() {
   const [traits, setTraits] = useState<Trait[]>([])
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
-  const [hideKey, setHideKey] = useState(0x70) // F1 default
+  const [hideKey, setHideKey] = useState(0x70) // F1 default (matches mod default)
   // First render + first load must not write loadout.json: the preset stays
   // active until the user actually edits something.
   const skipSave = useRef(true)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     ;(async () => {
+      // Independent loads: one broken file must not block the rest.
       try {
         const traitJson = await LoadTraits()
         setTraits(
@@ -48,25 +96,89 @@ export default function App() {
             (t) => ({ nameZh: t.nameZh, maxLevel: t.maxLevel ?? 15 })
           )
         )
-        const configJson = await LoadConfig()
-        skipSave.current = true
-        setSlots(JSON.parse(configJson).slots ?? [])
-        setHideKey(await GetHotkey())
       } catch (e) {
-        setStatus(`加载失败：${e}`)
+        setStatus(`词条字典加载失败：${e}`)
+      }
+      try {
+        const configJson = await LoadConfig()
+        const parsed = JSON.parse(configJson)
+        const rawSlots = Array.isArray(parsed?.slots) ? parsed.slots : []
+        skipSave.current = true
+        setSlots(rawSlots.map(normalizeSlot))
+      } catch (e) {
+        setStatus(`配装加载失败：${e}`)
+      }
+      try {
+        setHideKey(await GetHotkey())
+      } catch {
+        // keep F1 default
       }
     })()
   }, [])
 
-  // The hide key is the SAME key as the mod's menu hotkey (default F8):
-  // pressed in the tool it minimises the window; pressed in the game it
-  // brings the tool back. The hide is deferred until AFTER the key-up so
-  // the press is fully consumed here and never leaks to the game window.
+  const traitMax = useMemo(
+    () => new Map(traits.map((t) => [t.nameZh, t.maxLevel] as const)),
+    [traits]
+  )
+  const maxOf = (name: string) => traitMax.get(name) ?? 15
+  const traitNames = traits.map((t) => t.nameZh)
+
+  const updateSlot = (index: number, patch: Partial<Slot>) => {
+    setSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)))
+  }
+
+  const addSlot = () => {
+    if (slots.length >= MAX_SLOTS) return
+    setSlots((prev) => [...prev, { trait1: "", level1: 15, trait2: "", level2: 15, enabled: true }])
+  }
+
+  const removeSlot = (index: number) => {
+    setSlots((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const save = async () => {
+    const unknown = slots.filter(
+      (s) =>
+        (s.trait1 !== "" && !traitMax.has(s.trait1)) ||
+        (s.trait2 !== "" && !traitMax.has(s.trait2))
+    )
+    if (unknown.length > 0) {
+      const names = unknown.map((s) => s.trait1 || s.trait2).join("、")
+      setStatus(`存在字典外的词条（未保存）：${names}`)
+      return
+    }
+    try {
+      await SaveLoadout(JSON.stringify({ slots }, null, 2))
+      setStatus(`已自动保存 ${slots.length} 槽`)
+    } catch (e) {
+      setStatus(`自动保存失败：${e}`)
+    }
+  }
+
+  // Auto-save on edits (300 ms debounce; first load skips writing once).
+  useEffect(() => {
+    if (skipSave.current) {
+      skipSave.current = false
+      return
+    }
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => void save(), 300)
+    return () => clearTimeout(saveTimer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots])
+
+  // The hide key is the SAME key as the mod's menu hotkey (default F1,
+  // configurable; the mod publishes it in tool-hotkey.txt). Pressed here it
+  // minimises the window; pressed in the game it brings the tool back. The
+  // hide is deferred until AFTER the key-up so the press is fully consumed
+  // here and never leaks to the game window.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     const match = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
     const onKeyDown = (e: KeyboardEvent) => {
-      if (match(e)) e.preventDefault()
+      if (!match(e)) return
+      clearTimeout(timer)
+      e.preventDefault()
     }
     const onKeyUp = (e: KeyboardEvent) => {
       if (!match(e)) return
@@ -81,41 +193,6 @@ export default function App() {
       clearTimeout(timer)
     }
   }, [hideKey])
-
-  const maxOf = (name: string) => traits.find((t) => t.nameZh === name)?.maxLevel ?? 15
-  const traitNames = traits.map((t) => t.nameZh)
-
-  const updateSlot = (index: number, patch: Partial<Slot>) => {
-    setSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)))
-  }
-
-  const addSlot = () => {
-    if (slots.length >= 24) return
-    setSlots((prev) => [...prev, { trait1: "", level1: 15, trait2: "", level2: 15, enabled: true }])
-  }
-
-  const removeSlot = (index: number) => {
-    setSlots((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const save = async () => {
-    try {
-      await SaveLoadout(JSON.stringify({ slots }, null, 2))
-      setStatus(`已自动保存 ${slots.length} 槽`)
-    } catch (e) {
-      setStatus(`自动保存失败：${e}`)
-    }
-  }
-
-  // Auto-save on every edit; the first load skips writing once.
-  useEffect(() => {
-    if (skipSave.current) {
-      skipSave.current = false
-      return
-    }
-    void save()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slots])
 
   return (
     <div className="fixed inset-0 flex flex-col">
@@ -146,23 +223,11 @@ export default function App() {
                 placeholder="选择因子"
                 onSelect={(v) => updateSlot(index, { trait1: v, level1: Math.min(15, maxOf(v)) })}
               />
-              <InputGroup className="w-20 shrink-0">
-                <InputGroupInput
-                  type="number"
-                  min={1}
-                  max={maxOf(slot.trait1)}
-                  value={slot.level1}
-                  onChange={(e) => {
-                    const n = Math.min(Number(e.target.value), maxOf(slot.trait1))
-                    updateSlot(index, { level1: n })
-                    if (e.target.value !== String(n)) e.target.value = String(n)
-                  }}
-                  className="py-0 pb-px text-center leading-[36px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <InputGroupAddon align="inline-end" className="text-[#a0a0a0] tabular-nums">
-                  / {maxOf(slot.trait1)}
-                </InputGroupAddon>
-              </InputGroup>
+              <LevelInput
+                value={slot.level1}
+                max={maxOf(slot.trait1)}
+                onLevel={(n) => updateSlot(index, { level1: n })}
+              />
             </div>
             <div className="flex min-w-0 items-center gap-1.5">
               <TraitPicker
@@ -172,23 +237,12 @@ export default function App() {
                 noneOption
                 onSelect={(v) => updateSlot(index, { trait2: v, level2: v ? Math.min(15, maxOf(v)) : 0 })}
               />
-              <InputGroup className="w-20 shrink-0">
-                <InputGroupInput
-                  type="number"
-                  min={1}
-                  max={maxOf(slot.trait2)}
-                  value={slot.level2}
-                  onChange={(e) => {
-                    const n = Math.min(Number(e.target.value), maxOf(slot.trait2))
-                    updateSlot(index, { level2: n })
-                    if (e.target.value !== String(n)) e.target.value = String(n)
-                  }}
-                  className="py-0 pb-px text-center leading-[36px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <InputGroupAddon align="inline-end" className="text-[#a0a0a0] tabular-nums">
-                  / {maxOf(slot.trait2)}
-                </InputGroupAddon>
-              </InputGroup>
+              <LevelInput
+                value={slot.level2}
+                max={maxOf(slot.trait2)}
+                min={slot.trait2 ? 1 : 0}
+                onLevel={(n) => updateSlot(index, { level2: n })}
+              />
             </div>
             <div>
               <Button variant="outline" size="icon" onClick={() => removeSlot(index)}>
@@ -201,7 +255,12 @@ export default function App() {
 
       <div className="flex shrink-0 items-center gap-3 border-t bg-background p-4">
         <span className="truncate text-sm text-muted-foreground">{status}</span>
-        <Button variant="outline" className="ml-auto" onClick={addSlot}>
+        <Button
+          variant="outline"
+          className="ml-auto"
+          onClick={addSlot}
+          disabled={slots.length >= MAX_SLOTS}
+        >
           <Plus className="h-4 w-4" /> 添加槽位
         </Button>
       </div>

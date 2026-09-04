@@ -8,6 +8,8 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"syscall"
+	"unsafe"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -17,6 +19,41 @@ var assets embed.FS
 
 var app *application.App
 var win *application.WebviewWindow
+
+const mutexName = "Local\\GBFRPreEquippedSigilsTool"
+
+var (
+	user32                         = syscall.NewLazyDLL("user32.dll")
+	procFindWindowW                = user32.NewProc("FindWindowW")
+	procPostMessageW               = user32.NewProc("PostMessageW")
+	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
+	procShowWindow                 = user32.NewProc("ShowWindow")
+	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
+	procCreateMutexW               = kernel32.NewProc("CreateMutexW")
+	procGetLastError               = kernel32.NewProc("GetLastError")
+	procReleaseMutex               = kernel32.NewProc("ReleaseMutex")
+)
+
+// ensureSingleInstance: second launches activate the existing window and exit.
+func ensureSingleInstance() (release func()) {
+	handle, _, _ := procCreateMutexW.Call(0, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(mutexName))))
+	if handle == 0 {
+		return func() {}
+	}
+	if err, _, _ := procGetLastError.Call(); err == 183 { // ERROR_ALREADY_EXISTS
+		title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
+		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
+		if hwnd != 0 {
+			procShowWindow.Call(hwnd, 5)            // SW_SHOW
+			procPostMessageW.Call(hwnd, 0x8010, 0, 0) // internal show (repaint-safe)
+			procSetForegroundWindow.Call(hwnd)
+		}
+		os.Exit(0)
+	}
+	return func() {
+		procReleaseMutex.Call(handle)
+	}
+}
 
 // trayIcon returns a simple 16x16 icon (grey rounded square) for the tray.
 func trayIcon() []byte {
@@ -35,6 +72,9 @@ func trayIcon() []byte {
 }
 
 func main() {
+	releaseMutex := ensureSingleInstance()
+	defer releaseMutex()
+
 	// "--minimized" (used by old pre-warm) starts hidden; kept for compat.
 	hidden := false
 	for _, arg := range os.Args {
@@ -53,19 +93,19 @@ func main() {
 		},
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
-			// X button = hide to tray (window stays alive; the in-game hotkey
-			// restores it via the WM_APP+0x10 show request).
+			// X button = hide to tray; WM_APP+0x10 = internal show request.
+			// A WebviewWindow HWND accessor does not exist in beta.16, so we
+			// filter by message instead: both messages are window-specific.
 			WndProcInterceptor: func(hwnd uintptr, msg uint32, wParam, lParam uintptr) (uintptr, bool) {
+				if win == nil {
+					return 0, false
+				}
 				if msg == 0x0010 { // WM_CLOSE
-					if win != nil {
-						win.Hide()
-					}
+					win.Hide()
 					return 0, true
 				}
 				if msg == 0x8010 { // WM_APP+0x10: internal show request (repaint-safe)
-					if win != nil {
-						win.Show()
-					}
+					win.Show()
 					return 0, true
 				}
 				return 0, false

@@ -2,9 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
+
+// MaxSlots mirrors the managed/native effective limit (must stay in sync).
+const MaxSlots = 22
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
 // Protocol is shared with the mod: traits.json (dictionary) and loadout.json
@@ -21,34 +27,15 @@ func (s *LoadoutService) MinimiseApp() {
 }
 
 // GetHotkey returns the configured menu hotkey as a virtual key code.
-// The mod persists it in HotkeyConfig.json (Reloaded-II configurable, enum
-// "MenuHotkey"). Missing/unparseable config falls back to F1 (0x70).
+// The mod publishes it in tool-hotkey.txt (mod directory, next to the exe);
+// missing file falls back to F1 (0x70).
 func (s *LoadoutService) GetHotkey() (int, error) {
-	data, err := os.ReadFile(filepath.Join(exeDir(), "HotkeyConfig.json"))
+	data, err := os.ReadFile(filepath.Join(exeDir(), "tool-hotkey.txt"))
 	if err != nil {
 		return 0x70, nil
 	}
-	var cfg struct {
-		MenuHotkey json.RawMessage `json:"MenuHotkey"`
-	}
-	if err := json.Unmarshal(data, &cfg); err != nil || len(cfg.MenuHotkey) == 0 {
-		return 0x70, nil
-	}
-	var numeric int
-	if err := json.Unmarshal(cfg.MenuHotkey, &numeric); err == nil {
-		return numeric, nil
-	}
-	var name string
-	if err := json.Unmarshal(cfg.MenuHotkey, &name); err == nil {
-		keyCodes := map[string]int{
-			"F1": 0x70, "F2": 0x71, "F3": 0x72, "F4": 0x73,
-			"F5": 0x74, "F6": 0x75, "F7": 0x76, "F8": 0x77,
-			"F9": 0x78, "F10": 0x79, "F11": 0x7A, "F12": 0x7B,
-			"Insert": 0x2D, "Delete": 0x2E, "Home": 0x24, "End": 0x23,
-		}
-		if vk, ok := keyCodes[name]; ok {
-			return vk, nil
-		}
+	if vk, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && vk > 0 {
+		return vk, nil
 	}
 	return 0x70, nil
 }
@@ -92,13 +79,26 @@ func (s *LoadoutService) LoadConfig() (string, error) {
 }
 
 // SaveLoadout writes the player configuration (same schema as the mod reads).
+// Atomic write (temp + rename) so the mod's 250ms mtime tick never sees a
+// half-written file.
 func (s *LoadoutService) SaveLoadout(config string) error {
 	var parsed map[string][]loadoutSlot
 	if err := json.Unmarshal([]byte(config), &parsed); err != nil {
 		return err
 	}
-	return os.WriteFile(
-		filepath.Join(exeDir(), "loadout.json"),
-		[]byte(config),
-		0644)
+	slots := parsed["slots"]
+	if len(slots) > MaxSlots {
+		return fmt.Errorf("too many slots: %d (max %d)", len(slots), MaxSlots)
+	}
+	for i, slot := range slots {
+		if slot.Level1 < 0 || slot.Level1 > 200 || slot.Level2 < 0 || slot.Level2 > 200 {
+			return fmt.Errorf("slot %d: level out of range", i+1)
+		}
+	}
+	path := filepath.Join(exeDir(), "loadout.json")
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, []byte(config), 0644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }
