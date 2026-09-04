@@ -4,6 +4,7 @@
     <Grid>
         <TextBox x:Name="Input" TextChanged="Input_TextChanged"
                  PreviewMouseDown="Input_PreviewMouseDown"
+                 PreviewKeyDown="Input_PreviewKeyDown"
                  LostKeyboardFocus="Input_LostKeyboardFocus" />
         <TextBlock x:Name="Placeholder" Text="搜索因子并筛选列表"
                    Foreground="Gray" IsHitTestVisible="False"

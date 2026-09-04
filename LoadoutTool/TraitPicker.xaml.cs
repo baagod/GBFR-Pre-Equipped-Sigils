@@ -49,10 +49,17 @@ public partial class TraitPicker : UserControl
         Placeholder.Visibility = Input.Text.Length == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
-        // Only pop the dropdown while the user is actually typing in this box
-        // (programmatic initialization must never pop 16 pickers).
-        if (Input.IsKeyboardFocusWithin && Filter.Length > 0 && !Dropdown.IsOpen)
+    }
+
+    private void Input_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // User is typing: show the filtered list. Programmatic text changes
+        // (initialization) never open the popup.
+        if (!Dropdown.IsOpen)
+        {
+            RefreshOptions();
             Dropdown.IsOpen = true;
+        }
     }
 
     private void RefreshOptions()
