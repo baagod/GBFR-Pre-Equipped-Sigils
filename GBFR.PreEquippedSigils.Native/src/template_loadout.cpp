@@ -333,27 +333,46 @@ constexpr CharacterTemplate kDefaultTemplates[] = {
 
 }
 
-const CharacterTemplate* FindCharacterTemplate(uint32_t character_hash) noexcept
+std::shared_mutex g_template_mutex;
+std::array<CharacterTemplate, kRuntimeTemplateCapacity> g_runtime_templates{};
+
+constexpr size_t kBuiltinTemplateCount =
+   sizeof(kDefaultTemplates) / sizeof(kDefaultTemplates[0]);
+
+void InitializeRuntimeTemplates()
 {
+   std::unique_lock lock(g_template_mutex);
+   size_t index = 0;
    for (const CharacterTemplate& entry : kDefaultTemplates)
    {
-      if (entry.character_hash == character_hash)
-         return &entry;
+      if (index >= g_runtime_templates.size())
+         break;
+      g_runtime_templates[index++] = entry;
    }
-   return nullptr;
 }
 
-const TemplateGemSlot* FindTemplateSlot(
-   uint32_t character_hash, int virtual_slot) noexcept
+bool TryGetRuntimeSlot(
+   uint32_t character_hash, int virtual_slot, TemplateGemSlot& out) noexcept
 {
-   if (virtual_slot < 0 || virtual_slot >= kVirtualSlotCapacity)
-      return nullptr;
-   const CharacterTemplate* character = FindCharacterTemplate(character_hash);
-   if (character == nullptr)
-      return nullptr;
-   const TemplateGemSlot& slot =
-      character->slots[static_cast<size_t>(virtual_slot)];
-   return slot.gem_id == 0 ? nullptr : &slot;
+   if (virtual_slot < 0 ||
+       virtual_slot >= g_virtual_slot_count.load(std::memory_order_acquire))
+      return false;
+   try
+   {
+      std::shared_lock lock(g_template_mutex);
+      for (const CharacterTemplate& entry : g_runtime_templates)
+      {
+         if (entry.character_hash == character_hash)
+         {
+            out = entry.slots[static_cast<size_t>(virtual_slot)];
+            return out.gem_id != 0;
+         }
+      }
+   }
+   catch (...)
+   {
+   }
+   return false;
 }
 
 void InstallDefaultTemplateSelections()
@@ -361,20 +380,21 @@ void InstallDefaultTemplateSelections()
    size_t installed = 0;
    {
       std::unique_lock lock(g_selection_mutex);
-      for (const CharacterTemplate& character : kDefaultTemplates)
+      for (const CharacterTemplate& character : g_runtime_templates)
       {
+         if (character.character_hash == 0)
+            continue;
          auto& slots = g_character_selections[character.character_hash];
+         for (int index = 0; index < kVirtualSlotCapacity; ++index)
+            slots[static_cast<size_t>(index)] = 0;
          for (int index = 0; index < kVirtualSlotCapacity; ++index)
          {
             const TemplateGemSlot& template_slot =
                character.slots[static_cast<size_t>(index)];
             if (template_slot.gem_id == 0)
                break; // The table is dense from virtual slot 0.
-            if (slots[static_cast<size_t>(index)] == 0)
-            {
-               slots[static_cast<size_t>(index)] = MakeTemplateSlotId(index);
-               ++installed;
-            }
+            slots[static_cast<size_t>(index)] = MakeTemplateSlotId(index);
+            ++installed;
          }
       }
    }
@@ -391,28 +411,77 @@ bool TryCopyTemplateGem(
 
    const int virtual_slot =
       static_cast<int>(selected_slot_id - kTemplateSlotIdBase);
-   const TemplateGemSlot* template_slot =
-      FindTemplateSlot(character_hash, virtual_slot);
-   if (template_slot == nullptr)
+   TemplateGemSlot template_slot{};
+   if (!TryGetRuntimeSlot(character_hash, virtual_slot, template_slot))
       return false;
 
    // Character-restricted template gems (e.g. awakening / war-spirit sigils)
    // must still honor the compatibility table. Unrestricted gems pass for any
    // character (required hash == 0).
    if (!IsCharacterCompatible(
-          GetRequiredCharacterHash(template_slot->gem_id), character_hash))
+          GetRequiredCharacterHash(template_slot.gem_id), character_hash))
       return false;
 
    GemData gem{};
-   gem.trait1 = template_slot->trait1;
-   gem.trait1_level = template_slot->trait1_level;
-   gem.trait2 = template_slot->trait2;
-   gem.trait2_level = template_slot->trait2_level;
-   gem.gem_id = template_slot->gem_id;
+   gem.trait1 = template_slot.trait1;
+   gem.trait1_level = template_slot.trait1_level;
+   gem.trait2 = template_slot.trait2;
+   gem.trait2_level = template_slot.trait2_level;
+   gem.gem_id = template_slot.gem_id;
    gem.worn_by = kUnwornCharacterHash;
-   gem.sigil_level = template_slot->sigil_level;
+   gem.sigil_level = template_slot.sigil_level;
    gem.slot_id = selected_slot_id;
    gem.flags = 0;
    return SafeCopyToOutput(gem, output);
+}
+
+bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
+{
+   const bool use_builtin = slots == nullptr || count <= 0;
+   const int32_t effective_count =
+      use_builtin
+         ? kTemplateSlotCount
+         : (count > kVirtualSlotCapacity ? kVirtualSlotCapacity : count);
+   const int32_t previous_count = g_virtual_slot_count.load(std::memory_order_acquire);
+   if (effective_count != previous_count)
+   {
+      if (g_hooks_ready.load(std::memory_order_acquire) &&
+          g_layout_ready.load(std::memory_order_acquire))
+      {
+         if (!ApplyTraitLoopLimits(effective_count))
+            return false;
+      }
+      g_virtual_slot_count.store(effective_count, std::memory_order_release);
+   }
+
+   {
+      std::unique_lock lock(g_template_mutex);
+      size_t builtin_index = 0;
+      for (CharacterTemplate& character : g_runtime_templates)
+      {
+         if (character.character_hash == 0)
+            continue;
+         if (use_builtin)
+         {
+            if (builtin_index < kBuiltinTemplateCount)
+               character = kDefaultTemplates[builtin_index++];
+            else
+               character = CharacterTemplate{};
+            continue;
+         }
+         for (int32_t slot_index = 0; slot_index < kVirtualSlotCapacity; ++slot_index)
+         {
+            character.slots[static_cast<size_t>(slot_index)] =
+               slot_index < effective_count
+                  ? slots[static_cast<size_t>(slot_index)]
+                  : TemplateGemSlot{};
+         }
+      }
+   }
+
+   InstallDefaultTemplateSelections();
+   if (g_hooks_ready.load(std::memory_order_acquire))
+      ScheduleSelectedStatusRebind();
+   return true;
 }
 }

@@ -481,6 +481,18 @@ void ShutdownHooks()
    DisableGameplayHooksAndRestore();
 }
 
+bool ApplyTraitLoopLimits(int32_t virtual_slot_count) noexcept
+{
+   const uint8_t expanded_slot_count =
+      static_cast<uint8_t>(kNativeInternalSlotCount + virtual_slot_count);
+   return WriteByte(
+             g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
+             expanded_slot_count) &&
+      WriteByte(
+         g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
+         expanded_slot_count);
+}
+
 bool InstallHooks()
 {
    const uint64_t preflight_started = BeginStartupPhase("required-byte-rva-preflight");
@@ -538,17 +550,8 @@ bool InstallHooks()
       return false;
    }
 
-   const uint8_t expanded_slot_count = static_cast<uint8_t>(GetExpandedInternalSlotCount());
    const uint64_t loop_patch_started = BeginStartupPhase("trait-loop-limit-patches");
-   const bool loop_patches_ready =
-      WriteByte(
-         g_image_base +
-            g_game_layout.trait_apply_loop_limit_immediate_rva,
-         expanded_slot_count) &&
-      WriteByte(
-         g_image_base +
-            g_game_layout.trait_category_loop_limit_immediate_rva,
-         expanded_slot_count);
+   const bool loop_patches_ready = ApplyTraitLoopLimits(GetVirtualSlotCount());
    CompleteStartupPhase(
       "trait-loop-limit-patches", loop_patch_started, loop_patches_ready);
    if (!loop_patches_ready)

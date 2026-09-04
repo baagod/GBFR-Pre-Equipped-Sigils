@@ -14,7 +14,7 @@ namespace GBFR.PreEquippedSigils;
 /// </summary>
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 15;
+    internal const int AbiVersion = 16;
 
     private const string LibraryName = "GBFR.PreEquippedSigils.Native.dll";
     private static readonly object ResolverLock = new();
@@ -89,6 +89,14 @@ internal static unsafe partial class NativeCore
     }
 
     internal static void Tick() => NativeTick();
+
+    /// <summary>
+    /// Applies a custom loadout (null restores the built-in template).
+    /// </summary>
+    internal static bool ApplyCustomLoadout(TemplateSlotNative[]? slots)
+    {
+        return NativeSetCustomLoadout(slots, (uint)(slots?.Length ?? 0)) != 0;
+    }
 
     internal static void Shutdown()
     {

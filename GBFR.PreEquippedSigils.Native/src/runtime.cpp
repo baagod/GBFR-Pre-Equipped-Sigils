@@ -73,6 +73,7 @@ void Initialize()
 
    const uint64_t activation_started =
       BeginStartupPhase("template-selection-install");
+   InitializeRuntimeTemplates();
    InstallDefaultTemplateSelections();
    CompleteStartupPhase(
       "template-selection-install", activation_started, true);

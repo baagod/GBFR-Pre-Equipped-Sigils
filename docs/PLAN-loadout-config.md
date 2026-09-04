@@ -18,7 +18,7 @@ mod 运行中**热更新**生效。目的：终结"能不能加 xx / X 顶满"�
 |---|---|---|
 | UI 形态 | **独立 WPF-UI exe**（C# .NET 8，自包含） | 不做 ImGui overlay（原版模式，几万行）；不做 Reloaded-II 静态配置页（无动态行）；不做 HTML 套壳（原生控件足够） |
 | 与 mod 关联 | **共享文件协议**：mod 目录 `loadout.json` + mtime 检测 | 零进程间通信；任一方崩溃无影响；玩家也可手改 |
-| 工具入口 | **F8 热键**（仅游戏前台）→ `Process.Start(LoadoutTool.exe --mod-dir <dir>)` | 玩家视角等同原版 F8，实现轻 |
+| 工具入口 | **热键（默认 F8，可自定义）**——仅游戏前台 → `Process.Start(LoadoutTool.exe --mod-dir <dir>)`；键位经 **Reloaded-II 配置页**（静态枚举字段：F6-F11/Insert）设置，防热键冲突 | 玩家视角等同原版 F8；键位设置=配置页静态字段（其适用场景）；`OnConfigurationUpdated` 热改键位 |
 | 热更新 | 现有链：tick 检测 → 运行时模板替换 → `ScheduleSelectedStatusRebind`/`RequestHotApply` → Generation 日志 | 全部现有机件复用 |
 | 数据流 | `loadout.json`（中文词条名）→ 托管层解析校验 → **ABI v16** `GBFR20_SetCustomLoadout` → native 运行时模板表 | 校验/错误日志放 .NET；native 仅存数据 |
 | 槽数 | 运行时化（`GetVirtualSlotCount()` 改读运行时值）；变化时**运行中重 patch 两处循环上限字节**（现有 WriteByte+读回校验） | 架构红利：现有函数已参数化；hot-apply 已证明运行中可改 |
@@ -70,7 +70,7 @@ mod 运行中**热更新**生效。目的：终结"能不能加 xx / X 顶满"�
 
 **T1 验收**：构建 0w0e；手写 loadout.json（示例）→ 游戏内：日志出现
 `Generation M ... copied N/N`；装备界面/训练场换词条生效；删除配置回退默认；
-错词条名日志定位；**不重启**改动即在（mtime 热检测）。
+错词条名日志定位；**不重启** 改动即在（mtime 热检测）。
 
 ## 5. T2 任务清单（工具 + 热键，预期 1.5-2 天）
 
@@ -79,7 +79,8 @@ mod 运行中**热更新**生效。目的：终结"能不能加 xx / X 顶满"�
 | T2.1 | `LoadoutTool/`（新子工程） | `net8.0-windows` + UseWPF + NuGet `WPF-UI`（Dark 主题）；`MainWindow : FluentWindow`（无边框圆角标题栏白送） |
 | T2.2 | UI 实现 | `LoadoutSlot`（Enabled/Trait1/Level1/Trait2/Level2）→ `ObservableCollection<LoadoutSlot>` → `ItemsControl + DataTemplate`：词条下拉（traits.json 中文名）+等级框 \| 词条下拉+等级框 \| ✓ −；"添加槽位"按钮；保存按钮 |
 | T2.3 | 保存逻辑 | 命令行 `--mod-dir`（mod 拉起时传入）→ 写 `loadout.json`（同 3.1 格式）；未带参 → 提示并兜底默认路径 |
-| T2.4 | `GBFR.PreEquippedSigils/Hotkey.cs`（新，~30 行） | P/Invoke `SetWindowsHookEx(WH_KEYBOARD_LL)`；仅当前台进程是游戏（GetForegroundWindow→进程名）且 F8 按下沿 → `Process.Start(LoadoutTool.exe --mod-dir <modDir>)` |
+| T2.4 | `GBFR.PreEquippedSigils/Hotkey.cs`（新） | P/Invoke `SetWindowsHookEx(WH_KEYBOARD_LL)`；仅当前台进程是游戏（GetForegroundWindow→进程名）且按**配置键位**（默认 F8）按下沿 → `Process.Start(LoadoutTool.exe --mod-dir <modDir>)` |
+| T2.4b | `GBFR.PreEquippedSigils/Config.cs`（新） | Reloaded-II 标准配置：`Config`（enum Hotkey，默认 F8）+ `ConfiguratorMixin`；Mod.cs 读取并转发给 Hotkey.cs；`OnConfigurationUpdated` 热更新键位 |
 | T2.5 | `build-release.ps1` | 工具 self-contained 单 exe → 打入 mod zip（mod 目录内 exe，Reloaded-II 无冲突） |
 
 **T2 验收**：工具 UI 完整可用；游戏内 F8 弹出（仅游戏前台）；改后保存→T1 热更新生效；

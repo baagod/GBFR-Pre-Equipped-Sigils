@@ -58,3 +58,19 @@ uint32_t GBFR20_CALL GBFR20_CopyRuntimeMessage(char* buffer, uint32_t buffer_siz
    }
    return required_size > UINT32_MAX ? UINT32_MAX : static_cast<uint32_t>(required_size);
 }
+
+int32_t GBFR20_CALL GBFR20_SetCustomLoadout(
+   const GBFR20_TemplateSlot* slots, uint32_t count)
+{
+   if (g_shutting_down.load(std::memory_order_acquire))
+      return 0;
+   EnsureInitialized();
+   if (!g_hooks_ready.load(std::memory_order_acquire))
+      return 0;
+   // GBFR20_TemplateSlot is layout-identical to the native TemplateGemSlot
+   // (packed 1, same field order, 0x18 bytes); only read, never modified.
+   const bool applied = ApplyCustomLoadout(
+      reinterpret_cast<const TemplateGemSlot*>(slots),
+      static_cast<int32_t>(count));
+   return applied ? 1 : 0;
+}

@@ -94,6 +94,14 @@ struct CharacterTemplate
    std::array<TemplateGemSlot, kVirtualSlotCapacity> slots{};
 };
 
+// Runtime template table: initialized from the built-in loadout and replaced
+// by GBFR20_SetCustomLoadout at runtime. Readers copy values under the shared
+// mutex (same pattern as GetSelection) so detour paths stay lock-safe.
+inline constexpr size_t kRuntimeTemplateCapacity = 32;
+extern std::shared_mutex g_template_mutex;
+extern std::array<CharacterTemplate, kRuntimeTemplateCapacity> g_runtime_templates;
+extern std::atomic<int32_t> g_virtual_slot_count;
+
 inline constexpr bool IsCaptainCharacterHash(uint32_t character_hash) noexcept
 {
    return character_hash == kGranCharacterHash || character_hash == kDjeetaCharacterHash;
@@ -322,10 +330,12 @@ std::array<uint32_t, kVirtualSlotCapacity> GetSelection(uint32_t character_hash)
 uint32_t RequestHotApply(uint32_t character_hash);
 void ProcessPendingHotApply();
 
-const CharacterTemplate* FindCharacterTemplate(uint32_t character_hash) noexcept;
-const TemplateGemSlot* FindTemplateSlot(uint32_t character_hash, int virtual_slot) noexcept;
+bool TryGetRuntimeSlot(uint32_t character_hash, int virtual_slot, TemplateGemSlot& out) noexcept;
+void InitializeRuntimeTemplates();
+bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept;
 void InstallDefaultTemplateSelections();
 bool TryCopyTemplateGem(uint32_t character_hash, uint32_t selected_slot_id, void* output) noexcept;
+bool ApplyTraitLoopLimits(int32_t virtual_slot_count) noexcept;
 
 void ScheduleSelectedStatusRebind();
 bool ResolveGameLayout();

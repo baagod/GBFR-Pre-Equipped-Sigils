@@ -1,0 +1,7 @@
+{
+  "slots": [
+    { "trait1": "追击", "level1": 15, "trait2": "迅捷能力", "level2": 15, "enabled": true },
+    { "trait1": "怒涛", "level1": 15, "trait2": "激昂", "level2": 15, "enabled": true },
+    { "trait1": "豪胆", "level1": 15, "enabled": true }
+  ]
+}

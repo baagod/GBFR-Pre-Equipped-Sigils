@@ -75,6 +75,7 @@ public sealed class Mod : IMod
             {
                 Log($"Native core loaded without hooks: {NativeCore.GetRuntimeMessage()}");
             }
+            LoadoutConfig.Initialize(modDirectory, Log);
 
             _nativeCoreActive = true;
             _tickTimer = new System.Threading.Timer(
@@ -82,6 +83,7 @@ public sealed class Mod : IMod
                 {
                     try
                     {
+                        LoadoutConfig.Tick(Log);
                         NativeCore.Tick();
                     }
                     catch

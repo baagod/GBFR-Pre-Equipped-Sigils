@@ -31,9 +31,11 @@ std::atomic_uint64_t g_lifecycle_rebind_signature{0};
 std::atomic_uint32_t g_lifecycle_signature_attempts{0};
 std::atomic_uint64_t g_lifecycle_rebind_not_before_ms{0};
 
+std::atomic<int32_t> g_virtual_slot_count{kTemplateSlotCount};
+
 int GetVirtualSlotCount() noexcept
 {
-   return kTemplateSlotCount;
+   return g_virtual_slot_count.load(std::memory_order_acquire);
 }
 
 int GetExpandedInternalSlotCount() noexcept
