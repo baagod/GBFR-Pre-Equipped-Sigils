@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace LoadoutTool;
 
@@ -73,18 +74,29 @@ public partial class TraitPicker : UserControl
     }
 
     /// <summary>
-    /// Applies a filter and restores the edited text afterwards. An editable
-    /// ComboBox resets its Text to the first list item whenever the Items
-    /// collection changes and the current text is not an item (that is how
-    /// the list's first trait "7net" leaked into every picker).
+    /// Applies a filter and keeps the edited text. An editable ComboBox resets
+    /// its Text to the first list item whenever the Items collection changes
+    /// and the current text is not an item (that is how the first trait
+    /// "7net" leaked into every picker). The reset happens asynchronously, so
+    /// the restore is posted to the dispatcher as well.
     /// </summary>
     private void RefreshKeepText(System.Predicate<object>? filter)
     {
         string previous = Picker.Text;
         _view.Filter = filter;
         _view.Refresh();
+        RestoreText(previous);
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Background,
+            new Action(() => RestoreText(previous)));
+    }
+
+    private void RestoreText(string text)
+    {
+        if (Picker.Text == text)
+            return;
         _suppressFilter = true;
-        Picker.Text = previous;
+        Picker.Text = text;
         _suppressFilter = false;
     }
 
