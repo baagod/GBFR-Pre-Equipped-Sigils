@@ -147,6 +147,12 @@ export default function App() {
     setSlots((prev) => prev.filter((_, i) => i !== index))
   }
 
+  // Header check box: select all / clear all (official Table pattern).
+  const allEnabled = slots.length > 0 && slots.every((s) => s.enabled)
+  const toggleAll = () => {
+    setSlots((prev) => prev.map((slot) => ({ ...slot, enabled: !allEnabled })))
+  }
+
   const save = async () => {
     const unknown = slots.filter(
       (s) =>
@@ -209,7 +215,9 @@ export default function App() {
     <div className="fixed inset-0 flex flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-2">
         <div className={HEADER_ROW}>
-          <div />
+          <div>
+            <Checkbox checked={allEnabled} onCheckedChange={toggleAll} aria-label="全选/反选" />
+          </div>
           <div>#</div>
           <div className="pr-2 pl-[11px]">主因子</div>
           <div className="pl-[21px]">副因子</div>
@@ -278,7 +286,12 @@ export default function App() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel variant="outline" data-autofocus autoFocus>
+            <AlertDialogCancel
+              variant="outline"
+              data-autofocus
+              autoFocus
+              className="[&:focus]:border-ring [&:focus]:ring-2 [&:focus]:ring-ring/50"
+            >
               取消
             </AlertDialogCancel>
             <AlertDialogAction
