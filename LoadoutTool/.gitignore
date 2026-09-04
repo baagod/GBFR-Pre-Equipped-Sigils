@@ -1,0 +1,9 @@
+# Wails build output
+bin/
+LoadoutTool.exe
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/bindings/
+frontend/package-lock.json

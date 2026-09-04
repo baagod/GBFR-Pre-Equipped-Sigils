@@ -1,0 +1,6 @@
+node_modules/
+dist/
+bindings/
+package-lock.json
+LoadoutTool.exe
+bin/

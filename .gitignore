@@ -11,3 +11,4 @@ dist/
 *.pdb
 *.ilk
 *.zip
+tools-test/
