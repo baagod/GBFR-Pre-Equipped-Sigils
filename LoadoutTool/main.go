@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"syscall"
+"time"
 	"unsafe"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -28,6 +29,9 @@ var (
 	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
 	procShowWindow                 = user32.NewProc("ShowWindow")
 	procIsIconic                   = user32.NewProc("IsIconic")
+	procGetWindowLong                = user32.NewProc("GetWindowLongW")
+	procSetWindowLong                = user32.NewProc("SetWindowLongW")
+	procSetLayeredWindowAttributes  = user32.NewProc("SetLayeredWindowAttributes")
 	procSetWindowPos                = user32.NewProc("SetWindowPos")
 	procKeybdEvent                  = user32.NewProc("keybd_event")
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
@@ -47,7 +51,7 @@ func ensureSingleInstance() (release func()) {
 		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
 		if hwnd != 0 {
 			procShowWindow.Call(hwnd, 5)            // SW_SHOW
-			procShowWindow.Call(hwnd, 9) // SW_RESTORE`n`t`t`t`t`tprocPostMessageW.Call(hwnd, 0x8010, 0, 0)`n`t`t`t`t`tprocKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
+			procShowWindow.Call(hwnd, 9) // SW_RESTORE`n`t`t`t`t`tprocSetWindowLong.Call(hwnd, -20, (procGetWindowLong.Call(hwnd, -20))[0]|0x80000)`n`t`t`t`t`tprocSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)`n`t`t`t`t`tprocPostMessageW.Call(hwnd, 0x8010, 0, 0)`n`t`t`t`t`tgo func() {`n`t`t`t`t`t`ttime.Sleep(150 * time.Millisecond)`n`t`t`t`t`t`tprocSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)`n`t`t`t`t`t}()`n`t`t`t`t`tprocKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
 			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
 			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
 			procSetForegroundWindow.Call(hwnd)
@@ -93,6 +97,9 @@ func main() {
 		},
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
+			// Soft compositing avoids the white GPU frame flash when a hidden
+			// WebView2 window is woken back up.
+			AdditionalBrowserArgs: []string{},
 			// X button = hide to tray; WM_APP+0x10 = internal show request.
 			// A WebviewWindow HWND accessor does not exist in beta.16, so we
 			// filter by message instead: both messages are window-specific.
@@ -104,15 +111,19 @@ func main() {
 					win.Hide()
 					return 0, true
 				}
-				if msg == 0x8010 { // WM_APP+0x10: internal show + focus
-				win.Show()
-				win.Focus()
-				return 0, true
-			}
-				if msg == 0x8011 { // WM_APP+0x11: internal restore + focus
-				win.Restore()
-				win.Show()
-				win.Focus()
+				if msg == 0x8010 { // WM_APP+0x10: internal show + focus + repaint nudge
+					win.Show()
+					win.SetSize(759, 799)
+					win.SetSize(760, 800)
+					win.Focus()
+					return 0, true
+				}
+				if msg == 0x8011 { // WM_APP+0x11: internal restore + focus + repaint nudge
+					win.Restore()
+					win.Show()
+					win.SetSize(759, 799)
+					win.SetSize(760, 800)
+					win.Focus()
 					return 0, true
 				}
 				if msg == 0x8012 { // WM_APP+0x12: hide->show bounce (repaints WebView after minimize)
@@ -129,17 +140,21 @@ func main() {
 	})
 
 	win = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:      "GBFR Pre-Equipped Sigils",
-		Width:      760,
-		Height:     800,
-		MinWidth:   760, // fully locked at 760x786
-		MaxWidth:   760,
-		MinHeight:  800,
-		MaxHeight:  800,
-		URL:        "/",
-		Hidden:     hidden,
-		BackgroundColour: application.NewRGB(10, 10, 10),
+		Title:               "GBFR Pre-Equipped Sigils",
+		Width:               760,
+		Height:              800,
+		MinWidth:            760, // fully locked at 760x800
+		MaxWidth:            760,
+		MinHeight:           800,
+		MaxHeight:           800,
+		MaximiseButtonState: application.ButtonDisabled,
+		URL:                 "/",
+		Hidden:              hidden,
+		BackgroundColour:    application.NewRGB(10, 10, 10),
 	})
+	// Force the WebView2 backing colour to the theme background so restoring
+	// a hidden window does not flash a white frame before content renders.
+	win.SetBackgroundColour(application.NewRGB(10, 10, 10))
 
 	// System tray: single click toggles the window; menu offers quit.
 	tray := app.SystemTray.New()
@@ -164,7 +179,16 @@ func main() {
 			if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
 				procPostMessageW.Call(hwnd, 0x8011, 0, 0)
 			} else {
+				// Layered fade-in: hide the white frame under alpha 0, show,
+				// then fade to opaque once content has rendered.
+				exStyle, _, _ := procGetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19)) // GWL_EXSTYLE=-20
+				procSetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19), exStyle|0x80000) // WS_EX_LAYERED
+				procSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)
 				procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+				go func() {
+					time.Sleep(150 * time.Millisecond)
+					procSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)
+				}()
 			}
 			procKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
 			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
