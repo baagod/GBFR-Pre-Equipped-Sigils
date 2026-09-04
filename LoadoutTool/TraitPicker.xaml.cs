@@ -62,19 +62,36 @@ public partial class TraitPicker : UserControl
     private void Picker_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_suppressFilter)
-        {
-            // Programmatic value writes: show the full list next open.
-            _view.Filter = null;
-            _view.Refresh();
             return;
-        }
+        // While the user edits: filter but never let WPF rewrite the text.
         string keyword = Picker.Text.Trim();
-        _view.Filter = keyword.Length == 0
+        RefreshKeepText(keyword.Length == 0
             ? null
             : item =>
                 item is string name &&
-                name.Contains(keyword, StringComparison.OrdinalIgnoreCase);
+                name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Applies a filter and restores the edited text afterwards. An editable
+    /// ComboBox resets its Text to the first list item whenever the Items
+    /// collection changes and the current text is not an item (that is how
+    /// the list's first trait "7net" leaked into every picker).
+    /// </summary>
+    private void RefreshKeepText(System.Predicate<object>? filter)
+    {
+        string previous = Picker.Text;
+        _view.Filter = filter;
         _view.Refresh();
+        _suppressFilter = true;
+        Picker.Text = previous;
+        _suppressFilter = false;
+    }
+
+    private void Picker_DropDownOpened(object sender, EventArgs e)
+    {
+        // Opening the dropdown always shows the full trait list.
+        RefreshKeepText(null);
     }
 
     private void Picker_SelectionChanged(object sender, SelectionChangedEventArgs e)
