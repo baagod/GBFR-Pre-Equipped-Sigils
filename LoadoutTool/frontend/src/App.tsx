@@ -8,6 +8,16 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey } from "../bindings/loadouttool/loadoutservice"
 
 const MAX_SLOTS = 22 // matches mod MaxSlots / native effective limit
@@ -27,7 +37,7 @@ interface Trait {
 
 /* Fixed side columns + factor columns that eat all remaining width. */
 const GRID_COLS =
-  "grid grid-cols-[2.5rem_2.5rem_minmax(0,1fr)_minmax(0,1fr)_3.5rem] items-center gap-x-2"
+  "grid grid-cols-[2.5rem_2.5rem_minmax(0,1fr)_minmax(0,1fr)_4rem] items-center gap-x-2"
 
 const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
@@ -81,6 +91,7 @@ export default function App() {
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
   const [hideKey, setHideKey] = useState(0x70) // F1 default (matches mod default)
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null)
   // First render + first load must not write loadout.json: the preset stays
   // active until the user actually edits something.
   const skipSave = useRef(true)
@@ -199,10 +210,10 @@ export default function App() {
       <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-2">
         <div className={HEADER_ROW}>
           <div />
-          <div>#</div>
-          <div>主因子</div>
-          <div>副因子</div>
-          <div>移除</div>
+          <div className="text-center">#</div>
+          <div className="pr-2 text-center">主因子</div>
+          <div className="pl-2 text-center">副因子</div>
+          <div className="text-center">操作</div>
         </div>
 
         {slots.map((slot, index) => (
@@ -216,7 +227,7 @@ export default function App() {
             <div>
               <span className="text-muted-foreground tabular-nums">{index + 1}</span>
             </div>
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1.5 pr-2">
               <TraitPicker
                 value={slot.trait1}
                 traits={traitNames}
@@ -229,7 +240,7 @@ export default function App() {
                 onLevel={(n) => updateSlot(index, { level1: n })}
               />
             </div>
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1.5 pl-2">
               <TraitPicker
                 value={slot.trait2}
                 traits={traitNames}
@@ -244,14 +255,44 @@ export default function App() {
                 onLevel={(n) => updateSlot(index, { level2: n })}
               />
             </div>
-            <div>
-              <Button variant="outline" size="icon" onClick={() => removeSlot(index)}>
+            <div className="flex justify-center">
+              <Button variant="outline" size="icon" aria-label="移除" onClick={() => setPendingRemove(index)}>
                 <MinusIcon />
               </Button>
             </div>
           </div>
         ))}
       </div>
+
+      <AlertDialog
+        open={pendingRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemove(null)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>移除槽位？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除第 {(pendingRemove ?? 0) + 1} 行槽位。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="outline" data-autofocus autoFocus>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (pendingRemove !== null) removeSlot(pendingRemove)
+                setPendingRemove(null)
+              }}
+            >
+              移除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex shrink-0 items-center gap-3 border-t bg-background p-4">
         <span className="truncate text-sm text-muted-foreground">{status}</span>
@@ -261,7 +302,7 @@ export default function App() {
           onClick={addSlot}
           disabled={slots.length >= MAX_SLOTS}
         >
-          <Plus className="h-4 w-4" /> 添加槽位
+          <Plus /> 添加槽位
         </Button>
       </div>
     </div>
