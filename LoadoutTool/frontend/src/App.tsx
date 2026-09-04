@@ -37,7 +37,7 @@ interface Trait {
 
 /* Fixed side columns + factor columns that eat all remaining width. */
 const GRID_COLS =
-  "grid grid-cols-[2.5rem_2.5rem_minmax(0,1fr)_minmax(0,1fr)_4rem] items-center gap-x-2"
+  "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)_4rem] items-center gap-x-2"
 
 const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`

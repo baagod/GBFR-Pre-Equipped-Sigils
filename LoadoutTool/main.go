@@ -117,13 +117,12 @@ func main() {
 	})
 
 	win = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "GBFR Pre-Equipped Sigils",
-		Width:            900,
-		Height:           700,
-		MinWidth:         800,
-		MinHeight:        560,
-		URL:              "/",
-		Hidden:           hidden,
+		Title:         "GBFR Pre-Equipped Sigils",
+		Width:         784,
+		Height:        700,
+		DisableResize: true,
+		URL:           "/",
+		Hidden:        hidden,
 		BackgroundColour: application.NewRGB(10, 10, 10),
 	})
 
