@@ -1,0 +1,60 @@
+{
+  "slots": [
+    {
+      "level1": 15,
+      "trait2": "英勇灵气",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "英勇神速"
+    },
+    {
+      "level1": 15,
+      "trait2": "英勇之心",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "激昂"
+    },
+    {
+      "level1": 15,
+      "trait2": "自动复活",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "豪胆"
+    },
+    {
+      "level1": 15,
+      "trait2": "明镜止水",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "不动"
+    },
+    {
+      "level1": 15,
+      "trait2": "药水携带数",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "刚健"
+    },
+    {
+      "level1": 15,
+      "trait2": "躲避性能",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "守护"
+    },
+    {
+      "level1": 15,
+      "trait2": "迅捷能力",
+      "level2": 15,
+      "enabled": true,
+      "trait1": "追击"
+    },
+    {
+      "level1": 20,
+      "trait2": "空槽无因子",
+      "level2": 0,
+      "enabled": true,
+      "trait1": "可怕的漆黑钳蟹因子"
+    }
+  ]
+}

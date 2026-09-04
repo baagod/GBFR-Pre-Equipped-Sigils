@@ -26,6 +26,8 @@ public partial class MainWindow : FluentWindow
         {
             string path = Path.Combine(_modDir, "loadout.json");
             if (!File.Exists(path))
+                path = Path.Combine(_modDir, "builtin-loadout.json");
+            if (!File.Exists(path))
                 return;
             using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
             foreach (JsonElement slot in doc.RootElement.GetProperty("slots").EnumerateArray())
@@ -35,9 +37,15 @@ public partial class MainWindow : FluentWindow
                     Enabled = !slot.TryGetProperty("enabled", out JsonElement enabled) || enabled.GetBoolean(),
                     Trait1 = slot.TryGetProperty("trait1", out JsonElement t1) ? t1.GetString() ?? "" : "",
                     Level1 = slot.TryGetProperty("level1", out JsonElement l1) ? l1.GetInt32().ToString() : "15",
-                    Trait2 = slot.TryGetProperty("trait2", out JsonElement t2) ? t2.GetString() ?? "" : "",
                     Level2 = slot.TryGetProperty("level2", out JsonElement l2) ? l2.GetInt32().ToString() : "15",
                 };
+                if (slot.TryGetProperty("trait2", out JsonElement t2))
+                {
+                    // The built-in single-trait slot uses the "not selected"
+                    // sentinel name; show it as an empty second picker.
+                    string trait2Name = t2.GetString() ?? "";
+                    model.Trait2 = trait2Name == "空槽无因子" ? "" : trait2Name;
+                }
                 _slots.Add(model);
             }
             RefreshIndexes();

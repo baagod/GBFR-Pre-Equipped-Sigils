@@ -19,6 +19,7 @@
     <None Include="ModConfig.json" CopyToOutputDirectory="Always" />
     <None Include="README.md" CopyToOutputDirectory="Always" />
     <None Include="traits.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="builtin-loadout.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\GBFR.PreEquippedSigils.Native\bin\$(Configuration)\GBFR.PreEquippedSigils.Native.dll"
           Link="GBFR.PreEquippedSigils.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />

@@ -70,3 +70,28 @@ Set-Content -Path "$env:TEMP\loadout_table.txt" -Value $out -Encoding UTF8
 $slotCount = 1 + $common.Count
 Write-Output "generated: $($chars.Count) characters, $slotCount slots, $($out.Length) chars -> $env:TEMP\loadout_table.txt"
 Write-Output "SLOT_COUNT=$slotCount (sync native_internal.h kTemplateSlotCount if changed)"
+
+# --- builtin-loadout.json: captain (Gran) template as an editable starting
+# point for the loadout editor (trait-level; same shape as loadout.json). ---
+$root = Split-Path -Parent $PSScriptRoot
+$hashNames = @{}
+foreach ($line in Get-Content (Join-Path $root 'docs\gbfr-sigil-hashes.zh-CN.tsv') -Encoding UTF8) {
+    if ($line -match "^T\t([0-9A-F]{8})\t(.+)$") { $hashNames[$matches[1]] = $matches[2] }
+}
+$gran = $chars | Where-Object Hash -eq '2A26B1B2' | Select-Object -First 1
+$builtinSlots = @(
+    @{ trait1 = $hashNames[$gran.T1]; level1 = 15; trait2 = $hashNames[$gran.T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[0].T1]; level1 = 15; trait2 = $hashNames[$gran.War]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[1].T1]; level1 = 15; trait2 = $hashNames[$common[1].T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[2].T1]; level1 = 15; trait2 = $hashNames[$common[2].T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[3].T1]; level1 = 15; trait2 = $hashNames[$common[3].T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[4].T1]; level1 = 15; trait2 = $hashNames[$common[4].T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[5].T1]; level1 = 15; trait2 = $hashNames[$common[5].T2]; level2 = 15; enabled = $true },
+    @{ trait1 = $hashNames[$common[6].T1]; level1 = 20; trait2 = $hashNames[$common[6].T2]; level2 = 0; enabled = $true }
+)
+$builtinOut = Join-Path $root 'GBFR.PreEquippedSigils\builtin-loadout.json'
+[System.IO.File]::WriteAllText(
+    $builtinOut,
+    (@{ slots = $builtinSlots } | ConvertTo-Json -Depth 4),
+    [System.Text.UTF8Encoding]::new($false))
+Write-Output "wrote builtin-loadout.json -> $builtinOut"
