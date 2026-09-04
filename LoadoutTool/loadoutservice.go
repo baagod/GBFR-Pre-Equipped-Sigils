@@ -8,8 +8,17 @@ import (
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
 // Protocol is shared with the mod: traits.json (dictionary) and loadout.json
-// (player configuration, same shape as the builtin-loadout.json fallback).
+// (player configuration, same shape as the pre-loadout.json fallback).
 type LoadoutService struct{}
+
+// MinimiseApp hides the window to the taskbar; the process stays alive so the
+// in-game hotkey can bring the window back instantly. Invoked by Esc (and the
+// X button via the WM_CLOSE interceptor).
+func (s *LoadoutService) MinimiseApp() {
+	if win != nil {
+		win.Minimise()
+	}
+}
 
 type loadoutSlot struct {
 	Trait1  string `json:"trait1"`
@@ -35,13 +44,13 @@ func (s *LoadoutService) LoadTraits() (string, error) {
 	return string(data), nil
 }
 
-// LoadConfig returns loadout.json, or builtin-loadout.json as the editable
+// LoadConfig returns loadout.json, or pre-loadout.json as the editable
 // starting point when no player configuration exists yet.
 func (s *LoadoutService) LoadConfig() (string, error) {
 	dir := exeDir()
 	data, err := os.ReadFile(filepath.Join(dir, "loadout.json"))
 	if err != nil {
-		data, err = os.ReadFile(filepath.Join(dir, "builtin-loadout.json"))
+		data, err = os.ReadFile(filepath.Join(dir, "pre-loadout.json"))
 		if err != nil {
 			return "", err
 		}

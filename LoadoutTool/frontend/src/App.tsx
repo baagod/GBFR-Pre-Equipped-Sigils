@@ -8,7 +8,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
-import { LoadTraits, LoadConfig, SaveLoadout } from "../bindings/loadouttool/loadoutservice"
+import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp } from "../bindings/loadouttool/loadoutservice"
 
 interface Slot {
   trait1: string
@@ -54,6 +54,20 @@ export default function App() {
         setStatus(`加载失败：${e}`)
       }
     })()
+  }, [])
+
+  // Fixed Escape minimises the tool to the taskbar (window stays alive). Esc
+  // pressed inside an input group or the combobox popup is left to the
+  // components themselves (clear/close popup).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('[data-slot="input-group"], [data-slot="combobox-content"]')) return
+      void MinimiseApp()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
   }, [])
 
   const maxOf = (name: string) => traits.find((t) => t.nameZh === name)?.maxLevel ?? 15
@@ -142,7 +156,7 @@ export default function App() {
               <TraitPicker
                 value={slot.trait2}
                 traits={traitNames}
-                placeholder="不选择"
+                placeholder="无"
                 noneOption
                 onSelect={(v) => updateSlot(index, { trait2: v, level2: v ? Math.min(15, maxOf(v)) : 0 })}
               />
@@ -174,10 +188,10 @@ export default function App() {
       </div>
 
       <div className="flex shrink-0 items-center gap-3 border-t bg-background p-4">
-        <Button variant="outline" onClick={addSlot}>
+        <span className="truncate text-sm text-muted-foreground">{status}</span>
+        <Button variant="outline" className="ml-auto" onClick={addSlot}>
           <Plus className="h-4 w-4" /> 添加槽位
         </Button>
-        <span className="truncate text-sm text-muted-foreground">{status}</span>
       </div>
     </div>
   )

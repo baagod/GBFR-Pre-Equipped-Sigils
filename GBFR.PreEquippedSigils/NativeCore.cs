@@ -58,7 +58,7 @@ internal static unsafe partial class NativeCore
         try
         {
             NativeSetLogCallback(
-                (IntPtr)(delegate* unmanaged[Cdecl]<sbyte*, void>)&ForwardNativeLog
+                Marshal.GetFunctionPointerForDelegate(NativeLogCallbackProc)
             );
             uint abiVersion = NativeGetAbiVersion();
             if (abiVersion != AbiVersion)
@@ -126,7 +126,13 @@ internal static unsafe partial class NativeCore
         return Encoding.UTF8.GetString(bytes, 0, length);
     }
 
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    // Native log callback as a plain delegate (kept alive in a static field):
+    // avoids the [UnmanagedCallersOnly] path entirely.
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate void NativeLogCallback(sbyte* message);
+
+    private static readonly NativeLogCallback NativeLogCallbackProc = ForwardNativeLog;
+
     private static void ForwardNativeLog(sbyte* message)
     {
         try

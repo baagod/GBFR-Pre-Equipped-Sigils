@@ -117,7 +117,7 @@ public sealed class Mod : IMod
                 new Configurator(configDirectory).GetConfiguration<HotkeyConfig>(0);
             configuration.ConfigurationUpdated += OnHotkeyConfigurationUpdated;
             _hotkeyConfiguration = configuration;
-            Hotkey.Configure(modDirectory, configuration.VirtualKey);
+            Hotkey.Configure(modDirectory, configuration.VirtualKey, Log);
         }
         catch (Exception exception)
         {

@@ -2,52 +2,52 @@
   "slots": [
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "",
       "level2": 0,
-      "trait1": "激昂"
+      "trait1": "激昂",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "自动复活",
       "level2": 15,
-      "trait1": "豪胆"
+      "trait1": "豪胆",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "明镜止水",
       "level2": 15,
-      "trait1": "不动"
+      "trait1": "不动",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "药水携带数",
       "level2": 15,
-      "trait1": "刚健"
+      "trait1": "刚健",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "躲避性能",
       "level2": 15,
-      "trait1": "守护"
+      "trait1": "守护",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 15,
       "trait2": "迅捷能力",
       "level2": 15,
-      "trait1": "追击"
+      "trait1": "追击",
+      "level1": 15
     },
     {
       "enabled": true,
-      "level1": 20,
       "trait2": "",
       "level2": 0,
-      "trait1": "可怕的漆黑钳蟹因子"
+      "trait1": "可怕的漆黑钳蟹因子",
+      "level1": 20
     }
   ]
 }

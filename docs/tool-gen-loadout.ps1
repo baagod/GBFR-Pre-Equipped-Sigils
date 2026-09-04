@@ -81,7 +81,7 @@ $slotCount = 2 + $common.Count
 Write-Output "generated: $($chars.Count) characters, $slotCount slots, $($out.Length) chars -> $env:TEMP\loadout_table.txt"
 Write-Output "SLOT_COUNT=$slotCount (sync native_internal.h kTemplateSlotCount if changed)"
 
-# --- builtin-loadout.json: captain (Gran) template as an editable starting
+# --- pre-loadout.json: captain (Gran) template as an editable starting
 # point for the loadout editor (trait-level; same shape as loadout.json). ---
 $hashNames = @{}
 foreach ($line in Get-Content (Join-Path $root 'docs\gbfr-sigil-hashes.zh-CN.tsv') -Encoding UTF8) {
@@ -100,9 +100,9 @@ $builtinSlots = foreach ($s in $common) {
         enabled = $true
     }
 }
-$builtinOut = Join-Path $root 'GBFR.PreEquippedSigils\builtin-loadout.json'
+$builtinOut = Join-Path $root 'GBFR.PreEquippedSigils\pre-loadout.json'
 [System.IO.File]::WriteAllText(
     $builtinOut,
     (@{ slots = @($builtinSlots) } | ConvertTo-Json -Depth 4),
     [System.Text.UTF8Encoding]::new($false))
-Write-Output "wrote builtin-loadout.json -> $builtinOut"
+Write-Output "wrote pre-loadout.json -> $builtinOut"

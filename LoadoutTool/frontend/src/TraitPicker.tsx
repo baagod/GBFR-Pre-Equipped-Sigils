@@ -21,7 +21,7 @@ interface TraitPickerProps {
   traits: string[]
   /** Text shown on the trigger when value is empty ("选择因子" / "不选择"). */
   placeholder?: string
-  /** Prepend a "不选择" (empty value) option - used for the second trait. */
+  /** Prepend a "无" (empty value) option - used for the second trait. */
   noneOption?: boolean
   onSelect: (value: string) => void
 }
@@ -34,12 +34,12 @@ export function TraitPicker({
   onSelect,
 }: TraitPickerProps) {
   const items: TraitItem[] = noneOption
-    ? [{ value: "", label: "不选择" }, ...traits.map((trait) => ({ value: trait, label: trait }))]
+    ? [{ value: "", label: "无" }, ...traits.map((trait) => ({ value: trait, label: trait }))]
     : traits.map((trait) => ({ value: trait, label: trait }))
 
   const selected: TraitItem =
     items.find((item) => item.value === value) ??
-    (noneOption ? { value: "", label: "不选择" } : { value: "", label: placeholder })
+    (noneOption ? { value: "", label: "无" } : { value: "", label: placeholder })
 
   return (
     <Combobox
