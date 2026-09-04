@@ -210,9 +210,9 @@ export default function App() {
       <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-2">
         <div className={HEADER_ROW}>
           <div />
-          <div className="text-center">#</div>
-          <div className="pr-2 text-center">主因子</div>
-          <div className="pl-2 text-center">副因子</div>
+          <div>#</div>
+          <div className="pr-2 pl-[11px]">主因子</div>
+          <div className="pl-[21px]">副因子</div>
           <div className="text-center">操作</div>
         </div>
 
