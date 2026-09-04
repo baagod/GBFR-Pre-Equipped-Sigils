@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { MinusIcon, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -8,19 +8,40 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { LoadTraits, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey } from "../bindings/loadouttool/loadoutservice"
 
-const MAX_SLOTS = 22 // matches mod MaxSlots / native effective limit
+const MAX_SLOTS = 12 // fixed rows shown in the editor
+
+type Lang = "zh" | "en"
+
+const copy = {
+  zh: {
+    headerPrimary: "主因子",
+    headerSecondary: "副因子",
+    selectAll: "全选/反选",
+    pickTrait: "选择因子",
+    none: "无",
+    search: "搜索",
+    empty: "无匹配因子",
+    dictFail: (e: unknown) => `词条字典加载失败：${e}`,
+    configFail: (e: unknown) => `配装加载失败：${e}`,
+    unknown: (names: string) => `存在字典外的词条（未保存）：${names}`,
+    saveFail: (e: unknown) => `自动保存失败：${e}`,
+  },
+  en: {
+    headerPrimary: "Primary Sigil",
+    headerSecondary: "Secondary Sigil",
+    selectAll: "Select all / none",
+    pickTrait: "Select sigil",
+    none: "None",
+    search: "Search",
+    empty: "No matching sigils",
+    dictFail: (e: unknown) => `Failed to load trait dictionary: ${e}`,
+    configFail: (e: unknown) => `Failed to load loadout: ${e}`,
+    unknown: (names: string) => `Unknown traits (not saved): ${names}`,
+    saveFail: (e: unknown) => `Auto-save failed: ${e}`,
+  },
+} as const
 
 interface Slot {
   trait1: string
@@ -31,13 +52,14 @@ interface Slot {
 }
 
 interface Trait {
-  nameZh: string
+  zh: string
+  en: string
   maxLevel: number
 }
 
 /* Fixed side columns + factor columns that eat all remaining width. */
 const GRID_COLS =
-  "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)_4rem] items-center gap-x-2"
+  "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2"
 
 const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
@@ -77,13 +99,24 @@ function LevelInput({
 
 function normalizeSlot(raw: unknown): Slot {
   const s = (raw ?? {}) as Partial<Slot>
+  const trait1 = typeof s.trait1 === "string" ? s.trait1 : ""
+  const trait2 = typeof s.trait2 === "string" ? s.trait2 : ""
   return {
-    trait1: typeof s.trait1 === "string" ? s.trait1 : "",
-    level1: Number.isFinite(s.level1) ? (s.level1 as number) : 15,
-    trait2: typeof s.trait2 === "string" ? s.trait2 : "",
-    level2: Number.isFinite(s.level2) ? (s.level2 as number) : (s.trait2 ? 15 : 0),
+    trait1,
+    level1: trait1 ? (Number.isFinite(s.level1) ? (s.level1 as number) : 15) : 0,
+    trait2,
+    level2: trait2 ? (Number.isFinite(s.level2) ? (s.level2 as number) : 15) : 0,
     enabled: s.enabled !== false,
   }
+}
+
+const emptySlot = (): Slot => ({ trait1: "", level1: 0, trait2: "", level2: 0, enabled: true })
+
+/** Always pad the editor to MAX_SLOTS rows so the user just fills them in. */
+function pad12(slots: Slot[]): Slot[] {
+  const out = [...slots]
+  while (out.length < MAX_SLOTS) out.push(emptySlot())
+  return out.slice(0, MAX_SLOTS)
 }
 
 export default function App() {
@@ -91,7 +124,21 @@ export default function App() {
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
   const [hideKey, setHideKey] = useState(0x70) // F1 default (matches mod default)
-  const [pendingRemove, setPendingRemove] = useState<number | null>(null)
+  const [lang, setLang] = useState<Lang>(() =>
+    typeof localStorage !== "undefined" && localStorage.getItem("lang") === "en" ? "en" : "zh"
+  )
+  const t = copy[lang]
+  const toggleLang = () => {
+    setLang((prev) => {
+      const next: Lang = prev === "zh" ? "en" : "zh"
+      try {
+        localStorage.setItem("lang", next)
+      } catch {
+        // non-persistent environments
+      }
+      return next
+    })
+  }
   // First render + first load must not write loadout.json: the preset stays
   // active until the user actually edits something.
   const skipSave = useRef(true)
@@ -103,21 +150,21 @@ export default function App() {
       try {
         const traitJson = await LoadTraits()
         setTraits(
-          (JSON.parse(traitJson).traits as { nameZh: string; maxLevel?: number }[]).map(
-            (t) => ({ nameZh: t.nameZh, maxLevel: t.maxLevel ?? 15 })
+          (JSON.parse(traitJson).traits as { zh: string; en?: string; maxLevel?: number }[]).map(
+            (tr) => ({ zh: tr.zh, en: tr.en ?? tr.zh, maxLevel: tr.maxLevel ?? 15 })
           )
         )
       } catch (e) {
-        setStatus(`词条字典加载失败：${e}`)
+        setStatus(t.dictFail(e))
       }
       try {
         const configJson = await LoadConfig()
         const parsed = JSON.parse(configJson)
         const rawSlots = Array.isArray(parsed?.slots) ? parsed.slots : []
         skipSave.current = true
-        setSlots(rawSlots.map(normalizeSlot))
+        setSlots(pad12(rawSlots.map(normalizeSlot)))
       } catch (e) {
-        setStatus(`配装加载失败：${e}`)
+        setStatus(t.configFail(e))
       }
       try {
         setHideKey(await GetHotkey())
@@ -125,26 +172,23 @@ export default function App() {
         // keep F1 default
       }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const traitMax = useMemo(
-    () => new Map(traits.map((t) => [t.nameZh, t.maxLevel] as const)),
+    () => new Map(traits.map((tr) => [tr.zh, tr.maxLevel] as const)),
     [traits]
   )
   const maxOf = (name: string) => traitMax.get(name) ?? 15
-  const traitNames = traits.map((t) => t.nameZh)
+  const traitNames = traits.map((tr) => tr.zh)
+  const traitLabels = useMemo(
+    () =>
+      Object.fromEntries(traits.map((tr) => [tr.zh, lang === "zh" ? tr.zh : tr.en])),
+    [traits, lang]
+  )
 
   const updateSlot = (index: number, patch: Partial<Slot>) => {
     setSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)))
-  }
-
-  const addSlot = () => {
-    if (slots.length >= MAX_SLOTS) return
-    setSlots((prev) => [...prev, { trait1: "", level1: 15, trait2: "", level2: 15, enabled: true }])
-  }
-
-  const removeSlot = (index: number) => {
-    setSlots((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Header check box: select all / clear all (official Table pattern).
@@ -154,21 +198,21 @@ export default function App() {
   }
 
   const save = async () => {
-    const unknown = slots.filter(
+    const filled = slots.filter((s) => s.trait1 !== "")
+    const unknown = filled.filter(
       (s) =>
         (s.trait1 !== "" && !traitMax.has(s.trait1)) ||
         (s.trait2 !== "" && !traitMax.has(s.trait2))
     )
     if (unknown.length > 0) {
       const names = unknown.map((s) => s.trait1 || s.trait2).join("、")
-      setStatus(`存在字典外的词条（未保存）：${names}`)
+      setStatus(t.unknown(names))
       return
     }
     try {
-      await SaveLoadout(JSON.stringify({ slots }, null, 2))
-      setStatus(`已自动保存 ${slots.length} 槽`)
+      await SaveLoadout(JSON.stringify({ slots: filled }, null, 2))
     } catch (e) {
-      setStatus(`自动保存失败：${e}`)
+      setStatus(t.saveFail(e))
     }
   }
 
@@ -213,15 +257,19 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-2">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-0 [scrollbar-gutter:stable]">
+        {status && (
+          <div className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+            {status}
+          </div>
+        )}
         <div className={HEADER_ROW}>
           <div>
-            <Checkbox checked={allEnabled} onCheckedChange={toggleAll} aria-label="全选/反选" />
+            <Checkbox checked={allEnabled} onCheckedChange={toggleAll} aria-label={t.selectAll} />
           </div>
           <div>#</div>
-          <div className="pr-2 pl-[11px]">主因子</div>
-          <div className="pl-[21px]">副因子</div>
-          <div className="text-center">操作</div>
+          <div className="pr-2 pl-[11px]">{t.headerPrimary}</div>
+          <div className="pl-[21px]">{t.headerSecondary}</div>
         </div>
 
         {slots.map((slot, index) => (
@@ -239,12 +287,14 @@ export default function App() {
               <TraitPicker
                 value={slot.trait1}
                 traits={traitNames}
-                placeholder="选择因子"
+                labels={traitLabels}
+                placeholder={t.none}
                 onSelect={(v) => updateSlot(index, { trait1: v, level1: Math.min(15, maxOf(v)) })}
               />
               <LevelInput
-                value={slot.level1}
+                value={slot.trait1 ? slot.level1 : 0}
                 max={maxOf(slot.trait1)}
+                min={slot.trait1 ? 1 : 0}
                 onLevel={(n) => updateSlot(index, { level1: n })}
               />
             </div>
@@ -252,70 +302,35 @@ export default function App() {
               <TraitPicker
                 value={slot.trait2}
                 traits={traitNames}
-                placeholder="无"
+                labels={traitLabels}
+                placeholder={t.none}
                 noneOption
+                noneLabel={t.none}
+                searchPlaceholder={t.search}
+                emptyLabel={t.empty}
+                disabled={!slot.trait1}
                 onSelect={(v) => updateSlot(index, { trait2: v, level2: v ? Math.min(15, maxOf(v)) : 0 })}
               />
               <LevelInput
-                value={slot.level2}
+                value={slot.trait2 ? slot.level2 : 0}
                 max={maxOf(slot.trait2)}
                 min={slot.trait2 ? 1 : 0}
                 onLevel={(n) => updateSlot(index, { level2: n })}
               />
             </div>
-            <div className="flex justify-center">
-              <Button variant="outline" size="icon" aria-label="移除" onClick={() => setPendingRemove(index)}>
-                <MinusIcon />
-              </Button>
-            </div>
           </div>
         ))}
       </div>
 
-      <AlertDialog
-        open={pendingRemove !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingRemove(null)
-        }}
-      >
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>移除槽位？</AlertDialogTitle>
-            <AlertDialogDescription>
-              将删除第 {(pendingRemove ?? 0) + 1} 行槽位。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              variant="outline"
-              data-autofocus
-              autoFocus
-              className="[&:focus]:border-ring [&:focus]:ring-2 [&:focus]:ring-ring/50"
-            >
-              取消
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => {
-                if (pendingRemove !== null) removeSlot(pendingRemove)
-                setPendingRemove(null)
-              }}
-            >
-              移除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div className="flex shrink-0 items-center gap-3 border-t bg-background p-4">
-        <span className="truncate text-sm text-muted-foreground">{status}</span>
+      <div className="flex shrink-0 items-center border-t bg-background py-3 pr-4">
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           className="ml-auto"
-          onClick={addSlot}
-          disabled={slots.length >= MAX_SLOTS}
+          onClick={toggleLang}
+          aria-label="Switch language"
         >
-          <Plus /> 添加槽位
+          {lang === "zh" ? "EN" : "中"}
         </Button>
       </div>
     </div>

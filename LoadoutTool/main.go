@@ -1,11 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"embed"
-	"image"
-	"image/color"
-	"image/png"
 	"log"
 	"os"
 	"syscall"
@@ -16,6 +12,9 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed icons/tray.png
+var trayIconBytes []byte
 
 var app *application.App
 var win *application.WebviewWindow
@@ -28,6 +27,9 @@ var (
 	procPostMessageW               = user32.NewProc("PostMessageW")
 	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
 	procShowWindow                 = user32.NewProc("ShowWindow")
+	procIsIconic                   = user32.NewProc("IsIconic")
+	procSetWindowPos                = user32.NewProc("SetWindowPos")
+	procKeybdEvent                  = user32.NewProc("keybd_event")
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
 	procCreateMutexW               = kernel32.NewProc("CreateMutexW")
 	procGetLastError               = kernel32.NewProc("GetLastError")
@@ -45,8 +47,16 @@ func ensureSingleInstance() (release func()) {
 		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
 		if hwnd != 0 {
 			procShowWindow.Call(hwnd, 5)            // SW_SHOW
-			procPostMessageW.Call(hwnd, 0x8010, 0, 0) // internal show (repaint-safe)
+			procShowWindow.Call(hwnd, 9) // SW_RESTORE`n`t`t`t`t`tprocPostMessageW.Call(hwnd, 0x8010, 0, 0)`n`t`t`t`t`tprocKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
+			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
 			procSetForegroundWindow.Call(hwnd)
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002) // internal show (repaint-safe)
+			procKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
+			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
+			procSetForegroundWindow.Call(hwnd)
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002)
 		}
 		os.Exit(0)
 	}
@@ -55,20 +65,9 @@ func ensureSingleInstance() (release func()) {
 	}
 }
 
-// trayIcon returns a simple 16x16 icon (grey rounded square) for the tray.
+// trayIcon returns the embedded game trait icon (tray + window).
 func trayIcon() []byte {
-	img := image.NewRGBA(image.Rect(0, 0, 16, 16))
-	for y := 0; y < 16; y++ {
-		for x := 0; x < 16; x++ {
-			dx, dy := float64(x)-7.5, float64(y)-7.5
-			if dx*dx+dy*dy <= 52 {
-				img.Set(x, y, color.RGBA{0x9E, 0x9E, 0x9E, 0xFF})
-			}
-		}
-	}
-	var buf bytes.Buffer
-	_ = png.Encode(&buf, img)
-	return buf.Bytes()
+	return trayIconBytes
 }
 
 func main() {
@@ -84,7 +83,8 @@ func main() {
 	}
 
 	app = application.New(application.Options{
-		Name: "loadouttool",
+		Name:     "loadouttool",
+		Icon:     trayIconBytes,
 		Services: []application.Service{
 			application.NewService(&LoadoutService{}),
 		},
@@ -104,7 +104,19 @@ func main() {
 					win.Hide()
 					return 0, true
 				}
-				if msg == 0x8010 { // WM_APP+0x10: internal show request (repaint-safe)
+				if msg == 0x8010 { // WM_APP+0x10: internal show + focus
+				win.Show()
+				win.Focus()
+				return 0, true
+			}
+				if msg == 0x8011 { // WM_APP+0x11: internal restore + focus
+				win.Restore()
+				win.Show()
+				win.Focus()
+					return 0, true
+				}
+				if msg == 0x8012 { // WM_APP+0x12: hide->show bounce (repaints WebView after minimize)
+					win.Hide()
 					win.Show()
 					return 0, true
 				}
@@ -117,22 +129,52 @@ func main() {
 	})
 
 	win = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:         "GBFR Pre-Equipped Sigils",
-		Width:         760,
-		Height:        700,
-		DisableResize: true,
-		URL:           "/",
-		Hidden:        hidden,
+		Title:      "GBFR Pre-Equipped Sigils",
+		Width:      760,
+		Height:     800,
+		MinWidth:   760, // fully locked at 760x786
+		MaxWidth:   760,
+		MinHeight:  800,
+		MaxHeight:  800,
+		URL:        "/",
+		Hidden:     hidden,
 		BackgroundColour: application.NewRGB(10, 10, 10),
 	})
 
 	// System tray: single click toggles the window; menu offers quit.
 	tray := app.SystemTray.New()
 	tray.SetIcon(trayIcon())
-	tray.SetTooltip("GBFR 配装工具")
+	tray.SetTooltip("GBFR Pre-Equipped Sigils")
 	tray.AttachWindow(win)
+
+	tray.OnClick(func() {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("tray click panic: %v", r)
+				}
+			}()
+			title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
+			hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
+			if hwnd == 0 {
+				return
+			}
+			// Minimized windows repaint badly after external restore, so bounce
+			// through hide->show; hidden windows just get the internal show.
+			if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
+				procPostMessageW.Call(hwnd, 0x8011, 0, 0)
+			} else {
+				procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+			}
+			procKeybdEvent.Call(0x12, 0, 0, 0) // VK_MENU down (grants foreground right)
+			procKeybdEvent.Call(0x12, 0, 2, 0) // VK_MENU up
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFF, 0, 0, 0, 0, 0x0001|0x0002|0x0040)
+			procSetForegroundWindow.Call(hwnd)
+			procSetWindowPos.Call(hwnd, 0xFFFFFFFE, 0, 0, 0, 0, 0x0001|0x0002)
+		}()
+	})
 	menu := application.NewMenu()
-	menu.Add("退出").OnClick(func(*application.Context) { app.Quit() })
+	menu.Add("Exit").OnClick(func(*application.Context) { app.Quit() })
 	tray.SetMenu(menu)
 	tray.Show()
 

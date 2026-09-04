@@ -37,7 +37,7 @@ $entries = foreach ($pair in $zhT.GetEnumerator()) {
     $name = $pair.Value
     $gem = '0'
     $preferred = $zhS | Where-Object {
-        $_.Name -match [regex]::Escape($name) -and ($_.Name -match 'V\+|Ⅴ')
+        $_.Name -match [regex]::Escape($name) -and ($_.Name -match 'V\+|鈪?)
     } | Select-Object -First 1
     if ($preferred) {
         $gem = $preferred.Hash
@@ -46,15 +46,15 @@ $entries = foreach ($pair in $zhT.GetEnumerator()) {
         if ($any) { $gem = $any.Hash }
     }
     [pscustomobject]@{
-        nameZh = $name
-        nameEn = if ($enT.ContainsKey($pair.Key)) { $enT[$pair.Key] } else { $name }
+        zh = $name
+        en = if ($enT.ContainsKey($pair.Key)) { $enT[$pair.Key] } else { $name }
         hash   = $pair.Key
         gem    = $gem
         maxLevel = if ($maxLevels.ContainsKey($pair.Key)) { $maxLevels[$pair.Key] } else { 15 }
     }
 }
 
-$duplicates = $entries | Group-Object nameZh | Where-Object Count -gt 1
+$duplicates = $entries | Group-Object zh | Where-Object Count -gt 1
 if ($duplicates) {
     Write-Error "duplicate trait names: $($duplicates.Name -join ', ')"
     exit 1

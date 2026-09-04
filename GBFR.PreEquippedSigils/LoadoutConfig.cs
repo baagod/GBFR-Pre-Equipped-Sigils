@@ -12,7 +12,7 @@ internal static class LoadoutConfig
 {
     private const uint UnwornCharacterHash = 0x887AE0B0;
     private const uint FallbackGem = 0x335DA2A5; // Guts V+ (known-good display item)
-    private const int MaxSlots = 22; // matches native effective count
+    private const int MaxSlots = 12; // conservative cap (more slots risk instability)
     private const int DefaultLevel = 15;
 
     private sealed class TraitInfo
@@ -58,7 +58,7 @@ internal static class LoadoutConfig
             {
                 try
                 {
-                    string nameZh = entry.GetProperty("nameZh").GetString() ?? "";
+                    string nameZh = entry.GetProperty("zh").GetString() ?? "";
                     if (nameZh.Length == 0)
                         continue;
                     uint hash = Convert.ToUInt32(entry.GetProperty("hash").GetString() ?? "0", 16);
