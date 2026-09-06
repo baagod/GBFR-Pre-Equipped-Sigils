@@ -194,7 +194,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 1. 编译：**0 警告 0 错误**（third_party 的 C4834 已在 vcxproj 单独压制）。
 2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
-   - `Installed N built-in template loadout selection(s). Exclusive slots 1-3 (T1/T2/war), general slot i = slot 3+i; inventory-independent.`（当前 29 角色 × 3 专属 = **87**；槽位布局：专属 1-3，通用第 i 个 = 槽 3+i）
+   - `Installed N built-in template loadout selection(s). Exclusive slots 1-3 (T1/T2/war), general slots 4-M; inventory-independent.`（当前 29 角色无配置 = **87**；有配置时 N = 29 × (3+通用槽数)，通用槽全角色共享，槽位布局：专属 1-3、通用 4 起）
    - `Native hooks installed: N virtual slots.`
    - 启动/换人/进战斗（context-1 状态重建）：`Trait contribution confirmed for 0xE7053919: N/N ...`（首次；二次出现应为 `incomplete: N/M`）
    - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`

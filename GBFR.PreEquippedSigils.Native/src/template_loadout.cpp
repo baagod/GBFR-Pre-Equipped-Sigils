@@ -333,10 +333,14 @@ void InstallDefaultTemplateSelections()
          }
       }
    }
+   const int total_virtual = GetVirtualSlotCount();
+   std::string layout = "exclusive slots 1-3 (T1/T2/war)";
+   if (total_virtual > kBuiltinExclusiveSlotCount)
+      layout += ", general slots 4-" + std::to_string(total_virtual);
    Log(
       "Installed " + std::to_string(installed) +
-      " built-in template loadout selection(s). Exclusive slots 1-3 (T1/T2/war), "
-      "general slot i = slot 3+i; inventory-independent.");
+      " built-in template loadout selection(s). " + layout +
+      "; inventory-independent.");
 }
 
 bool TryCopyTemplateGem(
