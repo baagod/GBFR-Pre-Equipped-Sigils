@@ -144,6 +144,24 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 3. 校验：`extract/verify_parser.py`（模拟 C# 解析，检查主词条存在/等级不超 cap/哨兵规则）；
 4. 数据版本从 `extract/loadout.json` 行数核对（当前 279）。
 
+**副因子合法性规则**（2026 会话定稿，前端 `App.tsx legalByMain` 与 `extract/verify_parser.py` 镜像）：
+
+- 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字。
+- **自由组** = 组内存在变体满足 `sec='' 且 pool=0 且 special=False`（战气/霸体/慧眼等 86 组）：
+  副因子 = **全部词条 − 独占词条**。
+- **正常组**（其余 130 组）：副因子 = `组内池版.pool ∪ 组内固定变体.sec ∪ 自由词条（86，非独占）`。
+- **独占词条** = 仅出现在 `special`（single/觉醒＋）行的词条 = 3 个：`082033CB` 钳蟹的共鸣、
+  `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子。
+- **自由词条** = 所有自由变体的主词条（86 个），任何主因子可组合（非独占）。
+- UI：非法副词条在列表中灰显（`opacity-45`）、选中非法时 trigger 红框；**保存不再拦截**
+  （模组侧 C# 校验仍兜底）。
+- 装配 gem 解析：副因子命中某固定变体 `sec` → 用该变体 gem；否则（池内/无副/自由词条）→
+  池版变体 gem（无池则首个变体）。
+
+**重置为预设**（工具底部按钮，AlertDialog + 取消默认聚焦）：删除用户
+`%LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json`（模组回退内置模板），界面就地重载预设，
+不重启进程。
+
 **与模板表的关系**：`template_loadout.cpp` 的 `kDefaultTemplates[]`（§4）是**内置默认 9 槽**的
 模板（gem_id/trait1/trait2 直接内嵌 C++）；`sigils.json`/`skills.json` 是**玩家配置**
 （`loadout.json`）解析用的 ID→名称/上限映射。两者独立：玩家配置走 sigils.json/skills.json，
@@ -231,6 +249,20 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - 热键：mod 激活前等待按键释放（防止按键尾落到工具导致"弹出即隐藏"）；工具内 Esc 也可隐藏；mod 发布 `tool-hotkey.txt` 供工具同步键位。
 - 上限：MaxSlots 22 → **12**（工具 + 托管 LoadoutConfig 同步）。
 - 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 Loadout.exe 等 9 文件。
+
+### 0.5.0 发布记录（2026-09-06）
+- **sigils.json 变体模型**：因子物品表改 `{key, gem, name, zh, skill, sec, pool, category, player, special}`；
+  `name`（英文名）为分组键（同名变体一行）；`sec`=固定副词条（固定变体）、`pool`=随机池候选（池版变体）；
+  `rarity` 移除、`category` 加入。
+- **副因子合法性规则**（名字组级）：自由组（战气/霸体/慧眼等）→ 全词条−独占；正常组 → 池∪固定∪自由词条；
+  独占 3 词条（钳蟹共鸣/相扑斗力/终极钳蟹因子）；非法列表灰显 + trigger 红框；保存不再拦截。
+- **重置为预设**（底部按钮）：AlertDialog 确认（取消默认聚焦），删除用户配置、就地重载预设。
+- **独占因子不取随机池**：觉醒＋保留固定专属词条（sec），战气/专属词条无副。
+- **修复**：工具热键呼出（exe 更名 Loadout.exe 对齐）、启动首行版本号、日志精简（战斗确认首报/失败才报）、
+  配置加载竞态（主因子显示"无"）、gen 输出 `player` 统一字符串。
+- 数据：mod 运行时表改用自有提取（`extract` 管线）；`traits.json`→`skills.json` 更名、`maxLevel`→`cap`、
+  物品键 `hash`→`gem`（上游与运行时表一致）。
+- 文档：`extract/GENERATING.md`（生成手册）、MAINTENANCE §4.1（运行时表 + 合法性规则）。
 
 ### 已验证（实测通过的
 - 主控 + AI 角色都吃注入（明镜止的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认的
