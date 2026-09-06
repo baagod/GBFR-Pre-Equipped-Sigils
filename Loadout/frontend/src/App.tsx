@@ -503,7 +503,7 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 px-4 pt-2"
+        className="shrink-0 border-b bg-background px-4 pt-2 pb-2"
       >
         <TabsList>
           <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
@@ -708,15 +708,15 @@ function ExclusivePanel({
           lang === "zh" ? e.nameZh || e.name || e.hash : e.name || e.nameZh || e.hash
         return (
           <div key={e.hash} className="border-b py-2 text-sm last:border-b-0">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-              <span className="min-w-[6rem] font-medium">{characterName}</span>
+            <div className="grid grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
+              <span className="font-medium">{characterName}</span>
               {row.map((r) => (
-                <label key={r.key} className="flex items-center gap-1.5">
+                <label key={r.key} className="flex min-w-0 items-center gap-1.5">
                   <Checkbox
                     checked={r.on}
                     onCheckedChange={(v) => onChange(e.hash, r.key, v === true)}
                   />
-                  <span>{gemName(r.gem)}</span>
+                  <span className="truncate">{gemName(r.gem)}</span>
                 </label>
               ))}
             </div>
