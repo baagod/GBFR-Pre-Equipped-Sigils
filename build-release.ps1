@@ -70,7 +70,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Loadout editor tool: Wails v3 build (GUI subsystem, embedded frontend dist).
-$toolDir = Join-Path $root 'loadouttool'
+$toolDir = Join-Path $root 'Loadout'
 & npm --prefix (Join-Path $toolDir 'frontend') run build
 if ($LASTEXITCODE -ne 0) {
     throw "Tool frontend build failed with exit code $LASTEXITCODE."

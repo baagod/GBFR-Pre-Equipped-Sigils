@@ -164,7 +164,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ## 9. 已知限制与未来方的
 
-- 配装表编译期内置的*配置化已完成**的026-09-04）：`loadout.json` + Wails v3 工具（`loadouttool/`，托的单实的自动保存/每词条最大等级）+ RegisterHotKey 热键（默的F1的 ABI v16，详的[docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）的
+- 配装表编译期内置的*配置化已完成**的026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托的单实的自动保存/每词条最大等级）+ RegisterHotKey 热键（默的F1的 ABI v16，详的[docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）的
 - 当前已覆盖全角色；扩展新角色 = 生成器数据表加条的+ 查该角色觉醒的战气 hash的
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效 的日志出现 layout failed 的等上的
   方案或重新逆向的
@@ -235,7 +235,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - 托盘/窗口：三态激活（隐藏/最小化/遮挡）、隐藏恢复透明淡入（**解决 WebView2 恢复白闪**，Win32 WS_EX_LAYERED + alpha 渐入）、固定 760×800（禁最大化）、游戏因子图标（go:embed）。
 - 热键：mod 激活前等待按键释放（防止按键尾落到工具导致"弹出即隐藏"）；工具内 Esc 也可隐藏；mod 发布 `tool-hotkey.txt` 供工具同步键位。
 - 上限：MaxSlots 22 → **12**（工具 + 托管 LoadoutConfig 同步）。
-- 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 LoadoutTool.exe 等 9 文件。
+- 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 loadout.exe 等 9 文件。
 
 ### 已验证（实测通过的
 - 主控 + AI 角色都吃注入（明镜止的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认的

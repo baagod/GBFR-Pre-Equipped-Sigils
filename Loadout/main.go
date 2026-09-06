@@ -82,7 +82,7 @@ func main() {
 	}
 
 	app = application.New(application.Options{
-		Name:     "loadouttool",
+		Name:     "Loadout",
 		Icon:     trayIconBytes,
 		Services: []application.Service{
 			application.NewService(&LoadoutService{}),
