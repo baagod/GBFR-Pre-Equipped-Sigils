@@ -124,19 +124,6 @@ func (s *LoadoutService) LoadExclusives() (string, error) {
 	return string(data), nil
 }
 
-// ResetLoadout removes the player configuration so the mod falls back to the
-// built-in template (matches LoadoutConfig's "file removed -> restore built-in"
-// path). The UI reloads the preset itself. Deleting a non-existent file is a
-// no-op.
-func (s *LoadoutService) ResetLoadout() error {
-	path := filepath.Join(userCfgDir(), "loadout.json")
-	err := os.Remove(path)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
 // validateSlots enforces the shared schema limits.
 func validateSlots(slots []loadoutSlot) error {
 	if len(slots) > MaxSlots {

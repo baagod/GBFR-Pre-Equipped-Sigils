@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, ResetLoadout, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
+import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
 
 const MAX_SLOTS = 12 // fixed rows shown in the editor
 
@@ -42,7 +42,7 @@ const copy = {
     exclFail: (e: unknown) => `专属因子表加载失败：${e}`,
     saveFail: (e: unknown) => `自动保存失败：${e}`,
     reset: "重置",
-    resetDesc: "将删除当前配置，恢复默认：专属因子全开、通用槽清空。",
+    resetDesc: "将删除当前配置，专属全开。",
     resetConfirm: "重置",
     cancel: "取消",
   },
@@ -62,7 +62,7 @@ const copy = {
     exclFail: (e: unknown) => `Failed to load exclusive factors: ${e}`,
     saveFail: (e: unknown) => `Auto-save failed: ${e}`,
     reset: "Reset",
-    resetDesc: "Removes the current configuration and restores the defaults (exclusives on, general slots cleared).",
+    resetDesc: "Removes the current configuration; exclusives back to full.",
     resetConfirm: "Reset",
     cancel: "Cancel",
   },
@@ -544,7 +544,9 @@ export default function App() {
                   <AlertDialogCancel ref={resetCancelRef}>{t.cancel}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
-                      void ResetLoadout()
+                      // Reset = empty configuration; lang survives (it is a
+                      // tool-side setting, not part of the mod config).
+                      void SaveLoadout(JSON.stringify({ lang, slots: [] }, null, 2))
                         .then(() => reloadConfig())
                         .finally(() => setResetOpen(false))
                     }}

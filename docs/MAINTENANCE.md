@@ -161,9 +161,9 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 - 装配 gem 解析：副因子命中某固定变体 `sec` → 用该变体 gem；否则（池内/无副/自由词条）→
   池版变体 gem（无池则首个变体）。
 
-**重置为预设**（工具底部按钮，AlertDialog + 取消默认聚焦）：删除用户
-`%LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json`（模组回退内置模板），界面就地重载预设，
-不重启进程。
+**重置为预设**（工具右上角"重置"按钮，AlertDialog + 取消默认聚焦）：写入空配置
+`{ lang, slots: [] }`（**lang 为工具侧设置，不参与重置**；模组因 slots 为空回退内置专属模板），
+界面就地重载预设，不重启进程。
 
 **与模板表的关系**：`template_loadout.cpp` 的 `kCharacterExclusives[]`（§4）是**内置专属默认**的
 模板（gem_id/trait1/trait2 直接内嵌 C++）；`sigils.json`/`skills.json` 是**玩家配置**
