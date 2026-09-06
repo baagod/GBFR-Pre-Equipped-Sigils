@@ -503,14 +503,14 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 border-b bg-background px-4 pt-2 pb-2"
+        className="shrink-0 border-b bg-background px-4 pt-1 pb-2"
       >
         <TabsList>
           <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
           <TabsTrigger value="exclusive">{t.tabExclusive}</TabsTrigger>
         </TabsList>
       </Tabs>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-0 [scrollbar-gutter:stable]">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-0 pb-0 [scrollbar-gutter:stable]">
         {status && (
           <div className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
             {status}
