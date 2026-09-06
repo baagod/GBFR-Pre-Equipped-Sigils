@@ -35,4 +35,22 @@ internal static unsafe partial class NativeCore
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     private static extern int GBFR20_SetCustomLoadout(TemplateSlotNative[]? slots, uint count);
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    internal struct ExclusiveOverrideNative
+    {
+        public uint CharacterHash;
+        public byte DisableT1;
+        public byte DisableT2;
+        public byte DisableWar;
+        public byte Reserved;
+    }
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    private static extern int GBFR20_SetExclusiveOverrides(
+        ExclusiveOverrideNative[]? overrides,
+        uint count);
+
+    internal static bool ApplyExclusiveOverrides(ExclusiveOverrideNative[]? overrides) =>
+        GBFR20_SetExclusiveOverrides(overrides, (uint)(overrides?.Length ?? 0)) != 0;
 }

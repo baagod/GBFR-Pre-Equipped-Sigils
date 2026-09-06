@@ -57,9 +57,8 @@ struct ResolvedGameLayout
 };
 
 inline constexpr int kNativeInternalSlotCount = 13;
-inline constexpr int kTemplateSlotCount = 9;
 // slots 0/1 of every character template are the mod-injected exclusives
-// (awakening+ / war spirit); player configuration only fills the slots after
+// (awakening, war spirit); player configuration only fills the slots after
 // these. Total virtual slots = kBuiltinExclusiveSlotCount + config count.
 inline constexpr int kBuiltinExclusiveSlotCount = 2;
 inline constexpr int kVirtualSlotCapacity = 24;
@@ -333,6 +332,8 @@ void ProcessPendingHotApply();
 bool TryGetRuntimeSlot(uint32_t character_hash, int virtual_slot, TemplateGemSlot& out) noexcept;
 void InitializeRuntimeTemplates();
 bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept;
+bool ApplyExclusiveOverrides(
+   const GBFR20_ExclusiveOverride* overrides, int32_t count) noexcept;
 void InstallDefaultTemplateSelections();
 bool TryCopyTemplateGem(uint32_t character_hash, uint32_t selected_slot_id, void* output) noexcept;
 bool ApplyTraitLoopLimits(int32_t virtual_slot_count) noexcept;

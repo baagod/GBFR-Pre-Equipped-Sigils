@@ -14,7 +14,7 @@ namespace GBFR.PreEquippedSigils;
 /// </summary>
 internal static unsafe partial class NativeCore
 {
-    internal const int AbiVersion = 16;
+    internal const int AbiVersion = 17;
 
     private const string LibraryName = "GBFR.PreEquippedSigils.Native.dll";
     private static readonly object ResolverLock = new();

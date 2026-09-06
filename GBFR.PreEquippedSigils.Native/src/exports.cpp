@@ -74,3 +74,18 @@ int32_t GBFR20_CALL GBFR20_SetCustomLoadout(
       static_cast<int32_t>(count));
    return applied ? 1 : 0;
 }
+
+int32_t GBFR20_CALL GBFR20_SetExclusiveOverrides(
+   const GBFR20_ExclusiveOverride* overrides, uint32_t count)
+{
+   if (g_shutting_down.load(std::memory_order_acquire))
+      return 0;
+   EnsureInitialized();
+   if (!g_hooks_ready.load(std::memory_order_acquire))
+      return 0;
+   return ApplyExclusiveOverrides(
+             reinterpret_cast<const GBFR20_ExclusiveOverride*>(overrides),
+             static_cast<int32_t>(count))
+      ? 1
+      : 0;
+}

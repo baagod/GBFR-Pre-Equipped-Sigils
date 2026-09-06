@@ -146,8 +146,9 @@ internal static class LoadoutConfig
             {
                 _hadConfigFile = false;
                 _lastAppliedUtc = DateTime.MinValue;
+                NativeCore.ApplyExclusiveOverrides(null); // everything enabled again
                 if (NativeCore.ApplyCustomLoadout(null))
-                    log("loadout.json removed; restored the built-in template.");
+                    log("loadout.json removed; restored the built-in exclusive template.");
             }
             return;
         }
@@ -162,11 +163,16 @@ internal static class LoadoutConfig
             string json = File.ReadAllText(_loadoutPath);
             if (json.Length > 1024 * 1024)
                 throw new InvalidDataException("loadout.json exceeds 1 MB");
+            var overrides = ParseExclusiveOverrides(json);
             var slots = ParseAndValidate(json);
             bool ok;
+            if (!NativeCore.ApplyExclusiveOverrides(overrides))
+                throw new InvalidDataException("native rejected the exclusive overrides");
             if (slots.Count == 0)
             {
-                log("loadout.json has no enabled slots; restoring the built-in template.");
+                // An existing (even empty) config means "no built-in general
+                // slots": only the per-character exclusives stay active.
+                log("loadout.json has no general slots; built-in exclusive template active.");
                 ok = NativeCore.ApplyCustomLoadout(null);
             }
             else
@@ -191,6 +197,53 @@ internal static class LoadoutConfig
             log($"Invalid loadout.json; kept previous configuration: {exception.Message}");
             _lastAttemptUtc = mtime;
         }
+    }
+
+    /// <summary>
+    /// Parses the optional "exclusive" object ({ characterHashHex: { t1, t2, war } })
+    /// into native overrides (disable bits). Missing entries stay enabled;
+    /// absent "exclusive" yields null (all enabled).
+    /// </summary>
+    private static NativeCore.ExclusiveOverrideNative[]? ParseExclusiveOverrides(string json)
+    {
+        using JsonDocument doc = JsonDocument.Parse(json);
+        JsonElement root = doc.RootElement;
+        if (root.ValueKind != JsonValueKind.Object ||
+            !root.TryGetProperty("exclusive", out JsonElement exclusive) ||
+            exclusive.ValueKind != JsonValueKind.Object)
+            return null;
+
+        var result = new List<NativeCore.ExclusiveOverrideNative>();
+        foreach (JsonProperty property in exclusive.EnumerateObject())
+        {
+            uint hash = PU(property.Name);
+            if (hash == 0 || property.Value.ValueKind != JsonValueKind.Object)
+                continue;
+            bool t1 = true;
+            bool t2 = true;
+            bool war = true;
+            foreach (JsonProperty field in property.Value.EnumerateObject())
+            {
+                if (field.Value.ValueKind != JsonValueKind.True &&
+                    field.Value.ValueKind != JsonValueKind.False)
+                    continue;
+                switch (field.Name)
+                {
+                    case "t1": t1 = field.Value.GetBoolean(); break;
+                    case "t2": t2 = field.Value.GetBoolean(); break;
+                    case "war": war = field.Value.GetBoolean(); break;
+                }
+            }
+            result.Add(new NativeCore.ExclusiveOverrideNative
+            {
+                CharacterHash = hash,
+                DisableT1 = t1 ? (byte)0 : (byte)1,
+                DisableT2 = t2 ? (byte)0 : (byte)1,
+                DisableWar = war ? (byte)0 : (byte)1,
+                Reserved = 0,
+            });
+        }
+        return result.Count == 0 ? null : result.ToArray();
     }
 
     private static List<NativeCore.TemplateSlotNative> ParseAndValidate(string json)

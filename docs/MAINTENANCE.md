@@ -10,7 +10,7 @@
 ## 1. 一句话说明
 
 游戏原生只计 12 个可见因子槽（内的 trait 循环上限 13）。本 mod 把循环上限扩到
-`13 + kTemplateSlotCount`，并 Hook 因子读取函数：当游戏询问 13 号起的虚拟槽时，
+`13 + 虚拟槽数`（= 2 内置专属 + 玩家通用槽），并 Hook 因子读取函数：当游戏询问 13 号起的虚拟槽时，
 把*内置模板*现场合成一份 GemData 交给游戏：不写存档、不依赖库存、不占用库存（
 `GemData.WORN_BY` 表示未装备）；战斗数值是真实的本地效果（在线 = 作弊级，风险自负）。
 
@@ -20,7 +20,7 @@
 build-release.ps1                    构建+打包脚本（MSBuild native、dotnet managed、zip）
 docs/
   MAINTENANCE.md                     本手册
-  tool-gen-loadout.ps1               生成 kCharacterExclusives[]/kGeneralSlots[] 数组文本与 pre-loadout.json
+  tool-gen-loadout.ps1               生成 kCharacterExclusives[] 表与 character-exclusives.json
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
   NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
@@ -28,7 +28,7 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   ModConfig.json                     ModId/版本/描述（发布信息）
   sigils.json                        运行时因子表（词条/物品 ID + 双语名；由 extract 管线生成的*见"数据文件生成"§4.x）
   skills.json                        运行时词条字典（hash/zh/en/cap；同上）
-  pre-loadout.json                   内置模板配置（mod 目录兜底；用户配置在 %LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json）
+  character-exclusives.json          每角色专属因子表（觉醒＋/两词条独立因子/战气；工具"专属因子"页数据源）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的 C ABI（v16：7 个导出 + GemData 结构）
   native_internal.h                  内部状态声明/常量（模板槽常量、预检字节等）
@@ -64,7 +64,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
   游戏状态重建：GetGemDataByIndexDetour（slot 13 起共 count 个）
     → TryLoadVirtualTraitSelection → TryCopySelectedVirtualGem
         → IsTemplateSlotId(0xFE000000+) → TryCopyTemplateGem
-            → kCharacterExclusives/kGeneralSlots（gem_id, trait1/2, 等级）
+            → kCharacterExclusives（gem_id, trait1/2, 等级；按 exclusive 状态拆分/合并）
             → 组装 GemData（worn_by=0x887AE0B0 未装备，flags=0）→ SafeCopyToOutput
     → natural bind 追踪：injected==expected 且 identity 一致 → CommitAuthorizedStatus
     → 日志 "Trait contribution confirmed for 0x...: N/N"（会话内首次状态重建报一次；未满 N/M 每次报 incomplete）
@@ -78,15 +78,15 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kCharacterExclusives[]` +
-`kGeneralSlots[]`（2026-09 由 26×9 全展开表去重：7 个通用槽全角色相同）。
+（2026-09 改版：内置仅含每角色专属 2 槽（觉醒＋组合 + 战气），通用槽不再有内置默认；专属可经 loadout.json 的 exclusive 段拆分/卸除）。
 **v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手改 hash。
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据，生成 `kCharacterExclusives[]`/`kGeneralSlots[]` 数组文本 |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War/Awake），从 sigils.json 推导变体 gem，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出）——**运行时不依赖**，仅开发用。 |
 
-**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）后运行脚本，输出到临时文件后替换 `template_loadout.cpp` 中从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `kGeneralSlots ... };` 的整段（自动定位起止替换）。
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或通用配装逻辑）后运行脚本，输出到临时文件后替换 `template_loadout.cpp` 中从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `};` 的整段（自动定位起止替换），并同步 `character-exclusives.json`。
 
 结构（每槽一个 `TemplateGemSlot`）：
 
@@ -109,9 +109,9 @@ TemplateGemSlot{
 > 该坑覆盖**所有单词条槽位**（战气槽 / 激昂 / 钳蟹），其他槽位均有真实 trait2，不受影响。
 
 **规则**：
-- 数据源：`kCharacterExclusives[]`（每角色 2 条：slot0 觉醒＋、slot1 战气）+ `kGeneralSlots[]`（slot3-9 七槽通用，全角色相同）；运行时由 `BuildCharacterTemplate` 组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 开始**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）。
+- 数据源：`kCharacterExclusives[]`（每角色：slot0 觉醒＋合并项（T1+T2）、slot1 战气、T1/T2 独立因子 gem）；运行时由 `BuildCharacterTemplate` 按 exclusive 状态组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 开始**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）。
 - 合成的 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **内置模板槽数（出厂预设）**：`native_internal.h` 的 `kTemplateSlotCount`（当前 9）只决定"无玩家配置时"的默认槽数；玩家配置（loadout.json）可任意 2+ 启用槽（≥2），**不受该常量约束**。仅当修改内置默认（模板表）时需同步该常量。
+- **内置默认（无配置）**：每角色仅注入专属 2 槽（觉醒＋/战气，按 exclusive 状态），通用槽全空；玩家配置（loadout.json）的 slots = 通用槽（可 0..12），总虚拟槽 = 2 + 通用槽数。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`extract/skills.json`（词条 hash/名）与 `extract/loadout.json`（物品 gem/名）；
@@ -161,7 +161,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 `%LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json`（模组回退内置模板），界面就地重载预设，
 不重启进程。
 
-**与模板表的关系**：`template_loadout.cpp` 的 `kCharacterExclusives[]` + `kGeneralSlots[]`（§4）是**内置默认 9 槽**的
+**与模板表的关系**：`template_loadout.cpp` 的 `kCharacterExclusives[]`（§4）是**内置专属默认**的
 模板（gem_id/trait1/trait2 直接内嵌 C++）；`sigils.json`/`skills.json` 是**玩家配置**
 （`loadout.json`）解析用的 ID→名称/上限映射。两者独立：玩家配置走 sigils.json/skills.json，
 无玩家配置时用内置模板（不走 JSON）。
@@ -208,7 +208,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 则启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=16`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **可选配置**：INI 体系已删除；无 `loadout.json` 时槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 9 = 觉醒＋/战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）。
+- **可选配置**：INI 体系已删除；无 `loadout.json` 时 = 内置专属（每角色觉醒＋/战气，全开），通用全空；有配置时 = 2 专属（按 exclusive 段开关）+ 通用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管用 4 空格。
 
@@ -221,7 +221,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ## 9. 已知限制与未来方向
 
-- 配装表编译期内置（**配置化已完成**，2026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）、ABI v16（配置化计划已执行，偏差记录见仓库提交历史）。
+- 配装表编译期内置（**配置化已完成**，2026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）、ABI v17（配置化计划已执行，偏差记录见仓库提交历史）。
 - 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效；日志出现 layout failed 时等更新
   方案或重新逆向。
@@ -231,7 +231,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - **改某角色某槽的词条**：编辑 `template_loadout.cpp` 对应 `TemplateGemSlot` 的
   `trait1/trait2` hash 与等级（hash 查 `extract/skills.json`，Ctrl+F 搜名字）→ 编译 → 部署 → 验证。
 - **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追加/调整数据后重新生成
-  （槽数变化时 `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）→ 编译 → 部署 → 验证。
+  （专属表改动经 `tool-gen-loadout.ps1` 重新生成；通用槽无内置默认）→ 编译 → 部署 → 验证。
 - **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表），模板表加
   `CharacterExclusiveLoadout` 条目 → 编译 → 部署 → 验证。
 - **升版本**：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）。
@@ -243,7 +243,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 会话交接情报（2026-09-05，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **版本**：v0.5.0（ABI v16 + 热键修复 + 日志精简 + 数据表命名统一）。槽位 9（觉醒＋/战气/激昂/豪胆/不动/刚健/守护/追击/钳蟹）+ 固定 12 行编辑器（可自由选择任意因子）。
+- **版本**：v0.5.0（ABI v17：每角色专属因子可拆分/卸除 + 取消内置通用预设）。入口配装：专属 2 槽（觉醒＋组合/拆 T1/T2、战气，默认全开）+ 玩家通用槽（固定 12 行编辑器）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 0.4.0 发布记录（2026-09-05）
@@ -283,7 +283,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - impact008（2026-09-04）：请求"迅捷能力/怒涛/激昂顶配版"——**拒绝"顶配/超强"**（保护平衡），接受其真实诉求（怒涛不在模板、词条可选性），归入配置化方向；回复话术 = "平衡 + 可配置"。
 
 ### 未来方向（未做）
-- ~~配置化~~ **已完成**（见上；不再重复立项）。后续方向：预设集丰富（狂战/斯巴达的伤害上限/天星系等）作新的 pre-loadout 模板；每角色独立的 v2；物品权威组合表。
+- ~~配置化~~ **已完成**（见上；不再重复立项）。后续方向：预设集丰富（狂战/斯巴达的伤害上限/天星系等）作玩家侧模板；物品权威组合表。
 - 坚持"合理扩展"的路线（不做超强数值的顶配）——87/819 是竞品，不撞车；对玩家请求统一话术拒绝。
 - Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌视作弊）。
 
