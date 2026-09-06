@@ -61,9 +61,13 @@ internal static class LoadoutConfig
     {
         if (Traits.Count == 0)
             return;
+        // A deletion must reach TryApply too: it restores the built-in template
+        // (ResetLoadout in the tool removes the file). The old File.Exists gate
+        // made the deletion branch in TryApply unreachable.
         if (File.Exists(_loadoutPath) &&
-            File.GetLastWriteTimeUtc(_loadoutPath) != _lastAppliedUtc)
-            TryApply(log);
+            File.GetLastWriteTimeUtc(_loadoutPath) == _lastAppliedUtc)
+            return;
+        TryApply(log);
     }
 
     private static bool LoadTables(Action<string> log)
