@@ -709,7 +709,7 @@ function ExclusivePanel({
         return (
           <div
             key={e.hash}
-            className="flex h-[42px] items-center border-b text-sm"
+            className="flex h-[42px] items-center border-b text-sm last:border-b-0"
           >
             <div className="grid w-full grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
               <span className="font-medium">{characterName}</span>
