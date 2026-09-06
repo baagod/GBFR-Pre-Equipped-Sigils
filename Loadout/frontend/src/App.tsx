@@ -118,7 +118,7 @@ const GRID_COLS =
   "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2"
 
 const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
-const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors hover:bg-muted/50`
+const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
 
 /** Clamped numeric level input with a grey "/ max" suffix. */
 function LevelInput({
@@ -709,7 +709,7 @@ function ExclusivePanel({
         return (
           <div
             key={e.hash}
-            className="flex h-[42px] items-center border-b text-sm"
+            className="flex h-[42px] items-center border-b text-sm last:border-b-0"
           >
             <div className="grid w-full grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
               <span className="font-medium">{characterName}</span>
