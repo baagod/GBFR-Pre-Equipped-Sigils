@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.4.0（0.3.5 已发布 Nexus；0.4.0 = 配装编辑器重构 + 双语 + 托盘完善，Nexus 发布中）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
+> 当前版本：0.5.0（热键修复 + 日志精简 + 数据表命名统一）。派生自 GBFR Extra Sigil Slots（Hiyajomaho-num9），已大幅精简。
 ---
 
 ## 1. 一句话说明
@@ -19,9 +19,9 @@
 ```
 build-release.ps1                    构建+打包脚本（MSBuild native 的dotnet managed 的zip的
 docs/
-  gbfr-sigil-hashes.zh-CN.tsv        hash 查询表（S=物品/gem_id，T=词条/trait，仅参考不打包的
-  gbfr-sigil-hashes.en.tsv           同上（英文）
-  MAINTENANCE.md                     本手的
+  MAINTENANCE.md                     本手册
+  tool-extract-exclusives.ps1        提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条）
+  tool-gen-loadout.ps1               生成 kDefaultTemplates[] 数组文本
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）的50ms 维持 Tick
   NativeCore.cs                      原生门面：加的ABI 校验/日志回调/Tick/Shutdown/消息读取
@@ -115,7 +115,8 @@ TemplateGemSlot{
 - **内置模板槽数（出厂预设）**：`native_internal.h` 的`kTemplateSlotCount`（当的9）只决定"无玩家配置时的默认槽的；玩家配置（loadout.json）可任意 2+启用槽（的2），**不受该常量约的*。仅当修改内置默认（模板表）时需同步该常量的
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）的
-- 词条 hash 查询：`docs/gbfr-sigil-hashes.zh-CN.tsv`（S=物品、T=词条；Ctrl+F 搜名字）的
+- 词条 hash 查询：`extract/skills.json`（词条 hash/名）与 `extract/loadout.json`（物品 gem/名）；
+  或 `sigils_all_full.xlsx` 的 `gem_key`/`skill1_hash` 列（Ctrl+F 搜名字）的
 - 角色 hash（角色名 的hash）：的`UiLocalization.cs` 的历史版本或 compatibility.tsv 的
   character_key 列；常用：古的`2A26B1B2`、姬的`A4ACBA76`、娜露梅 `E7053919`的
   芙劳 `646C3168`、菲迪埃的`74DD4C79`的
@@ -156,7 +157,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）的NET 8 SDK的
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/0.3.6
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/<version>（以脚本默认参数为准）的
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
@@ -169,7 +170,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 1. 编译的*0 警告 0 错误**（third_party 的C4834 已在 vcxproj 单独压制）的
 2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
    - `Installed N built-in template loadout selection(s); inventory-independent.`
-   - `Native hook installation completed with N virtual slots; ...`
+   - `Native hooks installed: N virtual slots.`
    - 启动/换人/进战斗（context-1 状态重建）：`Trait contribution confirmed for 0xE7053919: N/N ...`（首次；二次出现应为 `incomplete: N/M`）
    - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
 3. 训练场实测词条效果（如豪胆濒死不死、自动复活自起）+ 血条下 buff 图标的
@@ -206,7 +207,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 10. 常用操作速查（给接手 AI 的指令模板）
 
 - **改某角色某槽的词的*：编的`template_loadout.cpp` 对应 `TemplateGemSlot` 的
-  `trait1/trait2` hash 与等级（hash 的`docs/gbfr-sigil-hashes.zh-CN.tsv`）→ 编译 的部署 的验证的
+  `trait1/trait2` hash 与等级（hash 的`extract/skills.json`，Ctrl+F 搜名字）→ 编译 的部署 的验证的
 - **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追的调整数据 的重新生成
   （数的+ `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）的编译 的部署 的验证的
 - **加角的*：查该角色觉醒＋/战气的S/T hash（compatibility.tsv + 名字表）的模板表加
@@ -217,50 +218,10 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - **推的*：`git -c credential.helper="!gh auth git-credential" push origin main`
   （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检的gh token 的Contents: Read and write 权限）的
 
-## 11. 发布的Nexus 后续维护
-
-**已发布**（v0.3.5，2026-09-03）：https://www.nexusmods.com/granbluefantasyrelink/mods/823
-**发布中**（v0.4.0，2026-09-05）：配装编辑器重构 + 中英双语 + 托盘完善（Nexus 隔离审核中——已提交源码链接与 VT 1/62 误报说明；待自动解除）。
-
-发布信息（发的更新时以本表的mod README 为准）：
-
-| 的| 的|
-|---|---|
-| 名称 | GBFR Pre-Equipped Sigils |
-| 分类 | Miscellaneous |
-| 标签 | AI-Generated Content / Cheating / Gameplay |
-| 主文的| `dist/GBFR-Pre-Equipped-Sigils-<version>.zip` |
-| 源码 | https://github.com/baagod/GBFR-Pre-Equipped-Sigils |
-
-> **AI 标签口径的026-08-01 Nexus 新政的*：AI 标签分三档——`AI-Generated Content`（含
-> AI 生成的*代码**、UI、语音、对话、翻译、音乐、游戏内资产的 `AI Media`（AI 推广图的
-> 缩略图、视频、页面描述等 mod 外媒体）/ `AI-Assisted`（轻微使用）。规则：**主要的AI
-> 制作的mod 必须的AI-Generated Content**；打 AI-Assisted 的，审核方可要求证明开的
-> "人类主导"。本 mod 代码的AI 编写（README 已公开声明）→ **必须保持 AI-Generated
-> Content，勿降为 AI-Assisted**（选了可能被要求证明人类主导，风险单向）；截图均为
-> 游戏内实拍、无 AI 的的无需 AI Media。宁可偏重，不可偏低的
-
-**发布后维护流的*（每次发布新版本依次执行）：
-
-1. **升版的*：改 `ModConfig.json` 的`ModVersion` 的`build-release.ps1` 默认 `$Version`的
-   的§10 扫描全文档旧版本号残留（README、MAINTENANCE 头部、构建注释）的
-2. **构建**：`build-release.ps1` 的产出 `dist/GBFR-Pre-Equipped-Sigils-<version>.zip`的
-3. **部署验证**：游戏退的的复制 `dist\GBFR.PreEquippedSigils` 的`Mods\` 的的§6 验证清单实测的
-4. **更新 Nexus 文件的*：上传新 zip；Nexus 只认最新文件版本，旧版自动归档到历史的
-   上传时保持名的分类/标签/权限不变（见上表）的
-5. **同步页面描述**：Nexus 描述的`GBFR.PreEquippedSigils/README.md` 同源—的
-   改配装后必须两处同步（配装表、摘要、截图位置）的
-6. **截图**：一律游戏内真实截图，发布后上传的Images 区（不要 AI 生成图）的
-7. **游戏更新的*：先本机回归（的）；的layout 解析失败（日志出的layout failed），
-   在页面顶部加"不兼容版的警告并停更，不要静默失效的
-8. **提交推的*：按 §10 的提的推送模板执行，把版本号与发布记录同步到仓库的
-
-> 备注：RELEASE-NEXUS.md 已删除，发布直接用本手册的
-
 ## 12. 会话交接情报（2026-09-05，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **版本**：v0.4.0（ABI v16 + 配装编辑器重构 + 中英双语 + 托盘完善；Nexus 发布中/待审核）。槽位 9（觉醒＋/战气/激昂/豪胆/不动/刚健/守护/追击/钳蟹）+ 固定 12 行编辑器（可自由选择任意因子）。
+- **版本**：v0.5.0（ABI v16 + 热键修复 + 日志精简 + 数据表命名统一）。槽位 9（觉醒＋/战气/激昂/豪胆/不动/刚健/守护/追击/钳蟹）+ 固定 12 行编辑器（可自由选择任意因子）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 0.4.0 发布记录（2026-09-05）
