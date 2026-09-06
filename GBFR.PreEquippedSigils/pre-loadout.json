@@ -1,53 +1,112 @@
 {
-  "slots": [
+ "lang": "zh",
+ "slots": [
+  {
+   "items": [
     {
-      "enabled": true,
-      "trait2": "",
-      "level2": 0,
-      "trait1": "激昂",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "自动复活",
-      "level2": 15,
-      "trait1": "豪胆",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "明镜止水",
-      "level2": 15,
-      "trait1": "不动",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "药水携带数",
-      "level2": 15,
-      "trait1": "刚健",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "躲避性能",
-      "level2": 15,
-      "trait1": "守护",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "迅捷能力",
-      "level2": 15,
-      "trait1": "追击",
-      "level1": 15
-    },
-    {
-      "enabled": true,
-      "trait2": "",
-      "level2": 0,
-      "trait1": "可怕的漆黑钳蟹因子",
-      "level1": 20
+     "gem": "E5C9F685",
+     "level": 15,
+     "zh": "激昂",
+     "en": "Uplift"
     }
-  ]
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "91AC1DDD",
+     "level": 15,
+     "zh": "豪胆",
+     "en": "Guts"
+    },
+    {
+     "hash": "95F3FA86",
+     "level": 15,
+     "zh": "自动复活",
+     "en": "Autorevive"
+    }
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "B1CCC211",
+     "level": 15,
+     "zh": "不动",
+     "en": "Firm Stance"
+    },
+    {
+     "hash": "D2C8E10A",
+     "level": 15,
+     "zh": "明镜止水",
+     "en": "Nimble Onslaught"
+    }
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "D4EBB836",
+     "level": 15,
+     "zh": "刚健",
+     "en": "Stronghold"
+    },
+    {
+     "hash": "24883AF3",
+     "level": 15,
+     "zh": "药水携带数",
+     "en": "Potion Hoarder"
+    }
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "9C2399DA",
+     "level": 15,
+     "zh": "守护",
+     "en": "Aegis"
+    },
+    {
+     "hash": "8B3BF60C",
+     "level": 15,
+     "zh": "躲避性能",
+     "en": "Improved Dodge"
+    }
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "035A4DDD",
+     "level": 15,
+     "zh": "追击",
+     "en": "Supplementary Damage"
+    },
+    {
+     "hash": "318D12E9",
+     "level": 15,
+     "zh": "迅捷能力",
+     "en": "Quick Cooldown"
+    }
+   ],
+   "enabled": true
+  },
+  {
+   "items": [
+    {
+     "gem": "66CB28BA",
+     "level": 20,
+     "zh": "可怕的漆黑钳蟹因子",
+     "en": "Immortal Shell"
+    }
+   ],
+   "enabled": true
+  }
+ ]
 }

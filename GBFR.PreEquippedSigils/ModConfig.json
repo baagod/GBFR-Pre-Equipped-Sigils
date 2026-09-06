@@ -2,7 +2,7 @@
   "ModId": "GBFR.PreEquippedSigils",
   "ModName": "GBFR Pre-Equipped Sigils (2.0.5)",
   "ModAuthor": "baagod",
-  "ModVersion": "0.4.0",
+  "ModVersion": "0.5.0",
   "ModDescription": "涓哄叏瑙掕壊棰勯厤鎵╁睍鍥犲瓙锛屼笉鍗犵敤鏈綋 12 妲戒綅锛屾棤闇€搴撳瓨銆佷笉鍐欏瓨妗ｃ€侾re-equips extra sigils for all characters, using none of the base 12 slots. No inventory required, no save-file changes.",
   "ModDll": "GBFR.PreEquippedSigils.dll",
   "ModIcon": "",

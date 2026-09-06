@@ -7,36 +7,52 @@ namespace GBFR.PreEquippedSigils;
 /// pushes it into the native runtime template table through the ABI.
 /// No config file keeps the built-in 9-slot template; invalid files are
 /// reported and the last valid configuration stays active.
+///
+/// Data model (2026 会话改版):
+///   sigils.json  : { sigils: [ { hash, zh, en, skill, secondaries[], rarity, player, special } ] }
+///   traits.json  : { traits: [ { hash, zh, en, maxLevel } ] }
+///   loadout.json : [ { items: [ {hash, level, zh, en}, {hash, level, zh, en}? ], enabled } ]
+///                  items[0] = sigil (item), items[1] = secondary trait (optional).
+/// Soft validation: any combination is accepted (no secondaries check yet);
+/// hard validation only: unknown hashes / bad levels / too many slots.
 /// </summary>
 internal static class LoadoutConfig
 {
     private const uint UnwornCharacterHash = 0x887AE0B0;
-    private const uint FallbackGem = 0x335DA2A5; // Guts V+ (known-good display item)
     private const int MaxSlots = 12; // conservative cap (more slots risk instability)
     private const int DefaultLevel = 15;
+
+    private sealed class SigilInfo
+    {
+        public required uint Hash { get; init; }
+        public required uint Skill { get; init; }
+        public List<uint> Secondaries { get; } = new(); // reserved for next-version soft hints
+    }
 
     private sealed class TraitInfo
     {
         public required uint Hash { get; init; }
-        public required uint Gem { get; init; }
-        public int MaxLevel { get; init; } = 15;
+        public int MaxLevel { get; init; } = DefaultLevel;
     }
 
+    private static readonly Dictionary<string, SigilInfo> Sigils = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, TraitInfo> Traits = new(StringComparer.Ordinal);
     private static DateTime _lastAppliedUtc = DateTime.MinValue;
     private static DateTime _lastAttemptUtc = DateTime.MinValue;
     private static bool _hadConfigFile;
     private static string _loadoutPath = "";
+    private static string _sigilsPath = "";
     private static string _traitsPath = "";
 
     internal static void Initialize(string modDirectory, Action<string> log)
     {
         _loadoutPath = Path.Combine(modDirectory, "loadout.json");
+        _sigilsPath = Path.Combine(modDirectory, "sigils.json");
         _traitsPath = Path.Combine(modDirectory, "traits.json");
-        if (LoadTraits(log))
+        if (LoadTables(log))
             TryApply(log);
         else
-            log("Custom loadout disabled: trait dictionary is missing or invalid.");
+            log("Custom loadout disabled: sigil/trait data files are missing or invalid.");
     }
 
     internal static void Tick(Action<string> log)
@@ -48,40 +64,75 @@ internal static class LoadoutConfig
             TryApply(log);
     }
 
-    private static bool LoadTraits(Action<string> log)
+    private static bool LoadTables(Action<string> log)
     {
         try
         {
-            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_traitsPath));
-            int count = 0, skipped = 0;
-            foreach (JsonElement entry in doc.RootElement.GetProperty("traits").EnumerateArray())
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_sigilsPath));
+            int count = 0;
+            foreach (JsonElement entry in doc.RootElement.GetProperty("sigils").EnumerateArray())
             {
                 try
                 {
-                    string nameZh = entry.GetProperty("zh").GetString() ?? "";
-                    if (nameZh.Length == 0)
+                    string gem = Hx(entry.GetProperty("gem"));
+                    if (gem.Length == 0)
                         continue;
-                    uint hash = Convert.ToUInt32(entry.GetProperty("hash").GetString() ?? "0", 16);
-                    uint gem = Convert.ToUInt32(entry.GetProperty("gem").GetString() ?? "0", 16);
-                    int maxLevel = entry.TryGetProperty("maxLevel", out JsonElement ml) &&
-                                   ml.TryGetInt32(out int m)
-                        ? m
-                        : DefaultLevel;
-                    Traits[nameZh] = new TraitInfo
+                    var info = new SigilInfo
                     {
-                        Hash = hash,
-                        Gem = gem == 0 ? FallbackGem : gem,
-                        MaxLevel = maxLevel,
+                        Hash = PU(gem),
+                        Skill = PU(Hx(entry.GetProperty("skill"))),
                     };
+                    if (entry.TryGetProperty("secondaries", out JsonElement secs) &&
+                        secs.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement s in secs.EnumerateArray())
+                        {
+                            uint h = PU(Hx(s));
+                            if (h != 0)
+                                info.Secondaries.Add(h);
+                        }
+                    }
+                    Sigils[gem] = info;
                     count++;
                 }
                 catch
                 {
-                    skipped++; // one bad entry must not disable the whole dictionary
+                    // one bad entry must not disable the whole table
                 }
             }
-            log($"Loaded {count} trait dictionary entries{(skipped > 0 ? $" ({skipped} skipped)" : "")}.");
-            return Traits.Count > 0;
+            log($"Loaded {count} sigil entries.");
+        }
+        catch (Exception exception)
+        {
+            log($"Failed to load sigil table: {exception.Message}");
+            return false;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_traitsPath));
+            int count = 0;
+            foreach (JsonElement entry in doc.RootElement.GetProperty("traits").EnumerateArray())
+            {
+                try
+                {
+                    string hash = Hx(entry.GetProperty("hash"));
+                    if (hash.Length == 0)
+                        continue;
+                    int maxLevel = entry.TryGetProperty("maxLevel", out JsonElement ml) &&
+                                   ml.TryGetInt32(out int m)
+                        ? m
+                        : DefaultLevel;
+                    Traits[hash] = new TraitInfo { Hash = PU(hash), MaxLevel = maxLevel };
+                    count++;
+                }
+                catch
+                {
+                    // one bad entry must not disable the whole table
+                }
+            }
+            log($"Loaded {count} trait dictionary entries.");
+            return Traits.Count > 0 && Sigils.Count > 0;
         }
         catch (Exception exception)
         {
@@ -107,11 +158,11 @@ internal static class LoadoutConfig
 
         DateTime mtime = File.GetLastWriteTimeUtc(_loadoutPath);
         if (mtime == _lastAppliedUtc || mtime == _lastAttemptUtc)
-            return; // already applied, or already tried for this mtime
+            return;
 
         try
         {
-            var slots = ParseAndValidate(File.ReadAllText(_loadoutPath), log);
+            var slots = ParseAndValidate(File.ReadAllText(_loadoutPath));
             bool ok;
             if (slots.Count == 0)
             {
@@ -138,20 +189,30 @@ internal static class LoadoutConfig
         catch (Exception exception)
         {
             log($"Invalid loadout.json; kept previous configuration: {exception.Message}");
-            _lastAttemptUtc = mtime; // no log flood; retried only when the file changes
+            _lastAttemptUtc = mtime;
         }
     }
 
-    private static List<NativeCore.TemplateSlotNative> ParseAndValidate(string json, Action<string> log)
+    private static List<NativeCore.TemplateSlotNative> ParseAndValidate(string json)
     {
         var result = new List<NativeCore.TemplateSlotNative>();
         using JsonDocument doc = JsonDocument.Parse(json);
-        if (!doc.RootElement.TryGetProperty("slots", out JsonElement slotsElement) ||
-            slotsElement.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("missing 'slots' array");
+        JsonElement root = doc.RootElement;
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            // new config shape: { lang, slots: [...] } — lang is tool-side only
+            if (!root.TryGetProperty("slots", out JsonElement slotsEl) ||
+                slotsEl.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("missing 'slots' array");
+            root = slotsEl;
+        }
+        else if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException("expected an array of slots");
+        }
 
         int index = 0;
-        foreach (JsonElement slot in slotsElement.EnumerateArray())
+        foreach (JsonElement slot in root.EnumerateArray())
         {
             index++;
             bool enabled = !slot.TryGetProperty("enabled", out JsonElement enabledElement) ||
@@ -161,40 +222,45 @@ internal static class LoadoutConfig
             if (result.Count >= MaxSlots)
                 throw new InvalidDataException($"more than {MaxSlots} enabled slots");
 
-            string trait1 = slot.TryGetProperty("trait1", out JsonElement t1)
-                ? t1.GetString() ?? ""
-                : "";
-            if (!Traits.TryGetValue(trait1, out TraitInfo? info1))
-                throw new InvalidDataException($"slot {index}: unknown trait '{trait1}'");
+            if (!slot.TryGetProperty("items", out JsonElement items) ||
+                items.ValueKind != JsonValueKind.Array || items.GetArrayLength() < 1)
+                throw new InvalidDataException($"slot {index}: missing 'items' array");
 
-            int level1 = GetLevel(slot, "level1", index, info1.MaxLevel);
-            string trait2 = slot.TryGetProperty("trait2", out JsonElement t2)
-                ? t2.GetString() ?? ""
-                : "";
-            if (trait2.Length == 0)
+            JsonElement main = items[0];
+            string mainGem = Hx(main.GetProperty("gem"));
+            if (!Sigils.TryGetValue(mainGem, out SigilInfo? sigil))
+                throw new InvalidDataException($"slot {index}: unknown sigil '{mainGem}'");
+            int mainCap = Traits.TryGetValue($"{sigil.Skill:X8}", out TraitInfo? mt)
+                ? mt.MaxLevel
+                : DefaultLevel;
+            int level1 = GetLevel(main, "level", index, mainCap);
+
+            if (items.GetArrayLength() >= 2)
             {
+                JsonElement sec = items[1];
+                string secHash = Hx(sec.GetProperty("hash"));
+                if (!Traits.TryGetValue(secHash, out TraitInfo? trait))
+                    throw new InvalidDataException($"slot {index}: unknown trait '{secHash}'");
+                int level2 = GetLevel(sec, "level", index, trait.MaxLevel);
                 result.Add(new NativeCore.TemplateSlotNative
                 {
-                    GemId = info1.Gem,
-                    Trait1 = info1.Hash,
+                    GemId = sigil.Hash,
+                    Trait1 = sigil.Skill,
                     Trait1Level = level1,
-                    Trait2 = UnwornCharacterHash, // "not selected" sentinel, never 0
-                    Trait2Level = 0,
+                    Trait2 = trait.Hash,
+                    Trait2Level = level2,
                     SigilLevel = level1,
                 });
             }
             else
             {
-                if (!Traits.TryGetValue(trait2, out TraitInfo? info2))
-                    throw new InvalidDataException($"slot {index}: unknown trait '{trait2}'");
-                int level2 = GetLevel(slot, "level2", index, info2.MaxLevel);
                 result.Add(new NativeCore.TemplateSlotNative
                 {
-                    GemId = info1.Gem,
-                    Trait1 = info1.Hash,
+                    GemId = sigil.Hash,
+                    Trait1 = sigil.Skill,
                     Trait1Level = level1,
-                    Trait2 = info2.Hash,
-                    Trait2Level = level2,
+                    Trait2 = UnwornCharacterHash, // "not selected" sentinel, never 0
+                    Trait2Level = 0,
                     SigilLevel = level1,
                 });
             }
@@ -202,13 +268,22 @@ internal static class LoadoutConfig
         return result;
     }
 
-    private static int GetLevel(JsonElement slot, string propertyName, int index, int maxLevel)
+    private static int GetLevel(JsonElement item, string propertyName, int index, int maxLevel)
     {
-        if (!slot.TryGetProperty(propertyName, out JsonElement element))
+        if (!item.TryGetProperty(propertyName, out JsonElement element))
             return DefaultLevel;
         int level = element.GetInt32();
         if (level < 0 || level > maxLevel)
             throw new InvalidDataException($"slot {index}: {propertyName} out of range 0-{maxLevel}");
         return level;
+    }
+
+    private static string Hx(JsonElement e) =>
+        e.ValueKind == JsonValueKind.String ? (e.GetString() ?? "").Trim().ToUpperInvariant() : "";
+
+    private static uint PU(string hex)
+    {
+        try { return Convert.ToUInt32(hex, 16); }
+        catch { return 0; }
     }
 }

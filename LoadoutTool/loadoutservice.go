@@ -13,8 +13,9 @@ import (
 const MaxSlots = 22
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
-// Protocol is shared with the mod: traits.json (dictionary) and loadout.json
-// (player configuration, same shape as the pre-loadout.json fallback).
+// Protocol is shared with the mod: sigils.json (sigil table), traits.json
+// (trait dictionary) and loadout.json (player configuration, new array
+// format: [ { items: [{hash,level,zh,en}, {hash,level,zh,en}?], enabled } ]).
 type LoadoutService struct{}
 
 // MinimiseApp hides the window to the tray; the process stays alive so the
@@ -40,12 +41,17 @@ func (s *LoadoutService) GetHotkey() (int, error) {
 	return 0x70, nil
 }
 
+type loadoutItem struct {
+	Gem   string `json:"gem"` // items[0]: gem (物品) hash
+	Hash  string `json:"hash"` // items[1]: trait (词条) hash
+	Level int    `json:"level"`
+	Zh    string `json:"zh"`
+	En    string `json:"en"`
+}
+
 type loadoutSlot struct {
-	Trait1  string `json:"trait1"`
-	Level1  int    `json:"level1"`
-	Trait2  string `json:"trait2"`
-	Level2  int    `json:"level2"`
-	Enabled bool   `json:"enabled"`
+	Items   []loadoutItem `json:"items"`
+	Enabled bool          `json:"enabled"`
 }
 
 func exeDir() string {
@@ -58,6 +64,15 @@ func exeDir() string {
 
 func (s *LoadoutService) LoadTraits() (string, error) {
 	data, err := os.ReadFile(filepath.Join(exeDir(), "traits.json"))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// LoadSigils returns the sigil table (sigils.json) used for the primary picker.
+func (s *LoadoutService) LoadSigils() (string, error) {
+	data, err := os.ReadFile(filepath.Join(exeDir(), "sigils.json"))
 	if err != nil {
 		return "", err
 	}
@@ -78,21 +93,44 @@ func (s *LoadoutService) LoadConfig() (string, error) {
 	return string(data), nil
 }
 
-// SaveLoadout writes the player configuration (same schema as the mod reads).
-// Atomic write (temp + rename) so the mod's 250ms mtime tick never sees a
-// half-written file.
+// SaveLoadout writes the player configuration (same schema as the mod reads:
+// {lang, slots:[{items:[...],enabled}]}; a bare array is accepted too for
+// backwards compatibility). Atomic write (temp + rename) so the mod's 250ms
+// mtime tick never sees a half-written file.
 func (s *LoadoutService) SaveLoadout(config string) error {
-	var parsed map[string][]loadoutSlot
-	if err := json.Unmarshal([]byte(config), &parsed); err != nil {
+	var c struct {
+		Lang  string        `json:"lang"`
+		Slots []loadoutSlot `json:"slots"`
+	}
+	if err := json.Unmarshal([]byte(config), &c); err != nil {
 		return err
 	}
-	slots := parsed["slots"]
+	slots := c.Slots
+	if slots == nil {
+		// legacy bare-array config
+		var arr []loadoutSlot
+		if err := json.Unmarshal([]byte(config), &arr); err != nil {
+			return err
+		}
+		slots = arr
+	}
 	if len(slots) > MaxSlots {
 		return fmt.Errorf("too many slots: %d (max %d)", len(slots), MaxSlots)
 	}
 	for i, slot := range slots {
-		if slot.Level1 < 0 || slot.Level1 > 200 || slot.Level2 < 0 || slot.Level2 > 200 {
-			return fmt.Errorf("slot %d: level out of range", i+1)
+		if len(slot.Items) < 1 || len(slot.Items) > 2 {
+			return fmt.Errorf("slot %d: items must have 1 or 2 entries", i+1)
+		}
+		if slot.Items[0].Gem == "" {
+			return fmt.Errorf("slot %d: item gem is empty", i+1)
+		}
+		if len(slot.Items) == 2 && slot.Items[1].Hash == "" {
+			return fmt.Errorf("slot %d: second item hash is empty", i+1)
+		}
+		for _, item := range slot.Items {
+			if item.Level < 0 || item.Level > 200 {
+				return fmt.Errorf("slot %d: level out of range", i+1)
+			}
 		}
 	}
 	path := filepath.Join(exeDir(), "loadout.json")

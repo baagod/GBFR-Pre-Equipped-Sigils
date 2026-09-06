@@ -25,6 +25,8 @@ const mutexName = "Local\\GBFRPreEquippedSigilsTool"
 var (
 	user32                         = syscall.NewLazyDLL("user32.dll")
 	procFindWindowW                = user32.NewProc("FindWindowW")
+	procIsWindowVisible            = user32.NewProc("IsWindowVisible")
+	procGetForegroundWindow        = user32.NewProc("GetForegroundWindow")
 	procPostMessageW               = user32.NewProc("PostMessageW")
 	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
 	procShowWindow                 = user32.NewProc("ShowWindow")
@@ -40,11 +42,14 @@ var (
 
 // ensureSingleInstance: second launches activate the existing window and exit.
 func ensureSingleInstance() (release func()) {
-	handle, _, _ := procCreateMutexW.Call(0, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(mutexName))))
+	namePtr := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(mutexName)))
+	handle, _, cerr := procCreateMutexW.Call(0, 0, namePtr)
 	if handle == 0 {
+		log.Printf("single-instance: mutex create failed (handle=0), continuing without lock")
 		return func() {}
 	}
-	if err, _, _ := procGetLastError.Call(); err == 183 { // ERROR_ALREADY_EXISTS
+	if cerr == syscall.ERROR_ALREADY_EXISTS {
+		log.Printf("single-instance: existing instance detected, activating its window")
 		title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
 		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
 		if hwnd != 0 {
@@ -168,6 +173,13 @@ func main() {
 			// through hide->show; hidden windows just get the internal show.
 			if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
 				procPostMessageW.Call(hwnd, 0x8011, 0, 0)
+			} else if visible, _, _ := procIsWindowVisible.Call(hwnd); visible != 0 {
+				// Visible but possibly behind other windows: bring to front via
+				// the internal show/focus message (Wails handles the foreground
+				// rules) — no fade, no flash. Do nothing when already foreground.
+				if fg, _, _ := procGetForegroundWindow.Call(); fg != hwnd {
+					procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+				}
 			} else {
 				// Layered fade-in: hide the white frame under alpha 0, show,
 				// then fade to opaque once content has rendered.

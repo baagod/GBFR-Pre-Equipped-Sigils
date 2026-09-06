@@ -12,3 +12,4 @@ dist/
 *.ilk
 *.zip
 tools-test/
+loadouttool/*.exe
