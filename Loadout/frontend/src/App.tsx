@@ -693,7 +693,7 @@ function ExclusivePanel({
     return lang === "zh" ? s.zh || s.name || gem : s.name || s.zh || gem
   }
   return (
-    <div className="space-y-1">
+    <div>
       {table.map((e) => {
         const st = state?.[e.hash]
         const t1 = st ? st.t1 : true
@@ -709,7 +709,7 @@ function ExclusivePanel({
         return (
           <div
             key={e.hash}
-            className="flex h-[42px] items-center border-b text-sm last:border-b-0"
+            className="flex h-[42px] items-center border-b text-sm"
           >
             <div className="grid w-full grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
               <span className="font-medium">{characterName}</span>
