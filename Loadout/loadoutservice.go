@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// MaxSlots mirrors the managed/native effective limit (must stay in sync).
-const MaxSlots = 22
+// MaxSlots mirrors the managed editor limit (must stay in sync).
+const MaxSlots = 12
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
 // Protocol is shared with the mod: sigils.json (sigil table), skills.json

@@ -8,8 +8,8 @@ namespace GBFR.PreEquippedSigils;
 /// No config file keeps the built-in 9-slot template; invalid files are
 /// reported and the last valid configuration stays active.
 ///
-/// Data model (2026 会话改版):
-///   sigils.json  : { sigils: [ { hash, zh, en, skill, secondaries[], rarity, player, special } ] }
+/// Data model (2026 会话改版; mod parses only the fields it needs):
+///   sigils.json  : { sigils: [ { gem, skill } ] } (name/sec/pool/special are tool-side only)
 ///   skills.json  : { traits: [ { hash, zh, en, cap } ] }
 ///   loadout.json : [ { items: [ {hash, level, zh, en}, {hash, level, zh, en}? ], enabled } ]
 ///                  items[0] = sigil (item), items[1] = secondary trait (optional).
@@ -26,13 +26,10 @@ internal static class LoadoutConfig
     {
         public required uint Hash { get; init; }
         public required uint Skill { get; init; }
-        public uint Sec { get; set; }              // fixed second trait (0 = none)
-        public List<uint> Pool { get; } = new();   // random-pool candidates
     }
 
     private sealed class TraitInfo
     {
-        public required uint Hash { get; init; }
         public int MaxLevel { get; init; } = DefaultLevel;
     }
 
@@ -87,23 +84,6 @@ internal static class LoadoutConfig
                         Hash = PU(gem),
                         Skill = PU(Hx(entry.GetProperty("skill"))),
                     };
-                    if (entry.TryGetProperty("sec", out JsonElement secEl) &&
-                        secEl.ValueKind == JsonValueKind.String)
-                    {
-                        uint h = PU(Hx(secEl));
-                        if (h != 0)
-                            info.Sec = h;
-                    }
-                    if (entry.TryGetProperty("pool", out JsonElement poolEl) &&
-                        poolEl.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (JsonElement s in poolEl.EnumerateArray())
-                        {
-                            uint h = PU(Hx(s));
-                            if (h != 0)
-                                info.Pool.Add(h);
-                        }
-                    }
                     Sigils[gem] = info;
                     count++;
                 }
@@ -136,7 +116,7 @@ internal static class LoadoutConfig
                                    ml.TryGetInt32(out int m)
                         ? m
                         : DefaultLevel;
-                    Traits[hash] = new TraitInfo { Hash = PU(hash), MaxLevel = maxLevel };
+                    Traits[hash] = new TraitInfo { MaxLevel = maxLevel };
                     count++;
                 }
                 catch
@@ -260,7 +240,7 @@ internal static class LoadoutConfig
                     GemId = sigil.Hash,
                     Trait1 = sigil.Skill,
                     Trait1Level = level1,
-                    Trait2 = trait.Hash,
+                    Trait2 = PU(secHash),
                     Trait2Level = level2,
                     SigilLevel = level1,
                 });

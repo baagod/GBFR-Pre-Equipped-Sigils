@@ -57,10 +57,10 @@ internal static unsafe partial class NativeCore
         bool nativeLibraryCompleted = false;
         try
         {
-            NativeSetLogCallback(
+            GBFR20_SetLogCallback(
                 Marshal.GetFunctionPointerForDelegate(NativeLogCallbackProc)
             );
-            uint abiVersion = NativeGetAbiVersion();
+            uint abiVersion = GBFR20_GetAbiVersion();
             if (abiVersion != AbiVersion)
             {
                 throw new InvalidOperationException(
@@ -72,7 +72,7 @@ internal static unsafe partial class NativeCore
                 $"elapsed_ms={(long)Stopwatch.GetElapsedTime(nativeLibraryStarted).TotalMilliseconds}."
             );
             nativeLibraryCompleted = true;
-            return NativeInitialize() != 0;
+            return GBFR20_Initialize() != 0;
         }
         catch
         {
@@ -88,21 +88,21 @@ internal static unsafe partial class NativeCore
         }
     }
 
-    internal static void Tick() => NativeTick();
+    internal static void Tick() => GBFR20_Tick();
 
     /// <summary>
     /// Applies a custom loadout (null restores the built-in template).
     /// </summary>
     internal static bool ApplyCustomLoadout(TemplateSlotNative[]? slots)
     {
-        return NativeSetCustomLoadout(slots, (uint)(slots?.Length ?? 0)) != 0;
+        return GBFR20_SetCustomLoadout(slots, (uint)(slots?.Length ?? 0)) != 0;
     }
 
     internal static void Shutdown()
     {
         try
         {
-            NativeShutdown();
+            GBFR20_Shutdown();
         }
         finally
         {
@@ -112,14 +112,14 @@ internal static unsafe partial class NativeCore
 
     internal static string GetRuntimeMessage()
     {
-        uint required = NativeCopyRuntimeMessage(null, 0);
+        uint required = GBFR20_CopyRuntimeMessage(null, 0);
         if (required <= 1)
             return string.Empty;
         if (required > 64 * 1024)
             required = 64 * 1024;
         byte[] bytes = new byte[required];
         fixed (byte* buffer = bytes)
-            NativeCopyRuntimeMessage((sbyte*)buffer, required);
+            GBFR20_CopyRuntimeMessage((sbyte*)buffer, required);
         int length = Array.IndexOf(bytes, (byte)0);
         if (length < 0)
             length = bytes.Length;
@@ -156,7 +156,7 @@ internal static unsafe partial class NativeCore
         try
         {
             if (_libraryHandle != IntPtr.Zero)
-                NativeSetLogCallback(IntPtr.Zero);
+                GBFR20_SetLogCallback(IntPtr.Zero);
         }
         catch
         {

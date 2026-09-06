@@ -129,19 +129,6 @@ function LevelInput({
   )
 }
 
-function normalizeSlot(raw: unknown): Slot {
-  const s = (raw ?? {}) as Partial<Slot>
-  const mainHash = typeof s.mainHash === "string" ? s.mainHash : ""
-  const secHash = typeof s.secHash === "string" ? s.secHash : ""
-  return {
-    mainHash,
-    mainLevel: mainHash ? (Number.isFinite(s.mainLevel) ? (s.mainLevel as number) : 15) : 0,
-    secHash,
-    secLevel: secHash ? (Number.isFinite(s.secLevel) ? (s.secLevel as number) : 15) : 0,
-    enabled: s.enabled !== false,
-  }
-}
-
 const emptySlot = (): Slot => ({ mainHash: "", mainLevel: 0, secHash: "", secLevel: 0, enabled: true })
 
 /** Normalize a saved config (new array format) into Slot[] (mainHash = name).

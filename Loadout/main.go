@@ -30,8 +30,7 @@ var (
 	procPostMessageW               = user32.NewProc("PostMessageW")
 	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
 	procShowWindow                 = user32.NewProc("ShowWindow")
-	procIsIconic                   = user32.NewProc("IsIconic")
-	procGetWindowLong                = user32.NewProc("GetWindowLongW")
+	procGetWindowLong              = user32.NewProc("GetWindowLongW")
 	procSetWindowLong                = user32.NewProc("SetWindowLongW")
 	procSetLayeredWindowAttributes  = user32.NewProc("SetLayeredWindowAttributes")
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
@@ -154,20 +153,11 @@ func handleWndMsg(_ uintptr, msg uint32, _, _ uintptr) (uintptr, bool) {
 	case 0x0010: // WM_CLOSE
 		win.Hide()
 		return 0, true
-	case 0x8010: // show + focus + repaint nudge
-		win.Show()
-		nudge()
-		win.Focus()
-		return 0, true
-	case 0x8011: // restore + focus + repaint nudge
+	case 0x8010: // activate: restore + show + repaint nudge + focus (single activation command)
 		win.Restore()
 		win.Show()
 		nudge()
 		win.Focus()
-		return 0, true
-	case 0x8012: // hide->show bounce (repaints WebView after minimize)
-		win.Hide()
-		win.Show()
 		return 0, true
 	}
 	return 0, false
@@ -185,20 +175,15 @@ func trayOnClick() {
 	if hwnd == 0 {
 		return
 	}
-	// Minimized windows repaint badly after external restore, so bounce
-	// through hide->show; hidden windows just get the internal show.
-	if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
-		procPostMessageW.Call(hwnd, 0x8011, 0, 0)
-	} else if visible, _, _ := procIsWindowVisible.Call(hwnd); visible != 0 {
-		// Visible but possibly behind other windows: bring to front via the
-		// internal show/focus message (Wails handles the foreground rules) —
-		// no fade, no flash. Nothing to do when already foreground.
+	// One activation command for every state: 0x8010 restores+shows the window
+	// (the tool then nudges a repaint and focuses). Hidden windows get the
+	// layered fade-in first so the WebView2 frame does not flash white; a
+	// minimized window still reports visible and goes through the plain path.
+	if visible, _, _ := procIsWindowVisible.Call(hwnd); visible != 0 {
 		if fg, _, _ := procGetForegroundWindow.Call(); fg != hwnd {
 			procPostMessageW.Call(hwnd, 0x8010, 0, 0)
 		}
 	} else {
-		// Layered fade-in: hide the white frame under alpha 0, show, then
-		// fade to opaque once content has rendered.
 		exStyle, _, _ := procGetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19)) // GWL_EXSTYLE=-20
 		procSetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19), exStyle|0x80000) // WS_EX_LAYERED
 		procSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)

@@ -12,19 +12,11 @@ namespace GBFR.PreEquippedSigils;
 /// </summary>
 internal static class Hotkey
 {
-    private const int SwRestore = 9;
-    private const int SwShow = 5;
-    private const int HwndTopmost = -1;
-    private const int HwndNotopmost = -2;
-    private const uint SwpNomove = 0x0002;
-    private const uint SwpNosize = 0x0001;
-    private const uint SwpShowwindow = 0x0040;
     private const int WmHotkey = 0x0312;
     private const int HwndMessage = -3;
     private const int HotkeyId = 0x47B1;
     private const uint ModNoRepeat = 0x4000;
     private const int WmQuit = 0x0012;
-    private const int SwDestroy = 2;
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
@@ -39,18 +31,7 @@ internal static class Hotkey
     private static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
 
     [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetWindowPos(
-        IntPtr hWnd, IntPtr hWndInsertAfter,
-        int x, int y, int cx, int cy, uint uFlags);
-
-    [DllImport("user32.dll")]
-    private static extern bool BringWindowToTop(IntPtr hWnd);
 
     [DllImport("user32.dll")]
     private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
@@ -304,8 +285,8 @@ internal static class Hotkey
             log("Loadout.exe not found in the mod directory.");
             return;
         }
-        using var process = Process.Start(new ProcessStartInfo(
-            toolPath, $"--mod-dir \"{_modDirectory}\"")
+        // The tool resolves its own data directory (exeDir); no args needed.
+        using var process = Process.Start(new ProcessStartInfo(toolPath)
         {
             UseShellExecute = true,
         });
@@ -347,20 +328,16 @@ internal static class Hotkey
     }
 
     /// <summary>
-    /// Reliable bring-to-front for tray-hidden windows: first request an
-    /// internal show (WM_APP+0x10 -> WebView2 repaints correctly, unlike an
-    /// external SW_SHOW on a hidden window), then activate via temporary
-    /// TOPMOST which is removed again so the window does not stay on top.
+    /// Requests the tool to show/restore/focus itself (WM_APP+0x10; the tool
+    /// handles the hidden/minimized states and repaint nudges) and then takes
+    /// foreground permission. SetForegroundWindow must run here on the hotkey
+    /// process: the RegisterHotKey press is what Windows treats as user input
+    /// and grants activation rights to this process.
     /// </summary>
     private static void ActivateWindow(IntPtr hWnd)
     {
         PostMessage(hWnd, 0x8010, IntPtr.Zero, IntPtr.Zero);
         Thread.Sleep(80);
-        ShowWindow(hWnd, SwShow);
-        ShowWindow(hWnd, SwRestore);
-        BringWindowToTop(hWnd);
-        SetWindowPos(hWnd, (IntPtr)HwndTopmost, 0, 0, 0, 0, SwpNomove | SwpNosize | SwpShowwindow);
         SetForegroundWindow(hWnd);
-        SetWindowPos(hWnd, (IntPtr)HwndNotopmost, 0, 0, 0, 0, SwpNomove | SwpNosize);
     }
 }
