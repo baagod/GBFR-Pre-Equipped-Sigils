@@ -708,10 +708,8 @@ function ExclusivePanel({
           lang === "zh" ? e.nameZh || e.name || e.hash : e.name || e.nameZh || e.hash
         return (
           <div key={e.hash} className="border-b py-2 text-sm last:border-b-0">
-            <div className="mb-1 flex items-center gap-2 font-medium">
-              <span>{characterName}</span>
-            </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+              <span className="min-w-[6rem] font-medium">{characterName}</span>
               {row.map((r) => (
                 <label key={r.key} className="flex items-center gap-1.5">
                   <Checkbox
