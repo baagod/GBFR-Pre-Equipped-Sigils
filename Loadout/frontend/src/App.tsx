@@ -736,16 +736,23 @@ function ExclusivePanel({
   }
   return (
     <div>
-      {table.map((e) => {
-        const st = state?.[e.player]
-        const row = [
-          { key: e.t1, on: st?.[e.t1] ?? true, gem: e.t1Gem },
-          { key: e.t2, on: st?.[e.t2] ?? true, gem: e.t2Gem },
-          { key: e.war, on: st?.[e.war] ?? true, gem: e.warGem },
-        ]
-        const characterName =
-          lang === "zh" ? e.zh || e.name || e.hash : e.name || e.zh || e.hash
-        return (
+      {/* One row per shared player code (Gran/Djeeta both PL0000 with the same
+          exclusives): the toggle is linked for both in-game characters. */}
+      {table
+        .filter((e, index) => table.findIndex((x) => x.player === e.player) === index)
+        .map((e) => {
+          const st = state?.[e.player]
+          const row = [
+            { key: e.t1, on: st?.[e.t1] ?? true, gem: e.t1Gem },
+            { key: e.t2, on: st?.[e.t2] ?? true, gem: e.t2Gem },
+            { key: e.war, on: st?.[e.war] ?? true, gem: e.warGem },
+          ]
+          const characterName =
+            table
+              .filter((x) => x.player === e.player)
+              .map((x) => (lang === "zh" ? x.zh || x.name : x.name || x.zh))
+              .join(" / ") || e.hash
+          return (
           <div
             key={e.hash}
             className="flex h-[42px] items-center border-b text-sm last:border-b-0"
