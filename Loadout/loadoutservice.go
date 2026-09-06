@@ -62,6 +62,20 @@ func exeDir() string {
 	return filepath.Dir(exe)
 }
 
+// userCfgDir is where the player configuration (loadout.json) lives. The mod
+// folder is replaced on every update; this location survives them.
+func userCfgDir() string {
+	base := os.Getenv("LOCALAPPDATA")
+	if base == "" {
+		if d, err := os.UserConfigDir(); err == nil {
+			base = d
+		} else {
+			base = exeDir()
+		}
+	}
+	return filepath.Join(base, "GBFRPreEquippedSigils")
+}
+
 func (s *LoadoutService) LoadTraits() (string, error) {
 	data, err := os.ReadFile(filepath.Join(exeDir(), "traits.json"))
 	if err != nil {
@@ -79,13 +93,13 @@ func (s *LoadoutService) LoadSigils() (string, error) {
 	return string(data), nil
 }
 
-// LoadConfig returns loadout.json, or pre-loadout.json as the editable
-// starting point when no player configuration exists yet.
+// LoadConfig returns the player configuration from the user directory; when
+// none exists yet, the mod-dir pre-loadout.json template is used as the
+// editable starting point.
 func (s *LoadoutService) LoadConfig() (string, error) {
-	dir := exeDir()
-	data, err := os.ReadFile(filepath.Join(dir, "loadout.json"))
+	data, err := os.ReadFile(filepath.Join(userCfgDir(), "loadout.json"))
 	if err != nil {
-		data, err = os.ReadFile(filepath.Join(dir, "pre-loadout.json"))
+		data, err = os.ReadFile(filepath.Join(exeDir(), "pre-loadout.json"))
 		if err != nil {
 			return "", err
 		}
@@ -133,7 +147,11 @@ func (s *LoadoutService) SaveLoadout(config string) error {
 			}
 		}
 	}
-	path := filepath.Join(exeDir(), "loadout.json")
+	dir := userCfgDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "loadout.json")
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, []byte(config), 0644); err != nil {
 		return err
