@@ -203,7 +203,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   natural bind 的授权提交（`CommitAuthorizedStatus`）与 `ValidateAuthorizedStatuses`的
 - `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查的
 - `compatibility.tsv` 缺失或条目数 != 199 的启动失败（fail-closed）的
-- ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=15`）与
+- ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=16`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的`AbiVersion` 必须一致；改动需三方同步 + 版本号递增的
 - **可选配的*：INI 体系已删除；的`loadout.json` 时槽的= `kTemplateSlotCount` 常量（`native_internal.h`，当的9 = 觉醒的战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）的
 - 第三的`third_party/`（safetyhook、Zydis）只可升级替换，不可手改的
