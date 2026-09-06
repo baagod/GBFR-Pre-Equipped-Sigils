@@ -71,17 +71,17 @@ if ($LASTEXITCODE -ne 0) {
 
 # Loadout editor tool: Wails v3 build (GUI subsystem, embedded frontend dist).
 $toolDir = Join-Path $root 'Loadout'
-# Bindings are git-ignored generated output; regenerate before the frontend build.
-& wails3 generate bindings
-if ($LASTEXITCODE -ne 0) {
-    throw "Wails bindings generation failed with exit code $LASTEXITCODE."
-}
-& npm --prefix (Join-Path $toolDir 'frontend') run build
-if ($LASTEXITCODE -ne 0) {
-    throw "Tool frontend build failed with exit code $LASTEXITCODE."
-}
 Push-Location $toolDir
 try {
+    # Bindings are git-ignored generated output; regenerate before the frontend build.
+    & wails3 generate bindings
+    if ($LASTEXITCODE -ne 0) {
+        throw "Wails bindings generation failed with exit code $LASTEXITCODE."
+    }
+    & npm --prefix (Join-Path $toolDir 'frontend') run build
+    if ($LASTEXITCODE -ne 0) {
+        throw "Tool frontend build failed with exit code $LASTEXITCODE."
+    }
     & go build -ldflags "-H windowsgui" -o Loadout.exe .
     if ($LASTEXITCODE -ne 0) {
         throw "Tool build failed with exit code $LASTEXITCODE."
