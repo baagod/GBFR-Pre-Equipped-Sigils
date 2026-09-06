@@ -8,7 +8,6 @@
                            "player":  "PL0300",
                            "t2Gem":  "D48ABDDA",
                            "name":  "Rackam",
-                           "awakening":  "98A6D249",
                            "zh":  "拉卡姆",
                            "warGem":  "BC53CE24",
                            "hash":  "079DF0CC"
@@ -21,7 +20,6 @@
                            "player":  "PL1600",
                            "t2Gem":  "44D48479",
                            "name":  "Zeta",
-                           "awakening":  "4F01D6CA",
                            "zh":  "泽塔",
                            "warGem":  "BFDF838C",
                            "hash":  "0D21B430"
@@ -34,7 +32,6 @@
                            "player":  "PL0200",
                            "t2Gem":  "30A3F2EA",
                            "name":  "Katalina",
-                           "awakening":  "9ADA3E00",
                            "zh":  "卡塔莉娜",
                            "warGem":  "AC175924",
                            "hash":  "18E2F9F9"
@@ -47,7 +44,6 @@
                            "player":  "PL2400",
                            "t2Gem":  "282DBFF0",
                            "name":  "Gallanza",
-                           "awakening":  "895ABBF6",
                            "zh":  "加兰扎",
                            "warGem":  "41AC1082",
                            "hash":  "1BB37EF0"
@@ -60,7 +56,6 @@
                            "player":  "PL0800",
                            "t2Gem":  "B5DA3E80",
                            "name":  "Lancelot",
-                           "awakening":  "E19B1965",
                            "zh":  "兰斯洛特",
                            "warGem":  "8A3819C0",
                            "hash":  "22E437E5"
@@ -73,7 +68,6 @@
                            "player":  "PL2500",
                            "t2Gem":  "EC9FFE77",
                            "name":  "Maglielle",
-                           "awakening":  "D8A464F1",
                            "zh":  "玛格里耶",
                            "warGem":  "EB766D87",
                            "hash":  "25D46F4B"
@@ -86,7 +80,6 @@
                            "player":  "PL2200",
                            "t2Gem":  "AE9D89DF",
                            "name":  "Seofon",
-                           "awakening":  "6AAE4B8F",
                            "zh":  "西奥芬",
                            "warGem":  "9F72BAE0",
                            "hash":  "296471BE"
@@ -99,7 +92,6 @@
                            "player":  "PL0000",
                            "t2Gem":  "380A3CA8",
                            "name":  "Gran",
-                           "awakening":  "52A6E299",
                            "zh":  "古兰",
                            "warGem":  "0713D928",
                            "hash":  "2A26B1B2"
@@ -112,7 +104,6 @@
                            "player":  "PL0000",
                            "t2Gem":  "380A3CA8",
                            "name":  "Djeeta",
-                           "awakening":  "52A6E299",
                            "zh":  "姬塔",
                            "warGem":  "0713D928",
                            "hash":  "A4ACBA76"
@@ -125,7 +116,6 @@
                            "player":  "PL0900",
                            "t2Gem":  "FB9B6DD5",
                            "name":  "Vane",
-                           "awakening":  "673C5D8F",
                            "zh":  "瓦恩",
                            "warGem":  "A490BADF",
                            "hash":  "2EBE91D5"
@@ -138,7 +128,6 @@
                            "player":  "PL0400",
                            "t2Gem":  "F6C0FCA5",
                            "name":  "Io",
-                           "awakening":  "E2B380E5",
                            "zh":  "伊欧",
                            "warGem":  "43F26A91",
                            "hash":  "4D0A60C3"
@@ -151,7 +140,6 @@
                            "player":  "PL1100",
                            "t2Gem":  "BCEDF060",
                            "name":  "Siegfried",
-                           "awakening":  "AB835493",
                            "zh":  "齐格飞",
                            "warGem":  "E21A4170",
                            "hash":  "627BCB0D"
@@ -164,7 +152,6 @@
                            "player":  "PL2800",
                            "t2Gem":  "64301E91",
                            "name":  "Fraux",
-                           "awakening":  "5A360EA8",
                            "zh":  "芙罗",
                            "warGem":  "2D70C37D",
                            "hash":  "646C3168"
@@ -177,7 +164,6 @@
                            "player":  "PL2100",
                            "t2Gem":  "7E3A52A3",
                            "name":  "Sandalphon",
-                           "awakening":  "B8C44D5E",
                            "zh":  "桑德冯",
                            "warGem":  "5D592FDD",
                            "hash":  "718E1A14"
@@ -190,7 +176,6 @@
                            "player":  "PL2900",
                            "t2Gem":  "0723F7EC",
                            "name":  "Fediel",
-                           "awakening":  "A8A0CBFF",
                            "zh":  "菲迪埃",
                            "warGem":  "9ABD2DA5",
                            "hash":  "74DD4C79"
@@ -203,7 +188,6 @@
                            "player":  "PL1500",
                            "t2Gem":  "6CCA1FF7",
                            "name":  "Ghandagoza",
-                           "awakening":  "CE16D68B",
                            "zh":  "甘达戈萨",
                            "warGem":  "3069C2FE",
                            "hash":  "978E4B18"
@@ -216,7 +200,6 @@
                            "player":  "PL2600",
                            "t2Gem":  "D4117FF3",
                            "name":  "Beatrix",
-                           "awakening":  "95CC3CB8",
                            "zh":  "比亚特莉丝",
                            "warGem":  "51E98A7C",
                            "hash":  "9A8AF295"
@@ -229,7 +212,6 @@
                            "player":  "PL2700",
                            "t2Gem":  "1A359B67",
                            "name":  "Eustace",
-                           "awakening":  "23953FD4",
                            "zh":  "尤斯塔斯",
                            "warGem":  "D8C61507",
                            "hash":  "9B15CFB1"
@@ -242,7 +224,6 @@
                            "player":  "PL1900",
                            "t2Gem":  "EAA911B2",
                            "name":  "Id",
-                           "awakening":  "AF8E7E7E",
                            "zh":  "伊德",
                            "warGem":  "98E9E6EF",
                            "hash":  "A3A3CB2F"
@@ -255,7 +236,6 @@
                            "player":  "PL1800",
                            "t2Gem":  "147DA58B",
                            "name":  "Cagliostro",
-                           "awakening":  "02B1F8C0",
                            "zh":  "卡莉奥斯特罗",
                            "warGem":  "66F1B128",
                            "hash":  "AA66178A"
@@ -268,7 +248,6 @@
                            "player":  "PL2300",
                            "t2Gem":  "DBE503C7",
                            "name":  "Tweyen",
-                           "awakening":  "8ECBB0A3",
                            "zh":  "特维因",
                            "warGem":  "AD8CAEFB",
                            "hash":  "BAD16E3B"
@@ -281,7 +260,6 @@
                            "player":  "PL1000",
                            "t2Gem":  "C06F4708",
                            "name":  "Percival",
-                           "awakening":  "02472C43",
                            "zh":  "珀西瓦尔",
                            "warGem":  "4CDCE25B",
                            "hash":  "BDEF7181"
@@ -294,7 +272,6 @@
                            "player":  "PL0700",
                            "t2Gem":  "BF714A8A",
                            "name":  "Ferry",
-                           "awakening":  "B441275D",
                            "zh":  "费里",
                            "warGem":  "E496D882",
                            "hash":  "C3FFD418"
@@ -307,7 +284,6 @@
                            "player":  "PL0600",
                            "t2Gem":  "21E10EB7",
                            "name":  "Rosetta",
-                           "awakening":  "9BD1CC24",
                            "zh":  "罗塞塔",
                            "warGem":  "515E693C",
                            "hash":  "C8616284"
@@ -320,7 +296,6 @@
                            "player":  "PL0500",
                            "t2Gem":  "05ACA892",
                            "name":  "Eugen",
-                           "awakening":  "1BBE919C",
                            "zh":  "欧根",
                            "warGem":  "CAAE3F9C",
                            "hash":  "DD7A151E"
@@ -333,7 +308,6 @@
                            "player":  "PL1400",
                            "t2Gem":  "A879208F",
                            "name":  "Narmaya",
-                           "awakening":  "1A57AEF1",
                            "zh":  "娜露梅",
                            "warGem":  "CEF31894",
                            "hash":  "E7053919"
@@ -346,7 +320,6 @@
                            "player":  "PL1700",
                            "t2Gem":  "A59C9613",
                            "name":  "Vaseraga",
-                           "awakening":  "E4F986D9",
                            "zh":  "巴萨拉加",
                            "warGem":  "B3AB43F3",
                            "hash":  "F0EB77EF"
@@ -359,7 +332,6 @@
                            "player":  "PL1300",
                            "t2Gem":  "49651C89",
                            "name":  "Yodarha",
-                           "awakening":  "119B24A8",
                            "zh":  "约达尔哈",
                            "warGem":  "76D4716B",
                            "hash":  "FC6CDF7B"
@@ -372,7 +344,6 @@
                            "player":  "PL1200",
                            "t2Gem":  "7C8580CA",
                            "name":  "Charlotta",
-                           "awakening":  "AEEF8343",
                            "zh":  "夏洛特",
                            "warGem":  "4C28585A",
                            "hash":  "FD3BE362"

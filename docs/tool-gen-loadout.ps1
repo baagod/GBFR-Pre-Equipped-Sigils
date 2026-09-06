@@ -2,11 +2,9 @@
 
 # ============================================================================
 # 专属因子权威数据（改这里的 Hash/T1/T2/War/Awake 后重新生成）：
-#   Awake = 觉醒＋（组合物品 gem，携带 T1/T2 两词条）；T1/T2 = 觉醒＋两专属词条；
-#   War = 战气词条。T1Gem/T2Gem/WarGem（独立因子与战气的物品 gem）由脚本从
-#   sigils.json 推导（special=False 且 skill 匹配）；Awake 优先用 sigils.json
-#   的 special=True 行（skill=T1 & sec=T2），仅 3 个角色（1BB37EF0/25D46F4B/
-#   646C3168）在表中无该组合行，此时回退本列。
+#   T1/T2 = 觉醒＋两专属词条；War = 战气词条。T1Gem/T2Gem/WarGem（独立因子与
+#   战气的物品 gem）由脚本从 sigils.json 推导（special=False 且 skill 匹配）；
+#   Awake（觉醒＋组合物品 gem）仅用于由 compatibility.tsv 反查该角色 PL 码。
 # ============================================================================
 $chars = @(
     @{ Hash = '079DF0CC'; Name = 'Rackam'; Zh = '拉卡姆'; Awake = '98A6D249'; T1 = '151E4674'; T2 = 'A374FDF0'; War = 'D76F4D24' }, # Rackam
@@ -55,13 +53,11 @@ foreach ($line in Get-Content $tsvPath) {
     }
 }
 
-# sigils.json：skill -> 独立因子 gem（special=False）；"T1|T2" -> 觉醒＋组合 gem（special=True）
+# sigils.json：skill -> 独立因子 gem（special=False）
 $sigils = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $indepGem = @{}
-$awakeGem = @{}
 foreach ($s in $sigils.sigils) {
     if (-not $s.special -and -not $indepGem.ContainsKey($s.skill)) { $indepGem[$s.skill] = $s.gem }
-    if ($s.special -and -not $awakeGem.ContainsKey("$($s.skill)|$($s.sec)")) { $awakeGem["$($s.skill)|$($s.sec)"] = $s.gem }
 }
 
 $resolved = @()
@@ -69,8 +65,6 @@ foreach ($c in $chars) {
     $t1Gem = $indepGem[$c.T1]
     $t2Gem = $indepGem[$c.T2]
     $warGem = $indepGem[$c.War]
-    $awake = $awakeGem["$($c.T1)|$($c.T2)"]
-    if (-not $awake) { $awake = $c.Awake }   # 3 角色在 sigils.json 无组合行，回退显式值
     if (-not $t1Gem -or -not $t2Gem -or -not $warGem) {
         throw "cannot resolve exclusive gems for $($c.Hash): t1=$t1Gem t2=$t2Gem war=$warGem"
     }
@@ -79,7 +73,7 @@ foreach ($c in $chars) {
     $resolved += [pscustomobject]@{
         Hash = $c.Hash; Name = $c.Name; Zh = $c.Zh; Player = $player
         T1 = $c.T1; T2 = $c.T2; War = $c.War
-        Awake = $awake; T1Gem = $t1Gem; T2Gem = $t2Gem; WarGem = $warGem
+        T1Gem = $t1Gem; T2Gem = $t2Gem; WarGem = $warGem
     }
 }
 
@@ -111,7 +105,6 @@ $excl = @{
             t1 = $_.T1
             t2 = $_.T2
             war = $_.War
-            awakening = $_.Awake
             t1Gem = $_.T1Gem
             t2Gem = $_.T2Gem
             warGem = $_.WarGem

@@ -105,7 +105,6 @@ interface Exclusive {
   t1: string
   t2: string
   war: string
-  awakening: string
   t1Gem: string
   t2Gem: string
   warGem: string
@@ -127,10 +126,12 @@ function LevelInput({
   max,
   min = 1,
   onLevel,
+  disabled,
 }: {
   value: number
   max: number
   min?: number
+  disabled?: boolean
   onLevel: (n: number) => void
 }) {
   return (
@@ -140,6 +141,7 @@ function LevelInput({
         min={min}
         max={max}
         value={value}
+        disabled={disabled}
         onChange={(e) => {
           const n = Math.max(min, Math.floor(Math.min(Number(e.target.value), max)))
           onLevel(n)
@@ -292,8 +294,10 @@ export default function App() {
               continue
             }
             const merged = { ...(out[row.player] ?? {}) }
-            for (const trait of [row.t1, row.t2, row.war])
-              merged[trait] = (entry as Record<string, unknown>)[trait] !== false
+            const legacy = entry as Record<string, unknown>
+            merged[row.t1] = legacy.t1 !== false
+            merged[row.t2] = legacy.t2 !== false
+            merged[row.war] = legacy.war !== false
             out[row.player] = merged
             migrated = true
           }
@@ -686,6 +690,7 @@ function SlotRow({
           value={slot.mainHash ? slot.mainLevel : 0}
           max={maxOfMain(slot.mainHash)}
           min={slot.mainHash ? 1 : 0}
+          disabled={!slot.mainHash}
           onLevel={(n) => updateSlot(index, { mainLevel: n })}
         />
       </div>
@@ -708,6 +713,7 @@ function SlotRow({
           value={slot.secHash ? slot.secLevel : 0}
           max={maxOfSec(slot.secHash)}
           min={slot.secHash ? 1 : 0}
+          disabled={!slot.secHash}
           onLevel={(n) => updateSlot(index, { secLevel: n })}
         />
       </div>

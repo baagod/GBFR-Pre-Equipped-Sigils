@@ -301,11 +301,14 @@ internal static class LoadoutConfig
                 t2 = value;
             else if (row != null && traitHash == row.War)
                 war = value;
-            else switch (field.Name)
+            else
             {
-                case "t1": t1 = value; break;
-                case "t2": t2 = value; break;
-                case "war": war = value; break;
+                switch (field.Name)
+                {
+                    case "t1": t1 = value; break;
+                    case "t2": t2 = value; break;
+                    case "war": war = value; break;
+                }
             }
         }
         result.Add(new NativeCore.ExclusiveOverrideNative
