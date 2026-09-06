@@ -503,9 +503,9 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 bg-background px-4 pt-2"
+        className="shrink-0 border-b bg-background px-4 pt-2 pb-2"
       >
-        <TabsList variant="line">
+        <TabsList>
           <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
           <TabsTrigger value="exclusive">{t.tabExclusive}</TabsTrigger>
         </TabsList>
