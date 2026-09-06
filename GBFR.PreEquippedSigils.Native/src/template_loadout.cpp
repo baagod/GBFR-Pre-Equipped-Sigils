@@ -335,7 +335,8 @@ void InstallDefaultTemplateSelections()
    }
    Log(
       "Installed " + std::to_string(installed) +
-      " built-in template loadout selection(s); inventory-independent.");
+      " built-in template loadout selection(s). Exclusive slots 1-3 (T1/T2/war), "
+      "general slot i = slot 3+i; inventory-independent.");
 }
 
 bool TryCopyTemplateGem(
