@@ -505,10 +505,50 @@ export default function App() {
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
         className="shrink-0 border-b bg-background px-4 pt-1 pb-2"
       >
-        <TabsList>
-          <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
-          <TabsTrigger value="exclusive">{t.tabExclusive}</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
+            <TabsTrigger value="exclusive">{t.tabExclusive}</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center">
+            <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+              <AlertDialogTrigger
+                render={
+                  <Button variant="ghost" size="sm" aria-label={t.reset}>
+                    {t.reset}
+                  </Button>
+                }
+              />
+              <AlertDialogContent size="sm" initialFocus={resetCancelRef}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t.reset}?</AlertDialogTitle>
+                  <AlertDialogDescription>{t.resetDesc}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel ref={resetCancelRef}>{t.cancel}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      void ResetLoadout()
+                        .then(() => reloadConfig())
+                        .finally(() => setResetOpen(false))
+                    }}
+                  >
+                    {t.resetConfirm}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-1"
+              onClick={toggleLang}
+              aria-label="Switch language"
+            >
+              {lang === "zh" ? "EN" : "中"}
+            </Button>
+          </div>
+        </div>
       </Tabs>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-0 pb-0 [scrollbar-gutter:stable]">
         {status && (
@@ -552,45 +592,6 @@ export default function App() {
             onChange={updateExclusive}
           />
         )}
-      </div>
-
-      <div className="flex shrink-0 items-center border-t bg-background py-3 pr-4">
-        <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
-          <AlertDialogTrigger
-            render={
-              <Button variant="ghost" size="sm" className="ml-auto" aria-label={t.reset}>
-                {t.reset}
-              </Button>
-            }
-          />
-          <AlertDialogContent size="sm" initialFocus={resetCancelRef}>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t.reset}?</AlertDialogTitle>
-              <AlertDialogDescription>{t.resetDesc}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel ref={resetCancelRef}>{t.cancel}</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  void ResetLoadout()
-                    .then(() => reloadConfig())
-                    .finally(() => setResetOpen(false))
-                }}
-              >
-                {t.resetConfirm}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-2"
-          onClick={toggleLang}
-          aria-label="Switch language"
-        >
-          {lang === "zh" ? "EN" : "中"}
-        </Button>
       </div>
     </div>
   )
