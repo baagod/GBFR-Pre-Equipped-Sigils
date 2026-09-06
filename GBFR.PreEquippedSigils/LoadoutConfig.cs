@@ -46,7 +46,7 @@ internal static class LoadoutConfig
 
     private static readonly Dictionary<string, SigilInfo> Sigils = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, TraitInfo> Traits = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, ExclusiveRow> ExclusiveByPlayer = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, List<ExclusiveRow>> ExclusiveByPlayer = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, ExclusiveRow> ExclusiveByName = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<uint, ExclusiveRow> ExclusiveByHash = new();
     private static DateTime _lastAppliedUtc = DateTime.MinValue;
@@ -77,8 +77,9 @@ internal static class LoadoutConfig
         if (Traits.Count == 0)
             return;
         // A deletion must reach TryApply too: it restores the built-in template
-        // (ResetLoadout in the tool removes the file). The old File.Exists gate
-        // made the deletion branch in TryApply unreachable.
+        // (the file may be removed manually; the tool's reset now writes an
+        // empty config instead of deleting). The old File.Exists gate made the
+        // deletion branch in TryApply unreachable.
         if (File.Exists(_loadoutPath) &&
             File.GetLastWriteTimeUtc(_loadoutPath) == _lastAppliedUtc)
             return;
@@ -243,7 +244,10 @@ internal static class LoadoutConfig
                     };
                     if (row.Hash == 0 || row.Player.Length == 0)
                         continue;
-                    ExclusiveByPlayer[row.Player] = row;
+                    if (ExclusiveByPlayer.TryGetValue(row.Player, out var playerRows))
+                        playerRows.Add(row);
+                    else
+                        ExclusiveByPlayer[row.Player] = new List<ExclusiveRow> { row };
                     ExclusiveByHash[row.Hash] = row;
                     if (row.Name.Length > 0)
                         ExclusiveByName[row.Name] = row;
@@ -264,15 +268,54 @@ internal static class LoadoutConfig
         }
     }
 
-    private static ExclusiveRow? ResolveCharacter(string key)
+    /// Returns every row matching the key; player codes may be shared
+    /// (Gran/Djeeta are both "PL0000"). Empty = key not in the table.
+    private static List<ExclusiveRow> ResolveCharacters(string key)
     {
-        if (ExclusiveByPlayer.TryGetValue(key, out ExclusiveRow? row))
-            return row;
-        if (ExclusiveByHash.TryGetValue(PU(key), out row))
-            return row;
+        if (ExclusiveByPlayer.TryGetValue(key, out var playerRows))
+            return playerRows;
+        if (ExclusiveByHash.TryGetValue(PU(key), out ExclusiveRow? row))
+            return new List<ExclusiveRow> { row };
         if (ExclusiveByName.TryGetValue(key, out row))
-            return row;
-        return null;
+            return new List<ExclusiveRow> { row };
+        return new List<ExclusiveRow>();
+    }
+
+    private static void AddExclusiveOverride(
+        JsonElement fields, ExclusiveRow? row, uint hash,
+        List<NativeCore.ExclusiveOverrideNative> result)
+    {
+        bool t1 = true;
+        bool t2 = true;
+        bool war = true;
+        foreach (JsonProperty field in fields.EnumerateObject())
+        {
+            if (field.Value.ValueKind != JsonValueKind.True &&
+                field.Value.ValueKind != JsonValueKind.False)
+                continue;
+            bool value = field.Value.GetBoolean();
+            uint traitHash = PU(field.Name);
+            if (row != null && traitHash == row.T1)
+                t1 = value;
+            else if (row != null && traitHash == row.T2)
+                t2 = value;
+            else if (row != null && traitHash == row.War)
+                war = value;
+            else switch (field.Name)
+            {
+                case "t1": t1 = value; break;
+                case "t2": t2 = value; break;
+                case "war": war = value; break;
+            }
+        }
+        result.Add(new NativeCore.ExclusiveOverrideNative
+        {
+            CharacterHash = hash,
+            DisableT1 = t1 ? (byte)0 : (byte)1,
+            DisableT2 = t2 ? (byte)0 : (byte)1,
+            DisableWar = war ? (byte)0 : (byte)1,
+            Reserved = 0,
+        });
     }
 
     /// <summary>
@@ -296,41 +339,20 @@ internal static class LoadoutConfig
         {
             if (property.Value.ValueKind != JsonValueKind.Object)
                 continue;
-            ExclusiveRow? row = ResolveCharacter(property.Name);
-            uint hash = row?.Hash ?? PU(property.Name); // bare character hash still accepted
-            if (hash == 0)
-                continue;
-            bool t1 = true;
-            bool t2 = true;
-            bool war = true;
-            foreach (JsonProperty field in property.Value.EnumerateObject())
+            // A player key may match several rows (Gran/Djeeta share "PL0000"):
+            // emit one override per character. Unknown keys fall back to a raw
+            // character hash (legacy configs).
+            List<ExclusiveRow> rows = ResolveCharacters(property.Name);
+            if (rows.Count == 0)
             {
-                if (field.Value.ValueKind != JsonValueKind.True &&
-                    field.Value.ValueKind != JsonValueKind.False)
+                uint bareHash = PU(property.Name);
+                if (bareHash == 0)
                     continue;
-                bool value = field.Value.GetBoolean();
-                uint traitHash = PU(field.Name);
-                if (row != null && traitHash == row.T1)
-                    t1 = value;
-                else if (row != null && traitHash == row.T2)
-                    t2 = value;
-                else if (row != null && traitHash == row.War)
-                    war = value;
-                else switch (field.Name)
-                {
-                    case "t1": t1 = value; break;
-                    case "t2": t2 = value; break;
-                    case "war": war = value; break;
-                }
+                AddExclusiveOverride(property.Value, null, bareHash, result);
+                continue;
             }
-            result.Add(new NativeCore.ExclusiveOverrideNative
-            {
-                CharacterHash = hash,
-                DisableT1 = t1 ? (byte)0 : (byte)1,
-                DisableT2 = t2 ? (byte)0 : (byte)1,
-                DisableWar = war ? (byte)0 : (byte)1,
-                Reserved = 0,
-            });
+            foreach (ExclusiveRow row in rows)
+                AddExclusiveOverride(property.Value, row, row.Hash, result);
         }
         return result.Count == 0 ? null : result.ToArray();
     }

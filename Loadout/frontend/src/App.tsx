@@ -275,7 +275,30 @@ export default function App() {
       }
       try {
         const exclusiveJson = await LoadExclusives()
-        setExclusiveTable(JSON.parse(exclusiveJson).exclusives as Exclusive[])
+        const table = JSON.parse(exclusiveJson).exclusives as Exclusive[]
+        setExclusiveTable(table)
+        // Migrate legacy exclusive entries (character-hash keys + t1/t2/war)
+        // to the player-keyed shape; otherwise they render as all-enabled and
+        // the first toggle would silently re-enable the disabled factors.
+        setExclusiveState((prev) => {
+          if (!prev) return prev
+          const byHash = new Map(table.map((e) => [e.hash, e]))
+          const out: ExclusiveState = {}
+          let migrated = false
+          for (const [key, entry] of Object.entries(prev)) {
+            const row = byHash.get(key)
+            if (!row) {
+              out[key] = entry
+              continue
+            }
+            const merged = { ...(out[row.player] ?? {}) }
+            for (const trait of [row.t1, row.t2, row.war])
+              merged[trait] = (entry as Record<string, unknown>)[trait] !== false
+            out[row.player] = merged
+            migrated = true
+          }
+          return migrated ? out : prev
+        })
       } catch (e) {
         setStatus(t.exclFail(e))
       }

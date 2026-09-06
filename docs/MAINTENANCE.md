@@ -258,7 +258,9 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - **loadout.json `exclusive` 段** = `{ PL码/角色名/zh/角色hash: { 词条hash: bool } }`
   （兼容旧 `{t1,t2,war}`；C# 加载 character-exclusives.json 解析）。
 - **工具**：重置 = 写空配置 `{lang, slots:[]}`（lang 不参与重置，默认 zh，唯一来源 loadout.json；
-  旧的 ResetLoadout 服务方法已删）；专属因子页只显示角色名（zh/en），PL 代号不显示；通用表头 44px。
+  旧的 ResetLoadout 服务方法已删）；专属因子页只显示角色名（zh/en），PL 代号不显示；通用表头 44px；
+  旧格式（角色 hash 键 + t1/t2/war）首次加载自动迁移为 PL 键；**古兰/姬塔共享 PL0000**，
+  exclusive 键对二者联动（两者专属因子完全相同，mod 侧按 PL 键扇出到两个角色）。
 - **生成器** `tool-gen-loadout.ps1` 重写为干净单遍（重跑零 diff，已验证可复现）。
 
 ### 历史发布记录（要点）
