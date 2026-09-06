@@ -162,7 +162,9 @@ function AlertDialogCancel({
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
-      className={cn(className)}
+      // Programmatic initial focus (base-ui initialFocus) only matches :focus,
+      // not :focus-visible — show the ring on plain focus too.
+      className={cn("focus:ring-3 focus:ring-ring/50", className)}
       render={<Button variant={variant} size={size} />}
       {...props}
     />

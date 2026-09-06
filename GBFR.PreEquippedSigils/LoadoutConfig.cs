@@ -26,7 +26,8 @@ internal static class LoadoutConfig
     {
         public required uint Hash { get; init; }
         public required uint Skill { get; init; }
-        public List<uint> Secondaries { get; } = new(); // reserved for next-version soft hints
+        public uint Sec { get; set; }              // fixed second trait (0 = none)
+        public List<uint> Pool { get; } = new();   // random-pool candidates
     }
 
     private sealed class TraitInfo
@@ -86,14 +87,21 @@ internal static class LoadoutConfig
                         Hash = PU(gem),
                         Skill = PU(Hx(entry.GetProperty("skill"))),
                     };
-                    if (entry.TryGetProperty("secondaries", out JsonElement secs) &&
-                        secs.ValueKind == JsonValueKind.Array)
+                    if (entry.TryGetProperty("sec", out JsonElement secEl) &&
+                        secEl.ValueKind == JsonValueKind.String)
                     {
-                        foreach (JsonElement s in secs.EnumerateArray())
+                        uint h = PU(Hx(secEl));
+                        if (h != 0)
+                            info.Sec = h;
+                    }
+                    if (entry.TryGetProperty("pool", out JsonElement poolEl) &&
+                        poolEl.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement s in poolEl.EnumerateArray())
                         {
                             uint h = PU(Hx(s));
                             if (h != 0)
-                                info.Secondaries.Add(h);
+                                info.Pool.Add(h);
                         }
                     }
                     Sigils[gem] = info;

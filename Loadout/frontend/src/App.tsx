@@ -2,12 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
-import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey } from "../bindings/loadouttool/loadoutservice"
+import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, ResetLoadout } from "../bindings/loadouttool/loadoutservice"
 
 const MAX_SLOTS = 12 // fixed rows shown in the editor
 
@@ -25,8 +36,11 @@ const copy = {
     dictFail: (e: unknown) => `词条字典加载失败：${e}`,
     sigilFail: (e: unknown) => `因子表加载失败：${e}`,
     configFail: (e: unknown) => `配装加载失败：${e}`,
-    unknown: (names: string) => `存在字典外的词条（未保存）：${names}`,
     saveFail: (e: unknown) => `自动保存失败：${e}`,
+    reset: "重置为预设",
+    resetDesc: "将删除当前配置，恢复为预设模板。",
+    resetConfirm: "重置",
+    cancel: "取消",
   },
   en: {
     headerPrimary: "Primary Sigil",
@@ -39,8 +53,11 @@ const copy = {
     dictFail: (e: unknown) => `Failed to load trait dictionary: ${e}`,
     sigilFail: (e: unknown) => `Failed to load sigil table: ${e}`,
     configFail: (e: unknown) => `Failed to load loadout: ${e}`,
-    unknown: (names: string) => `Unknown sigils/traits (not saved): ${names}`,
     saveFail: (e: unknown) => `Auto-save failed: ${e}`,
+    reset: "Reset to preset",
+    resetDesc: "Removes the current configuration and restores the preset template.",
+    resetConfirm: "Reset",
+    cancel: "Cancel",
   },
 } as const
 
@@ -53,10 +70,16 @@ interface Slot {
 }
 
 interface Sigil {
+  key: string
   gem: string
+  name: string // display name (base, level suffix stripped); grouping key
   zh: string
-  en: string
   skill: string // primary trait hash
+  sec: string // fixed second trait hash ("" for pool-backed / plain)
+  pool: string[] // random-pool candidates ([] for fixed / plain)
+  category: string
+  player: string
+  special: boolean
 }
 
 interface Trait {
@@ -121,6 +144,21 @@ function normalizeSlot(raw: unknown): Slot {
 
 const emptySlot = (): Slot => ({ mainHash: "", mainLevel: 0, secHash: "", secLevel: 0, enabled: true })
 
+/** Normalize a saved config (new array format) into Slot[] (mainHash = name).
+ * Stored gems are mapped to display names via the sigil table; unknown gems
+ * keep their raw value. */
+function configToSlots(
+  parsed: { slots?: unknown; lang?: string },
+  sigils: Sigil[]
+): Slot[] {
+  const fromCfg = slotsFromConfig(parsed?.slots)
+  const nameOfGem = new Map(sigils.map((s) => [s.gem, s.name]))
+  for (const s of fromCfg) {
+    if (nameOfGem.has(s.mainHash)) s.mainHash = nameOfGem.get(s.mainHash) as string
+  }
+  return fromCfg
+}
+
 /** Always pad the editor to MAX_SLOTS rows so the user just fills them in. */
 function pad12(slots: Slot[]): Slot[] {
   const out = [...slots]
@@ -128,7 +166,7 @@ function pad12(slots: Slot[]): Slot[] {
   return out.slice(0, MAX_SLOTS)
 }
 
-/** Normalize a saved config (new array format) into Slot[]. */
+/** Normalize a saved config (new array format) into Slot[] (mainHash = name). */
 function slotsFromConfig(raw: unknown): Slot[] {
   const arr = Array.isArray(raw) ? raw : []
   return arr.map((slot) => {
@@ -154,8 +192,10 @@ export default function App() {
   const [sigils, setSigils] = useState<Sigil[]>([])
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
+  const [resetOpen, setResetOpen] = useState(false)
   const [hideKey, setHideKey] = useState(0x70) // F1 default (matches mod default)
   const [lang, setLang] = useState<Lang>("zh") // default zh; toggle is session-only
+  const resetCancelRef = useRef<HTMLButtonElement | null>(null)
   const t = copy[lang]
   const toggleLang = () => {
     setLang((prev) => (prev === "zh" ? "en" : "zh"))
@@ -183,13 +223,24 @@ export default function App() {
       } catch (e) {
         setStatus(t.dictFail(e))
       }
+      let sigilsLoaded: Sigil[] = []
       try {
         const sigilJson = await LoadSigils()
-        setSigils(
-          (JSON.parse(sigilJson).sigils as { gem?: string; zh: string; en?: string; skill: string }[])
-            .filter((s) => s.gem)
-            .map((s) => ({ gem: s.gem as string, zh: s.zh, en: s.en ?? s.zh, skill: s.skill }))
-        )
+        sigilsLoaded = (JSON.parse(sigilJson).sigils as Partial<Sigil>[])
+          .filter((s) => s.gem)
+          .map((s) => ({
+            key: s.key ?? "",
+            gem: s.gem as string,
+            name: s.name ?? s.zh ?? s.gem as string,
+            zh: s.zh ?? "",
+            skill: s.skill ?? "",
+            sec: s.sec ?? "",
+            pool: Array.isArray(s.pool) ? (s.pool as string[]) : [],
+            category: s.category ?? "",
+            player: s.player ?? "",
+            special: s.special === true,
+          }))
+        setSigils(sigilsLoaded)
       } catch (e) {
         setStatus(t.sigilFail(e))
       }
@@ -198,7 +249,7 @@ export default function App() {
         const parsed = JSON.parse(configJson)
         skipSave.current = true
         if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
-        setSlots(pad12(slotsFromConfig(parsed?.slots)))
+        setSlots(pad12(configToSlots(parsed, sigilsLoaded)))
       } catch (e) {
         setStatus(t.configFail(e))
       }
@@ -212,29 +263,126 @@ export default function App() {
   }, [])
 
   const traitByName = useMemo(() => new Map(traits.map((tr) => [tr.hash, tr])), [traits])
-  const sigilByName = useMemo(() => new Map(sigils.map((s) => [s.gem, s])), [sigils])
-  const maxOfMain = (h: string) => {
-    const s = sigilByName.get(h)
-    const tr = s ? traitByName.get(s.skill) : undefined
+  const sigilByGem = useMemo(() => new Map(sigils.map((s) => [s.gem, s])), [sigils])
+
+  // Variants grouped by display name: one entry per name (unique picker item).
+  const sigilGroups = useMemo(() => {
+    const byName = new Map<string, Sigil[]>()
+    for (const s of sigils) {
+      const g = byName.get(s.name)
+      if (g) g.push(s)
+      else byName.set(s.name, [s])
+    }
+    return [...byName.entries()].map(([name, variants]) => ({
+      name,
+      zh: variants[0]?.zh ?? name,
+      poolGem: variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? "",
+    }))
+  }, [sigils])
+
+  // Exclusive traits: used ONLY by special (single/awakening) sigils; a free
+  // main can combine every non-exclusive trait. Computed from the tables.
+  const { exclusiveTraits, allTraitHashes, freeTraits } = useMemo(() => {
+    const specialUse = new Set<string>()
+    const regularUse = new Set<string>()
+    const freeTraits = new Set<string>()
+    for (const s of sigils) {
+      if (s.special) {
+        specialUse.add(s.skill)
+        if (s.sec) specialUse.add(s.sec)
+      } else {
+        regularUse.add(s.skill)
+        if (s.sec) regularUse.add(s.sec)
+        for (const h of s.pool) regularUse.add(h)
+        if (s.sec === "" && s.pool.length === 0) freeTraits.add(s.skill)
+      }
+    }
+    const exclusive = new Set([...specialUse].filter((h) => !regularUse.has(h)))
+    return {
+      exclusiveTraits: exclusive,
+      allTraitHashes: traits.map((tr) => tr.hash),
+      freeTraits,
+    }
+  }, [sigils, traits])
+
+  const { legalSecs, freeNames } = useMemo(() => {
+    const byName = new Map<string, Sigil[]>()
+    for (const s of sigils) {
+      const g = byName.get(s.name)
+      if (g) g.push(s)
+      else byName.set(s.name, [s])
+    }
+    const m = new Map<string, Set<string>>()
+    const free = new Set<string>()
+    for (const [name, variants] of byName) {
+      const legal = new Set<string>()
+      let hasFree = false
+      for (const v of variants) {
+        for (const h of v.pool) legal.add(h)
+        if (v.sec) legal.add(v.sec)
+        else if (v.pool.length === 0 && !v.special) hasFree = true
+      }
+      m.set(name, legal)
+      if (hasFree) free.add(name)
+    }
+    return { legalSecs: m, freeNames: free }
+  }, [sigils])
+
+  const legalByMain = (name: string) => {
+    if (freeNames.has(name)) {
+      // free main can combine every non-exclusive trait (200 - exclusive)
+      return new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
+    }
+    const base = legalSecs.get(name) ?? new Set<string>()
+    const out = new Set(base)
+    for (const h of freeTraits) if (!exclusiveTraits.has(h)) out.add(h)
+    return out
+  }
+
+  // Locate the gem to write for (name, secHash): fixed variant if secHash
+  // matches a fixed sec, otherwise the pool-backed variant gem.
+  const gemFor = (name: string, secHash: string): string => {
+    const variants = sigils.filter((s) => s.name === name)
+    const fixed = secHash ? variants.find((v) => v.sec === secHash) : undefined
+    if (fixed) return fixed.gem
+    return variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? ""
+  }
+
+  const maxOfMain = (name: string) => {
+    const variants = sigils.filter((s) => s.name === name)
+    const tr = variants.length > 0 ? traitByName.get(variants[0].skill) : undefined
     return tr?.cap ?? 15
   }
   const maxOfSec = (h: string) => traitByName.get(h)?.cap ?? 15
 
-  const sigilHashes = sigils.map((s) => s.gem)
+  // Picker item values: main = unique display names; secondary = trait hashes
+  // (labels provided by hashLabels).
+  const sigilNames = sigilGroups.map((g) => g.name)
   const traitHashes = traits.map((tr) => tr.hash)
   const hashLabels = useMemo(
     () =>
-      Object.fromEntries(
-        [...traits, ...sigils].map((x) => [
-          "hash" in x ? x.hash : x.gem,
-          lang === "zh" ? x.zh : x.en,
-        ])
-      ),
-    [traits, sigils, lang]
+      Object.fromEntries([
+        ...traits.map((tr) => [tr.hash, lang === "zh" ? tr.zh : tr.en] as const),
+        ...sigilGroups.map((g) => [g.name, lang === "zh" ? g.zh : g.name] as const),
+      ]),
+    [traits, sigilGroups, lang]
   )
-
   const updateSlot = (index: number, patch: Partial<Slot>) => {
     setSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)))
+  }
+
+  // Reload the player config (falls back to the preset template). Used after
+  // a reset so the UI mirrors the fresh state without restarting the app.
+  const reloadConfig = async () => {
+    try {
+      const configJson = await LoadConfig()
+      const parsed = JSON.parse(configJson)
+      skipSave.current = true
+      if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
+      setSlots(pad12(configToSlots(parsed, sigils)))
+    } catch (e) {
+      setStatus(t.configFail(e))
+    }
   }
 
   // Header check box: select all / clear all (official Table pattern).
@@ -244,21 +392,15 @@ export default function App() {
   }
 
   const save = async () => {
+    if (sigils.length === 0 || traits.length === 0) return // tables not loaded yet
     const filled = slots.filter((s) => s.mainHash !== "")
-    const unknown = filled.filter(
-      (s) => !sigilByName.has(s.mainHash) || (s.secHash !== "" && !traitByName.has(s.secHash))
-    )
-    if (unknown.length > 0) {
-      const names = unknown.map((s) => s.mainHash || s.secHash).join("、")
-      setStatus(t.unknown(names))
-      return
-    }
     const cfg = filled.map((s) => {
+      const gem = gemFor(s.mainHash, s.secHash)
       const main = {
-        gem: s.mainHash,
+        gem,
         level: s.mainLevel,
-        zh: sigilByName.get(s.mainHash)?.zh ?? "",
-        en: sigilByName.get(s.mainHash)?.en ?? "",
+        zh: sigilByGem.get(gem)?.zh ?? "",
+        en: sigilByGem.get(gem)?.name ?? "",
       }
       const items: { gem?: string; hash?: string; level: number; zh: string; en: string }[] = [main]
       if (s.secHash !== "") {
@@ -340,9 +482,10 @@ export default function App() {
             key={index}
             index={index}
             slot={slot}
-            sigilHashes={sigilHashes}
+            sigilNames={sigilNames}
             traitHashes={traitHashes}
             labels={hashLabels}
+            legalOfMain={legalByMain}
             t={t}
             maxOfMain={maxOfMain}
             maxOfSec={maxOfSec}
@@ -352,10 +495,37 @@ export default function App() {
       </div>
 
       <div className="flex shrink-0 items-center border-t bg-background py-3 pr-4">
+        <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+          <AlertDialogTrigger
+            render={
+              <Button variant="ghost" size="sm" className="ml-auto" aria-label={t.reset}>
+                {t.reset}
+              </Button>
+            }
+          />
+          <AlertDialogContent size="sm" initialFocus={resetCancelRef}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t.reset}?</AlertDialogTitle>
+              <AlertDialogDescription>{t.resetDesc}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel ref={resetCancelRef}>{t.cancel}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  void ResetLoadout()
+                    .then(() => reloadConfig())
+                    .finally(() => setResetOpen(false))
+                }}
+              >
+                {t.resetConfirm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Button
           variant="ghost"
           size="sm"
-          className="ml-auto"
+          className="ml-2"
           onClick={toggleLang}
           aria-label="Switch language"
         >
@@ -369,9 +539,10 @@ export default function App() {
 function SlotRow({
   index,
   slot,
-  sigilHashes,
+  sigilNames,
   traitHashes,
   labels,
+  legalOfMain,
   t,
   maxOfMain,
   maxOfSec,
@@ -379,14 +550,17 @@ function SlotRow({
 }: {
   index: number
   slot: Slot
-  sigilHashes: string[]
+  sigilNames: string[]
   traitHashes: string[]
   labels: Record<string, string>
+  legalOfMain: (name: string) => Set<string>
   t: (typeof copy)["zh"] | (typeof copy)["en"]
   maxOfMain: (h: string) => number
   maxOfSec: (h: string) => number
   updateSlot: (i: number, patch: Partial<Slot>) => void
 }) {
+  const legal = slot.mainHash ? legalOfMain(slot.mainHash) : new Set<string>()
+  const secIllegal = slot.secHash !== "" && !legal.has(slot.secHash)
   return (
     <div className={DATA_ROW}>
       <div>
@@ -401,7 +575,7 @@ function SlotRow({
       <div className="flex min-w-0 items-center gap-1.5 pr-2">
         <TraitPicker
           value={slot.mainHash}
-          traits={sigilHashes}
+          traits={sigilNames}
           labels={labels}
           placeholder={t.none}
           onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(15, maxOfMain(v)) })}
@@ -418,6 +592,8 @@ function SlotRow({
           value={slot.secHash}
           traits={traitHashes}
           labels={labels}
+          legal={legal}
+          invalid={secIllegal}
           placeholder={t.none}
           noneOption
           noneLabel={t.none}

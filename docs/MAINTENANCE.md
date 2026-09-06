@@ -135,7 +135,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 | 文件 | 字段 | 说明 |
 |---|---|---|
 | `skills.json` | `{ hash, zh, en, cap }` | 词条 ID（hash）+ 双语名 + 等级上限；源 = extract/skills.json（含 key/desc/player，导出时仅留运行时字段） |
-| `sigils.json` | `{ gem, zh, en, skill, secondaries[], rarity, player, special }` | 物品 ID（gem）+ 主词条（skill）+ 随机池/固定副词条（secondaries）；源 = extract/loadout.json（去 key 字段） |
+| `sigils.json` | `{ key, gem, name, zh, skill, sec, pool, category, player, special }` | 物品变体行（不合并，279 行）：`name`（英文名）为分组键；`sec`=固定副词条（固定变体）、`pool`=随机池候选（池版变体）；`category` 替代原 rarity；源 = extract/loadout.json |
 
 **重建/更新流程**（只动源数据，不手改 mod 产物）：
 1. 改 `extract` 侧源表（`skills.json` / `loadout.json`，生成方式见 `extract/GENERATING.md` §1/§7）；

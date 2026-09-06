@@ -33,6 +33,10 @@ interface TraitPickerProps {
   emptyLabel?: string
   /** Disable the picker (e.g. secondary sigil before a primary is chosen). */
   disabled?: boolean
+  /** Optional set of legal values; items outside it are dimmed (illegal). */
+  legal?: Set<string>
+  /** Current selection is illegal for the chosen main sigil (red trigger). */
+  invalid?: boolean
   onSelect: (value: string) => void
 }
 
@@ -46,6 +50,8 @@ export function TraitPicker({
   searchPlaceholder = "搜索",
   emptyLabel = "无匹配因子",
   disabled = false,
+  legal,
+  invalid = false,
   onSelect,
 }: TraitPickerProps) {
   const items: TraitItem[] = noneOption
@@ -72,7 +78,14 @@ export function TraitPicker({
       <ComboboxTrigger
         className="[&_[data-slot=combobox-trigger-icon]]:hidden"
         render={
-          <Button variant="outline" className="min-w-0 flex-1 justify-between font-normal">
+          <Button
+            variant="outline"
+            className={
+              invalid
+                ? "min-w-0 flex-1 justify-between border-destructive font-normal text-destructive"
+                : "min-w-0 flex-1 justify-between font-normal"
+            }
+          >
             <ComboboxValue />
             <ChevronDown className="size-4 text-muted-foreground" />
           </Button>
@@ -82,11 +95,18 @@ export function TraitPicker({
         <ComboboxInput showTrigger={false} placeholder={searchPlaceholder} />
         <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
         <ComboboxList className="max-h-[264px]">
-          {(item) => (
-            <ComboboxItem key={item.value} value={item}>
-              {item.label}
-            </ComboboxItem>
-          )}
+          {(item) => {
+            const isLegal = !legal || legal.size === 0 || item.value === "" || legal.has(item.value)
+            return (
+              <ComboboxItem
+                key={item.value}
+                value={item}
+                className={isLegal ? undefined : "opacity-45"}
+              >
+                {item.label}
+              </ComboboxItem>
+            )
+          }}
         </ComboboxList>
       </ComboboxContent>
     </Combobox>
