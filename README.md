@@ -2,7 +2,10 @@
 
 派生自 [GBFR Extra Sigil Slots](https://github.com/cajoxorize366-oss/GBFR-Extra-Sigil-Slots) 的《碧蓝幻想：Relink》预配装因子 Mod（ER 2.0.5）：**全角色自动预配因子**，运行时合成注入，不占用本体 12 槽位，**无需库存、零存档**（配装可选：随附工具编辑 loadout.json，无配置即用内置专属模板）。
 
-**下载**：[Nexus 页面](https://www.nexusmods.com/granbluefantasyrelink/mods/823)
+**下载**：[Nexus 页面](https://www.nexusmods.com/granbluefantasyrelink/mods/823) · [GitHub Release](https://github.com/baagod/GBFR-Pre-Equipped-Sigils/releases)
+
+> **代码签名**：本项目发布包使用 [SignPath Foundation](https://signpath.org/) 的代码签名基础设施进行签名（面向开源项目的免费代码签名服务）；文件签名信息可在 Windows 文件属性"数字签名"页签查看。
+> **Code signing**: release binaries for this project are code-signed via the [SignPath Foundation](https://signpath.org/) infrastructure (free code signing for open-source projects); see the "Digital Signatures" tab in Windows file properties.
 
 ## 配装模板
 
