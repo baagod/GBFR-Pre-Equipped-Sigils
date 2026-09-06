@@ -159,7 +159,10 @@ internal static class LoadoutConfig
 
         try
         {
-            var slots = ParseAndValidate(File.ReadAllText(_loadoutPath));
+            string json = File.ReadAllText(_loadoutPath);
+            if (json.Length > 1024 * 1024)
+                throw new InvalidDataException("loadout.json exceeds 1 MB");
+            var slots = ParseAndValidate(json);
             bool ok;
             if (slots.Count == 0)
             {

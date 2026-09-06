@@ -452,16 +452,22 @@ void DisableGameplayHooksAndRestore() noexcept
              g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
              current) &&
           current == expanded_slot_count)
-         (void)WriteByte(
-            g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
-            g_game_layout.trait_apply_original_limit);
+      {
+         if (!WriteByte(
+                g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
+                g_game_layout.trait_apply_original_limit))
+            Log("Hook rollback: failed to restore the trait-apply loop limit.");
+      }
       if (ReadByte(
              g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
              current) &&
           current == expanded_slot_count)
-         (void)WriteByte(
-            g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
-            g_game_layout.trait_category_original_limit);
+      {
+         if (!WriteByte(
+                g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
+                g_game_layout.trait_category_original_limit))
+            Log("Hook rollback: failed to restore the trait-category loop limit.");
+      }
    }
 
    g_status_owner_tick_hook.reset();

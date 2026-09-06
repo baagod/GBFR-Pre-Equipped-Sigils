@@ -58,6 +58,10 @@ struct ResolvedGameLayout
 
 inline constexpr int kNativeInternalSlotCount = 13;
 inline constexpr int kTemplateSlotCount = 9;
+// slots 0/1 of every character template are the mod-injected exclusives
+// (awakening+ / war spirit); player configuration only fills the slots after
+// these. Total virtual slots = kBuiltinExclusiveSlotCount + config count.
+inline constexpr int kBuiltinExclusiveSlotCount = 2;
 inline constexpr int kVirtualSlotCapacity = 24;
 inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;

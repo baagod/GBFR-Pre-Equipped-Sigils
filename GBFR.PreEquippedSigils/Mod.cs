@@ -71,7 +71,7 @@ public sealed class Mod : IMod
                 };
             }
             Log($"GBFR Pre-Equipped Sigils v{ReadModVersion(modDirectory)} (ABI {NativeCore.AbiVersion})");
-            long nativeStarted = BeginStartupPhase("native-core");
+            long nativeStarted = Stopwatch.GetTimestamp();
             NativeCore.Configure(modDirectory);
             bool hooksReady = NativeCore.Initialize(Log);
             CompleteStartupPhase("native-core", nativeStarted, hooksReady);
@@ -175,12 +175,6 @@ public sealed class Mod : IMod
         {
             // External logger failures must not affect the mod lifecycle.
         }
-    }
-
-    private long BeginStartupPhase(string phase)
-    {
-        // Phases log once on completion; see CompleteStartupPhase.
-        return Stopwatch.GetTimestamp();
     }
 
     private void CompleteStartupPhase(string phase, long startedAt, bool succeeded = true)

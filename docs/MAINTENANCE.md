@@ -9,118 +9,118 @@
 
 ## 1. 一句话说明
 
-游戏原生只计的12 个可见因子槽（内的trait 循环上限 13）。本 mod 把循环上限扩的
-`13 + kTemplateSlotCount`，并 Hook 因子读取函数：当游戏询问的13 号起的虚拟槽时，
-的*内置模板的*现场合成一的GemData 交给游戏的*不写存档、不依赖库存、不的
-`GemData.WORN_BY`**；战斗数值是真实的本地效果（在线 = 作弊级，风险自负）的
+游戏原生只计 12 个可见因子槽（内的 trait 循环上限 13）。本 mod 把循环上限扩到
+`13 + kTemplateSlotCount`，并 Hook 因子读取函数：当游戏询问 13 号起的虚拟槽时，
+把*内置模板*现场合成一份 GemData 交给游戏：不写存档、不依赖库存、不占用库存（
+`GemData.WORN_BY` 表示未装备）；战斗数值是真实的本地效果（在线 = 作弊级，风险自负）。
 
-## 2. 目录结构与文件职的
+## 2. 目录结构与文件职责
 
 ```
-build-release.ps1                    构建+打包脚本（MSBuild native 的dotnet managed 的zip的
+build-release.ps1                    构建+打包脚本（MSBuild native、dotnet managed、zip）
 docs/
   MAINTENANCE.md                     本手册
   tool-extract-exclusives.ps1        提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条）
   tool-gen-loadout.ps1               生成 kDefaultTemplates[] 数组文本
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
-  Mod.cs                             生命周期、日志（时间戳）的50ms 维持 Tick
-  NativeCore.cs                      原生门面：加的ABI 校验/日志回调/Tick/Shutdown/消息读取
-  NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步的
+  Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
+  NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
+  NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   ModConfig.json                     ModId/版本/描述（发布信息）
   sigils.json                        运行时因子表（词条/物品 ID + 双语名；由 extract 管线生成的*见"数据文件生成"§4.x）
   skills.json                        运行时词条字典（hash/zh/en/cap；同上）
   pre-loadout.json                   内置模板配置（mod 目录兜底；用户配置在 %LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
-  native_api.h                       冻结的C ABI（v15的 个导的+ GemData 结构的
-  native_internal.h                  内部状的声明/常量（模板槽常量、预检字节等）
+  native_api.h                       冻结的 C ABI（v16：7 个导出 + GemData 结构）
+  native_internal.h                  内部状态声明/常量（模板槽常量、预检字节等）
   src/
-    dllmain.cpp                      DLL 入口（仅存模块句柄，loader-lock-safe的
-    exports.cpp                      6 的C 导出实现
-    runtime.cpp                      初始化顺序编的+ 阶段日志
+    dllmain.cpp                      DLL 入口（仅存模块句柄，loader-lock-safe）
+    exports.cpp                      7 个 C 导出实现
+    runtime.cpp                      初始化顺序编排 + 阶段日志
     runtime_state.cpp                全局原子/Log（带时间戳）/phase 机制/消息缓冲
-    layout_resolver.cpp              ★语义布局解析的.0.5 锚点，最高风险）
-    safe_game_access.cpp             ★SEH 安全内存读写、状态重建、授权提的
+    layout_resolver.cpp              ★语义布局解析（2.0.5 锚点，最高风险）
+    safe_game_access.cpp             ★SEH 安全内存读写、状态重建、授权提交
     trait_hooks.cpp                  ★注入核心：getter detour、natural bind、hot-apply 触发
-    selection_store.cpp              角色选择存储、hot-apply 队列（generation 机制的
-    name_tables.cpp                  兼容表加载（199 条角色限制映射，缺失的fail-closed的
-    template_loadout.cpp             ★★配装表——日常维护唯一要改的文的
+    selection_store.cpp              角色选择存储、hot-apply 队列（generation 机制）
+    name_tables.cpp                  兼容表加载（199 条角色限制映射，缺失即 fail-closed）
+    template_loadout.cpp             ★★配装表——日常维护唯一要改的文件
 ```
 
-`★` = 高风险区，除非明确任务需要，不要动的
+`★` = 高风险区，除非明确任务需要，不要动。
 
-## 3. 核心数据的
+## 3. 核心数据流
 
 ```
 启动:
-  Reloaded-II 的Mod.cs 的NativeCore.Initialize 的exports.GBFR20_Initialize
-    的runtime.Initialize:
+  Reloaded-II：Mod.cs → NativeCore.Initialize → exports.GBFR20_Initialize
+    → runtime.Initialize:
         executable-validation (必须 granblue_fantasy_relink.exe)
-        compatibility-table     (compatibility.tsv, 199 的 失败即停的
-        semantic-layout-resolution (layout_resolver, 失败即停的
+        compatibility-table     (compatibility.tsv, 199 条，失败即停)
+        semantic-layout-resolution (layout_resolver, 失败即停)
         template-selection-install (InstallDefaultTemplateSelections
-                                      的的0xFE000000+i 合成的id 写入角色选择)
-        native-hook-install    (4 的hook + 2 处循环上的patch)
+                                      以 0xFE000000+i 合成的 id 写入角色选择)
+        native-hook-install    (3 个 hook + 2 处循环上限 patch)
 
 运行:
-  游戏状态重的的GetGemDataByIndexDetour(slot 13..12+count)
-    的TryLoadVirtualTraitSelection 的TryCopySelectedVirtualGem
-        的IsTemplateSlotId(0xFE000000+) 的TryCopyTemplateGem
-            的的kDefaultTemplates 的(gem_id, trait1/2, 等级)
-            的组装 GemData(worn_by=0x887AE0B0 未装的 flags=0) 的SafeCopyToOutput
-    的natural bind 追踪: injected==expected 的identity 一的的CommitAuthorizedStatus
-    的日志 "Trait contribution confirmed for 0x...: N/N"（会话内首次状态重建报一次；未满 N/M 每次报 incomplete）
+  游戏状态重建：GetGemDataByIndexDetour（slot 13 起共 count 个）
+    → TryLoadVirtualTraitSelection → TryCopySelectedVirtualGem
+        → IsTemplateSlotId(0xFE000000+) → TryCopyTemplateGem
+            → kCharacterExclusives/kGeneralSlots（gem_id, trait1/2, 等级）
+            → 组装 GemData（worn_by=0x887AE0B0 未装备，flags=0）→ SafeCopyToOutput
+    → natural bind 追踪：injected==expected 且 identity 一致 → CommitAuthorizedStatus
+    → 日志 "Trait contribution confirmed for 0x...: N/N"（会话内首次状态重建报一次；未满 N/M 每次报 incomplete）
 
-维持 (Mod.cs 250ms Tick 的GBFR20_Tick):
+维持（Mod.cs 250ms Tick → GBFR20_Tick）:
   UpdateEditSessionState / ValidateAuthorizedStatuses /
   ScheduleSelectedStatusRebind / ProcessPendingHotApply / ConsumeApplyResult
-  （hot-apply 产生 "Generation N ... copied N/N" 日志，验证装备界的训练场路径）
+  （hot-apply 产生 "Generation N ... copied N/N" 日志，验证装备界面/训练场路径）
 ```
 
-## 4. 模板配装表（日常维护核心的
+## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kCharacterExclusives[]` +
-`kGeneralSlots[]`（2026-09 由 26×9 全展开表去重：7 个通用槽全角色相同）的
-**v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手的hash的
+`kGeneralSlots[]`（2026-09 由 26×9 全展开表去重：7 个通用槽全角色相同）。
+**v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手改 hash。
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-extract-exclusives.ps1` | 的compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数的的生成 `kCharacterExclusives[]`/`kGeneralSlots[]` 数组文本 |
-| [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官的ID 的/ 解包导出）—的*运行时不依赖**，仅开发工的|
+| `docs/tool-extract-exclusives.ps1` | 从 compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据，生成 `kCharacterExclusives[]`/`kGeneralSlots[]` 数组文本 |
+| [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出）——**运行时不依赖**，仅开发用。 |
 
-**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）的运行脚本输出到临时文的的替换 `template_loadout.cpp` 中从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `kGeneralSlots ... };` 的整段（自动定位起止替换）的
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）后运行脚本，输出到临时文件后替换 `template_loadout.cpp` 中从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `kGeneralSlots ... };` 的整段（自动定位起止替换）。
 
-结构（每槽一的`TemplateGemSlot`）：
+结构（每槽一个 `TemplateGemSlot`）：
 
 ```cpp
 TemplateGemSlot{
-   0x335DA2A5, // gem_id: 物品 hash（S 行）。游戏按它查 master 表拿显示名；词条效果吃的是下面两的hash（已实验验证的
-   0xE69A4694, // trait1: 主词的hash（T 行）
-   15,         // trait1_level: Ⅴ＋ = 15（漆黑钳的= 20的
-   0x95F3FA86, // trait2: 副词的hash的*无副词条必须的0x887AE0B0的不选择"哨兵），不能的0**的
+   0x335DA2A5, // gem_id: 物品 hash（S 行）。游戏按它查 master 表拿显示名；词条效果吃的是下面两个 hash（已实验验证）
+   0xE69A4694, // trait1: 主词条 hash（T 行）
+   15,         // trait1_level: Ⅴ＋ = 15（漆黑钳蟹 = 20）
+   0x95F3FA86, // trait2: 副词条 hash。**无副词条必须用 0x887AE0B0（"不选择"哨兵），不能用 0**
    15,         // trait2_level
-   15,         // sigil_level: 物品显示等级（漆黑钳的= 20；装备后事件因子显示 "-"、全列表显示 20的
+   15,         // sigil_level: 物品显示等级（漆黑钳蟹 = 20；装备后事件因子显示 "-"、全列表显示 20）
 },
 ```
 
-> ⚠️ **踩过的坑的026-09-02，ER 2.0.5的*的单词条因的（如漆黑的钳蟹因的Lv20）把
-> `trait2` 写成 `0` 会在游戏"全部因子列表"的*多渲染一个空的Lv1 条目**的
-> 正确写法的`trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自从游戏内修改的
-> 观察到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —的与注入的
-> `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）的
-> 该坑覆盖**所有单词条槽位**（战气槽 / 激的/ 钳蟹），其他槽位均有真实 trait2，不受影响的
+> ⚠️ **踩过的坑（2026-09-02，ER 2.0.5）**：单词条因子（如漆黑的钳蟹因子 Lv20）把
+> `trait2` 写成 `0` 会在游戏"全部因子列表"中**多渲染一个空的 Lv1 条目**。
+> 正确写法是 `trait2 = 0x887AE0B0`（游戏本体的"不选择"哨兵值，取自游戏内修改器观察
+> 到的映射；本体事件因子装备后等级显示 "-"，全列表里是 20 —与注入的
+> `trait1_level=20 / sigil_level=20` 一致，两者独立，都不是问题）。
+> 该坑覆盖**所有单词条槽位**（战气槽 / 激昂 / 钳蟹），其他槽位均有真实 trait2，不受影响。
 
-**规则**的
-- 数据源：`kCharacterExclusives[]`（每角色 2 条：slot0 觉醒＋、slot1 战气）+ `kGeneralSlots[]`（slot3-9 七槽通用，全角色相同）；运行时由 `BuildCharacterTemplate` 组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 的0 的*连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）的
-- 合成的id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定的
-- **内置模板槽数（出厂预设）**：`native_internal.h` 的`kTemplateSlotCount`（当的9）只决定"无玩家配置时的默认槽的；玩家配置（loadout.json）可任意 2+启用槽（的2），**不受该常量约的*。仅当修改内置默认（模板表）时需同步该常量的
+**规则**：
+- 数据源：`kCharacterExclusives[]`（每角色 2 条：slot0 觉醒＋、slot1 战气）+ `kGeneralSlots[]`（slot3-9 七槽通用，全角色相同）；运行时由 `BuildCharacterTemplate` 组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 开始**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）。
+- 合成的 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
+- **内置模板槽数（出厂预设）**：`native_internal.h` 的 `kTemplateSlotCount`（当前 9）只决定"无玩家配置时"的默认槽数；玩家配置（loadout.json）可任意 2+ 启用槽（≥2），**不受该常量约束**。仅当修改内置默认（模板表）时需同步该常量。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
-  `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）的
+  `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`extract/skills.json`（词条 hash/名）与 `extract/loadout.json`（物品 gem/名）；
-  或 `sigils_all_full.xlsx` 的 `gem_key`/`skill1_hash` 列（Ctrl+F 搜名字）的
-- 角色 hash（角色名 的hash）：的`UiLocalization.cs` 的历史版本或 compatibility.tsv 的
-  character_key 列；常用：古的`2A26B1B2`、姬的`A4ACBA76`、娜露梅 `E7053919`的
-  芙劳 `646C3168`、菲迪埃的`74DD4C79`的
+  或 `sigils_all_full.xlsx` 的 `gem_key`/`skill1_hash` 列（Ctrl+F 搜名字）。
+- 角色 hash（角色名的 hash）：`UiLocalization.cs` 的历史版本或 compatibility.tsv 的
+  character_key 列；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、娜露梅 `E7053919`。
+  芙劳 `646C3168`、菲迪埃 `74DD4C79`。
 
 ## 4.1 数据文件生成（mod 运行时表：sigils.json / skills.json）
 
@@ -163,7 +163,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 `%LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json`（模组回退内置模板），界面就地重载预设，
 不重启进程。
 
-**与模板表的关系**：`template_loadout.cpp` 的 `kDefaultTemplates[]`（§4）是**内置默认 9 槽**的
+**与模板表的关系**：`template_loadout.cpp` 的 `kCharacterExclusives[]` + `kGeneralSlots[]`（§4）是**内置默认 9 槽**的
 模板（gem_id/trait1/trait2 直接内嵌 C++）；`sigils.json`/`skills.json` 是**玩家配置**
 （`loadout.json`）解析用的 ID→名称/上限映射。两者独立：玩家配置走 sigils.json/skills.json，
 无玩家配置时用内置模板（不走 JSON）。
@@ -171,76 +171,76 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 > 字段名约定（2026 会话定）：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；
 > `key`（GEEN_/SKILL_ 内部名）只在 extract 源表保留，不进运行时。
 
-## 5. 构建与部的
+## 5. 构建与部署
 
-环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）的NET 8 SDK的
+环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/<version>（以脚本默认参数为准）的
+powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/<version>（以脚本默认参数为准）。
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 
-- 部署的*游戏必须退的*，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到
-  Reloaded-II 的`Mods\`（覆的先删旧目录）的
-- 版本号：同步的`ModConfig.json` 的`ModVersion` 的`build-release.ps1` 默认 `$Version`的
+- 部署：**游戏必须退出**，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到
+  Reloaded-II 的 `Mods\`（覆盖前先删旧目录）。
+- 版本号：同步 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`。
 
-## 6. 验证清单（每次改动后必须的
+## 6. 验证清单（每次改动后必须做）
 
-1. 编译的*0 警告 0 错误**（third_party 的C4834 已在 vcxproj 单独压制）的
+1. 编译：**0 警告 0 错误**（third_party 的 C4834 已在 vcxproj 单独压制）。
 2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
    - `Installed N built-in template loadout selection(s); inventory-independent.`
    - `Native hooks installed: N virtual slots.`
    - 启动/换人/进战斗（context-1 状态重建）：`Trait contribution confirmed for 0xE7053919: N/N ...`（首次；二次出现应为 `incomplete: N/M`）
    - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
-3. 训练场实测词条效果（如豪胆濒死不死、自动复活自起）+ 血条下 buff 图标的
-4. 重启游戏配置保留的
+3. 训练场实测词条效果（如豪胆濒死不死、自动复活自起）+ 血条下 buff 图标。
+4. 重启游戏配置保留。
 
-## 7. 雷区（fail-closed 与安全边界，禁止削弱的
+## 7. 雷区（fail-closed 与安全边界，禁止削弱）
 
 - `layout_resolver.cpp`：唯一语义锚点、call/RIP 推导、精确字节预检。解析不完整/多重匹配/
-  校验不过 的**整套 gameplay hook 不安的*（fail-closed），不降的找个像的的Hook"的
-- `trait_hooks.cpp`：detour 的TLS/generation/identity/context/expected/injected 校验顺序的
-  natural bind 的授权提交（`CommitAuthorizedStatus`）与 `ValidateAuthorizedStatuses`的
-- `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查的
+  校验不过 则**整套 gameplay hook 不安装**（fail-closed），不降级为"找个像的就 Hook"。
+- `trait_hooks.cpp`：detour 的 TLS/generation/identity/context/expected/injected 校验顺序、
+  natural bind 的授权提交（`CommitAuthorizedStatus`）与 `ValidateAuthorizedStatuses`。
+- `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查。
   *SafeInvokeStatusRebuild 的身份改写已复核（2026-09）：调用前已校验
   status.character_hash == 目标角色，字符 hash 写入是恒等写（已删除）；
   仅 context_mode 被销为 0（装备态本来即 0，mission 态仅短暂存在），
   单字段对齐原子写 + 同步调用 + SEH，其他线程最多看到"装备界面同款 ctx0"，
   无撕裂读风险；勿再引入 8 字节原子写（收益为零且增加布局假设）。*
-- `compatibility.tsv` 缺失或条目数 != 199 的启动失败（fail-closed）的
+- `compatibility.tsv` 缺失或条目数 != 199 则启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=16`）与
-  `NativeCore.Interop.cs`、`NativeCore.cs` 的`AbiVersion` 必须一致；改动需三方同步 + 版本号递增的
-- **可选配的*：INI 体系已删除；的`loadout.json` 时槽的= `kTemplateSlotCount` 常量（`native_internal.h`，当的9 = 觉醒的战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）的
-- 第三的`third_party/`（safetyhook、Zydis）只可升级替换，不可手改的
-- 保持上游 3 空格缩进风格（native），托管的4 空格的
+  `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
+- **可选配置**：INI 体系已删除；无 `loadout.json` 时槽数 = `kTemplateSlotCount` 常量（`native_internal.h`，当前 9 = 觉醒＋/战气 + 7 通用）；有配置时 = 2 + 启用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）。
+- 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
+- 保持上游 3 空格缩进风格（native），托管用 4 空格。
 
-## 8. 保留但易被误判为"死代的的机的
+## 8. 保留但易被误判为"死代码"的机制
 
 | 机制 | 位置 | 作用 | 删除后果 |
 |---|---|---|---|
-| hot-apply（RequestHotApply / ProcessPendingHotApply / ScheduleSelectedStatusRebind的| selection_store / trait_hooks / exports.Tick | 主动重建角色状态，产生 Generation 确认日志，装备界面即时生的| 失去验证日志；部分场景生效延迟到下次自然重建的*不建议删** |
-| EditSession 状态（UpdateEditSessionState / SafeReadUiModes的| safe_game_access | hot-apply 的context1 分支判据 | 的hot-apply 绑定 |
+| hot-apply（RequestHotApply / ProcessPendingHotApply / ScheduleSelectedStatusRebind） | selection_store / trait_hooks / exports.Tick | 主动重建角色状态，产生 Generation 确认日志，装备界面即时生效 | 失去验证日志；部分场景生效延迟到下次自然重建。**不建议删** |
+| EditSession 状态（UpdateEditSessionState / SafeReadUiModes） | safe_game_access | hot-apply 的 context1 分支判据 | hot-apply 与状态重建绑定 |
 
-## 9. 已知限制与未来方的
+## 9. 已知限制与未来方向
 
-- 配装表编译期内置的*配置化已完成**的026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托的单实的自动保存/每词条最大等级）+ RegisterHotKey 热键（默的F1的 ABI v16，详的[docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）的
-- 当前已覆盖全角色；扩展新角色 = 生成器数据表加条的+ 查该角色觉醒的战气 hash的
-- 游戏更新后需回归：`layout_resolver` 锚点可能失效 的日志出现 layout failed 的等上的
-  方案或重新逆向的
+- 配装表编译期内置（**配置化已完成**，2026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）、ABI v16，详见 [docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）。
+- 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
+- 游戏更新后需回归：`layout_resolver` 锚点可能失效；日志出现 layout failed 时等更新
+  方案或重新逆向。
 
 ## 10. 常用操作速查（给接手 AI 的指令模板）
 
-- **改某角色某槽的词的*：编的`template_loadout.cpp` 对应 `TemplateGemSlot` 的
-  `trait1/trait2` hash 与等级（hash 的`extract/skills.json`，Ctrl+F 搜名字）→ 编译 的部署 的验证的
-- **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追的调整数据 的重新生成
-  （数的+ `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）的编译 的部署 的验证的
-- **加角的*：查该角色觉醒＋/战气的S/T hash（compatibility.tsv + 名字表）的模板表加
-  `CharacterTemplate` 条目 的编译 的部署 的验证的
-- **升版的*：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）的
+- **改某角色某槽的词条**：编辑 `template_loadout.cpp` 对应 `TemplateGemSlot` 的
+  `trait1/trait2` hash 与等级（hash 查 `extract/skills.json`，Ctrl+F 搜名字）→ 编译 → 部署 → 验证。
+- **改出厂默认（模板表）**：`tool-gen-loadout.ps1` 通用槽定义追加/调整数据后重新生成
+  （槽数变化时 `kTemplateSlotCount` 常量同步更新——仅影响无配置时的默认）→ 编译 → 部署 → 验证。
+- **加角色**：查该角色觉醒＋/战气的 S/T hash（compatibility.tsv + 名字表），模板表加
+  `CharacterExclusiveLoadout` 条目 → 编译 → 部署 → 验证。
+- **升版本**：走 §11 发布流程（含版本号同步、全文档旧版本号残留扫描、Nexus 描述同步）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
-  （不要改全局 git config）。提交前 `git status` 确认的bin/obj/dist 混入的
-- **推的*：`git -c credential.helper="!gh auth git-credential" push origin main`
-  （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检的gh token 的Contents: Read and write 权限）的
+  （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
+- **推送**：`git -c credential.helper="!gh auth git-credential" push origin main
+  （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检查 gh token 的 Contents: Read and write 权限）。
 
 ## 12. 会话交接情报（2026-09-05，供新会话 AI 快速对齐）
 
@@ -270,25 +270,25 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   物品键 `hash`→`gem`（上游与运行时表一致）。
 - 文档：`extract/GENERATING.md`（生成手册）、MAINTENANCE §4.1（运行时表 + 合法性规则）。
 
-### 已验证（实测通过的
-- 主控 + AI 角色都吃注入（明镜止的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认的
+### 已验证（实测通过）
+- 主控 + AI 角色都吃注入（明镜止水的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认。
 
-### 市场情报（Nexus 竞品的026-09-03~04的
-**转化率口径：Total views ÷ Unique DLs（数值越的= 转化越好），的823 = 1,329÷125 = 10.63；勿的Unique÷Views 混用的*
-- **我（823的*：Unique 125 / End 2 / Total 171 / Views 1,329（发布第 3 天实时抓取）—的*转化 10.63**，追平原的11.78（差 1.15）的
-- **823 更新的026-09-04 05:19 发布，仍的0.3.5 版：含追的迅捷能力完整 8 槽配的+ 的7/8 交换 + 清理后构建）**：文件下的u=48 / t=49（发布数小时内）——以老用户更新回流为主，拉新仍受 Views 曝光瓶颈限制的*下次发布应升 0.3.6（本次同的0.3.5 覆盖，用户侧看不出变化）**的
-- 657 原版：Unique 1,489 / End 28 / Total 3,153 / Views 17,534 / 转化 11.78（首个扩展槽、无竞品期）——目标：预设优化转化率追的超过（已基本达成）的
+### 市场情报（Nexus 竞品，2026-09-03~04）
+**转化率口径：Total views ÷ Unique DLs（数值越大 = 转化越好），我们 823 = 1,329÷125 = 10.63；勿把 Unique÷Views 混用。**
+- **我（823）**：Unique 125 / End 2 / Total 171 / Views 1,329（发布第 3 天实时抓取）——**转化 10.63**，追平原版 11.78（差 1.15）。
+- **823 更新（2026-09-04 05:19 发布，仍为 0.3.5 版：含追击＋迅捷能力完整 8 槽配装 + 7/8 交换 + 清理后构建）**：文件下载 u=48 / t=49（发布数小时内）——以老用户更新回流为主，拉新仍受 Views 曝光瓶颈限制。下次发布应升 0.3.6（本次同为 0.3.5 覆盖，用户侧看不出变化）。
+- 657 原版：Unique 1,489 / End 28 / Total 3,153 / Views 17,534 / 转化 11.78（首个扩展槽、无竞品期）——目标：预设优化转化率追平并超过（已基本达成）。
 
 ### 用户反馈
-- 韩国玩家（漆黑钳蟹因子）——已实现（槽 8的 回复的
-- 玩家的能否的657 共存"——回的会冲突（的hook），这是 657 的drop-in replacement"的
-- impact008的026-09-04）：请求"迅捷能力/怒涛/激昂顶的版—的*拒绝"顶配/超强"**（保护平衡），接受其真实诉求（怒涛不在模板、词条可选性）的归入配置化方向；回复话术 = "平衡 + 可配的的
+- 韩国玩家（漆黑钳蟹因子）——已实现（槽 8）。已回复。
+- 玩家问"能否与 657 共存"——回答：会冲突（同样 hook），这是 657 的 drop-in replacement。
+- impact008（2026-09-04）：请求"迅捷能力/怒涛/激昂顶配版"——**拒绝"顶配/超强"**（保护平衡），接受其真实诉求（怒涛不在模板、词条可选性），归入配置化方向；回复话术 = "平衡 + 可配置"。
 
 ### 未来方向（未做）
-- ~~配置化~~ **已完的*（见上；不再重复立项）。后续方向：预设集丰富（狂战的斯巴的伤害上限/天星系等）作的pre-loadout 模板；每角色开的v2；物品权威组合表的
-- 坚持"合理扩展的路线（不的超强数的顶配"—的87/819 是竞品，不撞车；对玩家请求统一话术拒绝）的
-- Reddit 反营销严格—的*不要主动的Reddit 自荐**（社区敌的作弊的）的
+- ~~配置化~~ **已完成**（见上；不再重复立项）。后续方向：预设集丰富（狂战/斯巴达的伤害上限/天星系等）作新的 pre-loadout 模板；每角色独立的 v2；物品权威组合表。
+- 坚持"合理扩展"的路线（不做超强数值的顶配）——87/819 是竞品，不撞车；对玩家请求统一话术拒绝。
+- Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌视作弊）。
 
 ### 备注
-- 竞品数字的Jina Reader 抓取（可能有轻微误差），仅作参考的
-- 所的槽位/版本/下载"改动后同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1的
+- 竞品数字由 Jina Reader 抓取（可能有轻微误差），仅作参考。
+- 所有槽位/版本/下载数据改动后需同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1。

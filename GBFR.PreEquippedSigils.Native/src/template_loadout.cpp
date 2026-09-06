@@ -310,15 +310,17 @@ bool TryCopyTemplateGem(
 bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
 {
    const bool use_builtin = slots == nullptr || count <= 0;
-   // Player configuration only fills GENERAL slots 2+; slots 0/1 (the
-   // per-character awakening+ and war spirit) keep the built-in exclusives,
-   // injected by the mod as always. Total virtual slots = 2 + config count.
+   // Player configuration only fills general slots kBuiltinExclusiveSlotCount+;
+   // slots 0/1 (the per-character awakening+ and war spirit) keep the built-in
+   // exclusives, injected by the mod as always.
    const int32_t effective_count =
       use_builtin
          ? kTemplateSlotCount
-         : (count > kVirtualSlotCapacity - 2 ? kVirtualSlotCapacity - 2 : count);
+         : (count > kVirtualSlotCapacity - kBuiltinExclusiveSlotCount
+               ? kVirtualSlotCapacity - kBuiltinExclusiveSlotCount
+               : count);
    const int32_t total_slot_count =
-      use_builtin ? kTemplateSlotCount : 2 + effective_count;
+      use_builtin ? kTemplateSlotCount : kBuiltinExclusiveSlotCount + effective_count;
    const int32_t previous_count = g_virtual_slot_count.load(std::memory_order_acquire);
    if (total_slot_count != previous_count)
    {
@@ -352,23 +354,25 @@ bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
                character = CharacterTemplate{};
             continue;
          }
-         const CharacterExclusiveLoadout* builtin_entry = nullptr;
-         for (const CharacterExclusiveLoadout& entry : kCharacterExclusives)
-         {
-            if (entry.character_hash == character.character_hash)
-            {
-               builtin_entry = &entry;
-               break;
-            }
-         }
+         // O(1) lookup: g_character_template_index is built in
+         // InitializeRuntimeTemplates in the same order as kCharacterExclusives
+         // and is read under the template mutex held here.
+         const auto entry_iterator =
+            g_character_template_index.find(character.character_hash);
+         const CharacterExclusiveLoadout* builtin_entry =
+            entry_iterator != g_character_template_index.end()
+               ? &kCharacterExclusives[entry_iterator->second]
+               : nullptr;
          // Keep the character exclusives; configure the general slots.
          character.slots[0] =
             builtin_entry != nullptr ? builtin_entry->awakening : TemplateGemSlot{};
          character.slots[1] =
             builtin_entry != nullptr ? builtin_entry->war_spirit : TemplateGemSlot{};
-         for (int32_t slot_index = 2; slot_index < kVirtualSlotCapacity; ++slot_index)
+         for (int32_t slot_index = kBuiltinExclusiveSlotCount;
+              slot_index < kVirtualSlotCapacity; ++slot_index)
          {
-            const int32_t config_index = slot_index - 2;
+            const int32_t config_index =
+               slot_index - kBuiltinExclusiveSlotCount;
             character.slots[static_cast<size_t>(slot_index)] =
                config_index < effective_count
                   ? slots[static_cast<size_t>(config_index)]
