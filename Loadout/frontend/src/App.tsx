@@ -503,7 +503,7 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 border-b bg-background px-4 pt-2 pb-2"
+        className="shrink-0 h-[60px] border-b bg-background px-4"
       >
         <div className="flex items-center justify-between gap-3">
           <TabsList>
