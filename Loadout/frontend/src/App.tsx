@@ -41,7 +41,7 @@ const copy = {
     configFail: (e: unknown) => `配装加载失败：${e}`,
     exclFail: (e: unknown) => `专属因子表加载失败：${e}`,
     saveFail: (e: unknown) => `自动保存失败：${e}`,
-    reset: "重置为预设",
+    reset: "重置",
     resetDesc: "将删除当前配置，恢复为预设模板。",
     resetConfirm: "重置",
     cancel: "取消",
@@ -61,7 +61,7 @@ const copy = {
     configFail: (e: unknown) => `Failed to load loadout: ${e}`,
     exclFail: (e: unknown) => `Failed to load exclusive factors: ${e}`,
     saveFail: (e: unknown) => `Auto-save failed: ${e}`,
-    reset: "Reset to preset",
+    reset: "Reset",
     resetDesc: "Removes the current configuration and restores the preset template.",
     resetConfirm: "Reset",
     cancel: "Cancel",
@@ -503,7 +503,7 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 border-b bg-background px-4 pt-1 pb-2"
+        className="shrink-0 border-b bg-background px-4 pt-2 pb-2"
       >
         <div className="flex items-center justify-between gap-3">
           <TabsList>
