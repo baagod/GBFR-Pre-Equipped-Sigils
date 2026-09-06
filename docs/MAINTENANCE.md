@@ -27,6 +27,9 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   NativeCore.cs                      原生门面：加的ABI 校验/日志回调/Tick/Shutdown/消息读取
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步的
   ModConfig.json                     ModId/版本/描述（发布信息）
+  sigils.json                        运行时因子表（词条/物品 ID + 双语名；由 extract 管线生成的*见"数据文件生成"§4.x）
+  skills.json                        运行时词条字典（hash/zh/en/cap；同上）
+  pre-loadout.json                   内置模板配置（mod 目录兜底；用户配置在 %LOCALAPPDATA%\GBFRPreEquippedSigils\loadout.json）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的C ABI（v15的 个导的+ GemData 结构的
   native_internal.h                  内部状的声明/常量（模板槽常量、预检字节等）
@@ -116,6 +119,37 @@ TemplateGemSlot{
 - 角色 hash（角色名 的hash）：的`UiLocalization.cs` 的历史版本或 compatibility.tsv 的
   character_key 列；常用：古的`2A26B1B2`、姬的`A4ACBA76`、娜露梅 `E7053919`的
   芙劳 `646C3168`、菲迪埃的`74DD4C79`的
+
+## 4.1 数据文件生成（mod 运行时表：sigils.json / skills.json）
+
+mod 目录下的 `sigils.json`（279 因子）与 `skills.json`（200 词条）**不是手工维护的**，
+由 `extract` 管线一次性导出（源 → 导出 → 运行时子集）：
+
+```
+extract/skills.json（词条字典，200 条）──┐
+                                          ├── export_runtime_data.py ──> mod 目录
+extract/loadout.json（因子物品表，279 条）─┘                             sigils.json + skills.json
+```
+
+| 文件 | 字段 | 说明 |
+|---|---|---|
+| `skills.json` | `{ hash, zh, en, cap }` | 词条 ID（hash）+ 双语名 + 等级上限；源 = extract/skills.json（含 key/desc/player，导出时仅留运行时字段） |
+| `sigils.json` | `{ gem, zh, en, skill, secondaries[], rarity, player, special }` | 物品 ID（gem）+ 主词条（skill）+ 随机池/固定副词条（secondaries）；源 = extract/loadout.json（去 key 字段） |
+
+**重建/更新流程**（只动源数据，不手改 mod 产物）：
+1. 改 `extract` 侧源表（`skills.json` / `loadout.json`，生成方式见 `extract/GENERATING.md` §1/§7）；
+2. 跑 `extract/export_runtime_data.py`（读 `extract/loadout.json` + `extract/skills.json` → 写 mod 目录
+   `GBFR.PreEquippedSigils/sigils.json` + `skills.json`）；
+3. 校验：`extract/verify_parser.py`（模拟 C# 解析，检查主词条存在/等级不超 cap/哨兵规则）；
+4. 数据版本从 `extract/loadout.json` 行数核对（当前 279）。
+
+**与模板表的关系**：`template_loadout.cpp` 的 `kDefaultTemplates[]`（§4）是**内置默认 9 槽**的
+模板（gem_id/trait1/trait2 直接内嵌 C++）；`sigils.json`/`skills.json` 是**玩家配置**
+（`loadout.json`）解析用的 ID→名称/上限映射。两者独立：玩家配置走 sigils.json/skills.json，
+无玩家配置时用内置模板（不走 JSON）。
+
+> 字段名约定（2026 会话定）：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；
+> `key`（GEEN_/SKILL_ 内部名）只在 extract 源表保留，不进运行时。
 
 ## 5. 构建与部的
 
