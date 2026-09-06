@@ -10,7 +10,7 @@
 ## 1. 一句话说明
 
 游戏原生只计 12 个可见因子槽（内的 trait 循环上限 13）。本 mod 把循环上限扩到
-`13 + 虚拟槽数`（= 2 内置专属 + 玩家通用槽），并 Hook 因子读取函数：当游戏询问 13 号起的虚拟槽时，
+`13 + 虚拟槽数`（= 3 内置专属 + 玩家通用槽），并 Hook 因子读取函数：当游戏询问 13 号起的虚拟槽时，
 把*内置模板*现场合成一份 GemData 交给游戏：不写存档、不依赖库存、不占用库存（
 `GemData.WORN_BY` 表示未装备）；战斗数值是真实的本地效果（在线 = 作弊级，风险自负）。
 
@@ -64,7 +64,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
   游戏状态重建：GetGemDataByIndexDetour（slot 13 起共 count 个）
     → TryLoadVirtualTraitSelection → TryCopySelectedVirtualGem
         → IsTemplateSlotId(0xFE000000+) → TryCopyTemplateGem
-            → kCharacterExclusives（gem_id, trait1/2, 等级；按 exclusive 状态拆分/合并）
+            → kCharacterExclusives（gem_id, trait1/2, 等级；按 exclusive 状态独立开关三个专属槽）
             → 组装 GemData（worn_by=0x887AE0B0 未装备，flags=0）→ SafeCopyToOutput
     → natural bind 追踪：injected==expected 且 identity 一致 → CommitAuthorizedStatus
     → 日志 "Trait contribution confirmed for 0x...: N/N"（会话内首次状态重建报一次；未满 N/M 每次报 incomplete）
@@ -78,8 +78,9 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 ## 4. 模板配装表（日常维护核心）
 
 文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kCharacterExclusives[]` +
-（2026-09 改版：内置仅含每角色专属 2 槽（觉醒＋组合 + 战气），通用槽不再有内置默认；专属可经 loadout.json 的 exclusive 段拆分/卸除）。
-**v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手改 hash。
+（2026-09 改版：内置仅含每角色专属 3 槽（T1/T2/战气，每槽一个独立专属因子，无"觉醒＋"合并），
+通用槽不再有内置默认；专属可经 loadout.json 的 exclusive 段逐项开关）。
+**数据由生成脚本维护，不要手改 hash。**
 
 | 工具 | 作用 |
 |---|---|
@@ -109,9 +110,12 @@ TemplateGemSlot{
 > 该坑覆盖**所有单词条槽位**（战气槽 / 激昂 / 钳蟹），其他槽位均有真实 trait2，不受影响。
 
 **规则**：
-- 数据源：`kCharacterExclusives[]`（每角色：slot0 觉醒＋合并项（T1+T2）、slot1 战气、T1/T2 独立因子 gem）；运行时由 `BuildCharacterTemplate` 按 exclusive 状态组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 从 0 开始**连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）。
+- 数据源：`kCharacterExclusives[]`（每角色一行：`{ character_hash, t1Gem, t1, t2Gem, t2, warGem, war }`，
+  gem 由脚本从 sigils.json 推导）；运行时由 `BuildCharacterTemplate` 按 exclusive 状态组装为
+  `CharacterTemplate{ character_hash, slots[24] }`；每角色固定槽位：slot0=T1、slot1=T2、slot2=战气，
+  禁用的槽留空（**槽位不连续**：`InstallDefaultTemplateSelections` 跳过空槽继续、`TryGetRuntimeSlot` 对空槽返回 false）。
 - 合成的 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定。
-- **内置默认（无配置）**：每角色仅注入专属 2 槽（觉醒＋/战气，按 exclusive 状态），通用槽全空；玩家配置（loadout.json）的 slots = 通用槽（可 0..12），总虚拟槽 = 2 + 通用槽数。
+- **内置默认（无配置）**：每角色仅注入专属 3 槽（T1/T2/战气，按 exclusive 状态），通用槽全空；玩家配置（loadout.json）的 slots = 通用槽（可 0..12），总虚拟槽 = 3 + 通用槽数。
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
   `GetRequiredCharacterHash(gem_id)` 校验，专属因子只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`extract/skills.json`（词条 hash/名）与 `extract/loadout.json`（物品 gem/名）；
@@ -208,7 +212,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `compatibility.tsv` 缺失或条目数 != 199 则启动失败（fail-closed）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=16`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
-- **可选配置**：INI 体系已删除；无 `loadout.json` 时 = 内置专属（每角色觉醒＋/战气，全开），通用全空；有配置时 = 2 专属（按 exclusive 段开关）+ 通用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用）。
+- **可选配置**：INI 体系已删除；无 `loadout.json` 时 = 内置专属（每角色 T1/T2/战气，全开），通用全空；有配置时 = 3 专属（按 exclusive 段开关）+ 通用槽数（由 `LoadoutConfig` 解析校验、mtime 250ms 热应用。exclusive 段键 = PL 码/角色名/名字/角色 hash，内层 = 词条 hash→bool，兼容旧 `{t1,t2,war}` 布尔形状）。
 - 第三方 `third_party/`（safetyhook、Zydis）只可升级替换，不可手改。
 - 保持上游 3 空格缩进风格（native），托管用 4 空格。
 
@@ -243,7 +247,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 会话交接情报（2026-09-05，供新会话 AI 快速对齐）
 
 ### 当前状态
-- **版本**：v0.5.0（ABI v17：每角色专属因子可拆分/卸除 + 取消内置通用预设）。入口配装：专属 2 槽（觉醒＋组合/拆 T1/T2、战气，默认全开）+ 玩家通用槽（固定 12 行编辑器）。
+- **版本**：v0.5.0（ABI v17：每角色专属因子可拆分/卸除 + 取消内置通用预设）。入口配装：专属 3 槽（T1/T2/战气，每槽一个独立专属因子，无"觉醒＋"合并，默认全开）+ 玩家通用槽（固定 12 行编辑器）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；原版（657 Extra Sigil Slots）有库存/UI/跨角色绑定痛点——需差异化："预配装/全角色/零折腾"。
 
 ### 0.4.0 发布记录（2026-09-05）

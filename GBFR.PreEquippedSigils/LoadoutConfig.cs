@@ -33,8 +33,22 @@ internal static class LoadoutConfig
         public int MaxLevel { get; init; } = DefaultLevel;
     }
 
+    private sealed class ExclusiveRow
+    {
+        public required uint Hash { get; init; }
+        public required string Player { get; init; } // PL code (e.g. PL1400)
+        public required string Name { get; init; }
+        public required string Zh { get; init; }
+        public required uint T1 { get; init; }
+        public required uint T2 { get; init; }
+        public required uint War { get; init; }
+    }
+
     private static readonly Dictionary<string, SigilInfo> Sigils = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, TraitInfo> Traits = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, ExclusiveRow> ExclusiveByPlayer = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, ExclusiveRow> ExclusiveByName = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<uint, ExclusiveRow> ExclusiveByHash = new();
     private static DateTime _lastAppliedUtc = DateTime.MinValue;
     private static DateTime _lastAttemptUtc = DateTime.MinValue;
     private static bool _hadConfigFile;
@@ -51,6 +65,7 @@ internal static class LoadoutConfig
             "GBFRPreEquippedSigils", "loadout.json");
         _sigilsPath = Path.Combine(modDirectory, "sigils.json");
         _traitsPath = Path.Combine(modDirectory, "skills.json");
+        LoadExclusiveTable(modDirectory, log);
         if (LoadTables(log))
             TryApply(log);
         else
@@ -200,9 +215,72 @@ internal static class LoadoutConfig
     }
 
     /// <summary>
-    /// Parses the optional "exclusive" object ({ characterHashHex: { t1, t2, war } })
-    /// into native overrides (disable bits). Missing entries stay enabled;
-    /// absent "exclusive" yields null (all enabled).
+    /// Loads character-exclusives.json (the tool's per-character exclusive
+    /// table) so "exclusive" keys can be PL codes / character names as well as
+    /// raw character hashes. Table missing or invalid only disables that
+    /// convenience: raw hashes and the legacy t1/t2/war shape still work.
+    /// </summary>
+    private static void LoadExclusiveTable(string modDirectory, Action<string> log)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(
+                File.ReadAllText(Path.Combine(modDirectory, "character-exclusives.json")));
+            int count = 0;
+            foreach (JsonElement entry in doc.RootElement.GetProperty("exclusives").EnumerateArray())
+            {
+                try
+                {
+                    var row = new ExclusiveRow
+                    {
+                        Hash = PU(Hx(entry.GetProperty("hash"))),
+                        Player = Hx(entry.GetProperty("player")),
+                        Name = Hx(entry.GetProperty("name")),
+                        Zh = Hx(entry.GetProperty("zh")),
+                        T1 = PU(Hx(entry.GetProperty("t1"))),
+                        T2 = PU(Hx(entry.GetProperty("t2"))),
+                        War = PU(Hx(entry.GetProperty("war"))),
+                    };
+                    if (row.Hash == 0 || row.Player.Length == 0)
+                        continue;
+                    ExclusiveByPlayer[row.Player] = row;
+                    ExclusiveByHash[row.Hash] = row;
+                    if (row.Name.Length > 0)
+                        ExclusiveByName[row.Name] = row;
+                    if (row.Zh.Length > 0)
+                        ExclusiveByName[row.Zh] = row;
+                    count++;
+                }
+                catch
+                {
+                    // one bad entry must not disable the whole table
+                }
+            }
+            log($"Loaded {count} character exclusive entries.");
+        }
+        catch (Exception exception)
+        {
+            log($"Failed to load character-exclusive table: {exception.Message}");
+        }
+    }
+
+    private static ExclusiveRow? ResolveCharacter(string key)
+    {
+        if (ExclusiveByPlayer.TryGetValue(key, out ExclusiveRow? row))
+            return row;
+        if (ExclusiveByHash.TryGetValue(PU(key), out row))
+            return row;
+        if (ExclusiveByName.TryGetValue(key, out row))
+            return row;
+        return null;
+    }
+
+    /// <summary>
+    /// Parses the optional "exclusive" object
+    /// ({ PL码/name/hash: { 词条hash(T1/T2/War): bool } }) into native overrides
+    /// (disable bits). Missing entries stay enabled; the legacy shape
+    /// ({ characterHashHex: { t1, t2, war } }) is still accepted; absent
+    /// "exclusive" yields null (all enabled).
     /// </summary>
     private static NativeCore.ExclusiveOverrideNative[]? ParseExclusiveOverrides(string json)
     {
@@ -216,8 +294,11 @@ internal static class LoadoutConfig
         var result = new List<NativeCore.ExclusiveOverrideNative>();
         foreach (JsonProperty property in exclusive.EnumerateObject())
         {
-            uint hash = PU(property.Name);
-            if (hash == 0 || property.Value.ValueKind != JsonValueKind.Object)
+            if (property.Value.ValueKind != JsonValueKind.Object)
+                continue;
+            ExclusiveRow? row = ResolveCharacter(property.Name);
+            uint hash = row?.Hash ?? PU(property.Name); // bare character hash still accepted
+            if (hash == 0)
                 continue;
             bool t1 = true;
             bool t2 = true;
@@ -227,11 +308,19 @@ internal static class LoadoutConfig
                 if (field.Value.ValueKind != JsonValueKind.True &&
                     field.Value.ValueKind != JsonValueKind.False)
                     continue;
-                switch (field.Name)
+                bool value = field.Value.GetBoolean();
+                uint traitHash = PU(field.Name);
+                if (row != null && traitHash == row.T1)
+                    t1 = value;
+                else if (row != null && traitHash == row.T2)
+                    t2 = value;
+                else if (row != null && traitHash == row.War)
+                    war = value;
+                else switch (field.Name)
                 {
-                    case "t1": t1 = field.Value.GetBoolean(); break;
-                    case "t2": t2 = field.Value.GetBoolean(); break;
-                    case "war": war = field.Value.GetBoolean(); break;
+                    case "t1": t1 = value; break;
+                    case "t2": t2 = value; break;
+                    case "war": war = value; break;
                 }
             }
             result.Add(new NativeCore.ExclusiveOverrideNative

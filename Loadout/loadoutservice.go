@@ -55,14 +55,11 @@ type loadoutSlot struct {
 	Enabled bool          `json:"enabled"`
 }
 
-// exclusiveState mirrors the mod-side "exclusive" section: per character the
-// three exclusive factors (t1/t2 = awakening pair, war = war spirit), true =
-// enabled (default when omitted).
-type exclusiveState struct {
-	T1  bool `json:"t1"`
-	T2  bool `json:"t2"`
-	War bool `json:"war"`
-}
+// exclusiveState mirrors the mod-side "exclusive" section: keyed by player
+// code (or name/hash), inner keys are the factor trait hashes, true = enabled
+// (default when omitted). Parsed only to validate the config; the payload is
+// written verbatim.
+type exclusiveState map[string]bool
 
 func exeDir() string {
 	exe, err := os.Executable()
