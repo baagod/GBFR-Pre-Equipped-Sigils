@@ -202,6 +202,11 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `trait_hooks.cpp`：detour 的TLS/generation/identity/context/expected/injected 校验顺序的
   natural bind 的授权提交（`CommitAuthorizedStatus`）与 `ValidateAuthorizedStatuses`的
 - `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查的
+  *SafeInvokeStatusRebuild 的身份改写已复核（2026-09）：调用前已校验
+  status.character_hash == 目标角色，字符 hash 写入是恒等写（已删除）；
+  仅 context_mode 被销为 0（装备态本来即 0，mission 态仅短暂存在），
+  单字段对齐原子写 + 同步调用 + SEH，其他线程最多看到"装备界面同款 ctx0"，
+  无撕裂读风险；勿再引入 8 字节原子写（收益为零且增加布局假设）。*
 - `compatibility.tsv` 缺失或条目数 != 199 的启动失败（fail-closed）的
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=16`）与
   `NativeCore.Interop.cs`、`NativeCore.cs` 的`AbiVersion` 必须一致；改动需三方同步 + 版本号递增的

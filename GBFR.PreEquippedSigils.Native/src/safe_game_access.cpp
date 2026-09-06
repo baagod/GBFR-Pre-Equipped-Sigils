@@ -429,7 +429,14 @@ bool SafeInvokeStatusRebuild(
    {
       if (!preserve_context)
       {
-         *reinterpret_cast<uint32_t*>(status + g_game_layout.status_character_hash_offset) = character_hash;
+         // The caller verified (above and in ProcessPendingHotApply) that the
+         // status already belongs to character_hash, so the character-hash
+         // write would be a no-op and is omitted. Only context_mode is pinned
+         // to 0 so the game's rebuild function takes the equipment-style path;
+         // for already-equipment statuses (the normal hot-apply case) even
+         // this store writes the same value. One aligned 4-byte store; other
+         // threads only ever observe the former context value or 0 (the same
+         // value an open equipment screen has) during the synchronous rebuild.
          *reinterpret_cast<int32_t*>(status + g_game_layout.status_context_mode_offset) = 0;
          identity_was_overridden = true;
       }
@@ -446,8 +453,6 @@ bool SafeInvokeStatusRebuild(
    {
       __try
       {
-         *reinterpret_cast<uint32_t*>(status + g_game_layout.status_character_hash_offset) =
-            original_identity.character_hash;
          *reinterpret_cast<int32_t*>(status + g_game_layout.status_context_mode_offset) =
             original_identity.context_mode;
       }
