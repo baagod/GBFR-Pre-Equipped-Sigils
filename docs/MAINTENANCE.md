@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.0（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.1（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -248,20 +248,22 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.0（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
-  （固定 12 行编辑器，无内置通用默认）。**待发布 0.5.1**：本会话已完成的专属重构与工具改动（见下）。
+- **版本**：v0.5.1（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+  （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
 
-### 最近改动（2026-09-07，未发布，随 0.5.1）
+### 0.5.1 发布记录（2026-09-07）
 - **专属因子 3 独立槽重构**（native/C#/工具/数据表，ABI 不变）：原生表 = `{hash, t1Gem, t1, t2Gem, t2, warGem, war}`；
   `kBuiltinExclusiveSlotCount` 2→3（启动 Installed 87）；禁用的槽留空（槽位不连续）。
 - **loadout.json `exclusive` 段** = `{ PL码/角色名/zh/角色hash: { 词条hash: bool } }`
   （兼容旧 `{t1,t2,war}`；C# 加载 character-exclusives.json 解析）。
 - **工具**：重置 = 写空配置 `{lang, slots:[]}`（lang 不参与重置，默认 zh，唯一来源 loadout.json；
   旧的 ResetLoadout 服务方法已删）；专属因子页只显示角色名（zh/en），PL 代号不显示；通用表头 44px；
-  旧格式（角色 hash 键 + t1/t2/war）首次加载自动迁移为 PL 键；**古兰/姬塔共享 PL0000**，
-  exclusive 键对二者联动（两者专属因子完全相同，mod 侧按 PL 键扇出到两个角色）。
-- **生成器** `tool-gen-loadout.ps1` 重写为干净单遍（重跑零 diff，已验证可复现）。
+  等级输入门控（无因子时禁用）；旧格式（角色 hash 键 + t1/t2/war）首次加载自动迁移为 PL 键；
+  **古兰/姬塔共享 PL0000**（面板合并为一行，mod 侧按 PL 键扇出到两个角色——两者专属因子完全相同）。
+- **生成器** `tool-gen-loadout.ps1` 重写为干净单遍（重跑零 diff，已验证可复现）；
+  `character-exclusives.json` 移除无消费者的 `awakening` 字段。
+- **已验证**：游戏内测试通过（专属因子逐项开关、3 槽显示、日志 Installed 87）。
 
 ### 历史发布记录（要点）
 - **0.4.0（2026-09-05）**：编辑器固定 12 行（无增删）、中英双语、托盘三态激活 + 隐藏淡入
