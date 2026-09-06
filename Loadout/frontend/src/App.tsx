@@ -720,9 +720,8 @@ function ExclusivePanel({
           { key: e.t2, on: st?.[e.t2] ?? true, gem: e.t2Gem },
           { key: e.war, on: st?.[e.war] ?? true, gem: e.warGem },
         ]
-        const displayName =
-          lang === "zh" ? e.zh || e.name || "" : e.name || e.zh || ""
-        const characterName = `${e.player} · ${displayName || e.hash}`
+        const characterName =
+          lang === "zh" ? e.zh || e.name || e.hash : e.name || e.zh || e.hash
         return (
           <div
             key={e.hash}
