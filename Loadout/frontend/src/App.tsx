@@ -264,8 +264,11 @@ export default function App() {
         skipSave.current = true
         if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
         setSlots(pad12(configToSlots(parsed, sigilsLoaded)))
-        if (parsed?.exclusive && typeof parsed.exclusive === "object")
-          setExclusiveState(parsed.exclusive)
+        setExclusiveState(
+          parsed?.exclusive && typeof parsed.exclusive === "object"
+            ? parsed.exclusive
+            : undefined
+        )
       } catch (e) {
         setStatus(t.configFail(e))
       }
@@ -402,8 +405,11 @@ export default function App() {
       skipSave.current = true
       if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
       setSlots(pad12(configToSlots(parsed, sigils)))
-      if (parsed?.exclusive && typeof parsed.exclusive === "object")
-        setExclusiveState(parsed.exclusive)
+      setExclusiveState(
+        parsed?.exclusive && typeof parsed.exclusive === "object"
+          ? parsed.exclusive
+          : undefined
+      )
     } catch (e) {
       setStatus(t.configFail(e))
     }
