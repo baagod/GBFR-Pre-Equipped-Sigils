@@ -707,8 +707,11 @@ function ExclusivePanel({
         const characterName =
           lang === "zh" ? e.nameZh || e.name || e.hash : e.name || e.nameZh || e.hash
         return (
-          <div key={e.hash} className="border-b py-2 text-sm last:border-b-0">
-            <div className="grid grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
+          <div
+            key={e.hash}
+            className="flex h-[42px] items-center border-b text-sm last:border-b-0"
+          >
+            <div className="grid w-full grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
               <span className="font-medium">{characterName}</span>
               {row.map((r) => (
                 <label key={r.key} className="flex min-w-0 items-center gap-1.5">
