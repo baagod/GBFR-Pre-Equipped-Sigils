@@ -78,16 +78,17 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 
 ## 4. 模板配装表（日常维护核心的
 
-文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kDefaultTemplates[]`的
+文件：`GBFR.PreEquippedSigils.Native/src/template_loadout.cpp` 的`kCharacterExclusives[]` +
+`kGeneralSlots[]`（2026-09 由 26×9 全展开表去重：7 个通用槽全角色相同）的
 **v0.3 起覆盖全角色**（v0.3.5 起每角色 8 槽），数据由生成脚本维护，不要手的hash的
 
 | 工具 | 作用 |
 |---|---|
 | `docs/tool-extract-exclusives.ps1` | 的compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数的的生成 `kDefaultTemplates[]` 数组文本 |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数的的生成 `kCharacterExclusives[]`/`kGeneralSlots[]` 数组文本 |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官的ID 的/ 解包导出）—的*运行时不依赖**，仅开发工的|
 
-**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）的运行脚本输出到临时文的的替换 `template_loadout.cpp` 的`constexpr CharacterTemplate kDefaultTemplates[] = { ... };` 段（自动定位起止替换）的
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 里的数据表（或改通用槽定义）的运行脚本输出到临时文的的替换 `template_loadout.cpp` 中从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `kGeneralSlots ... };` 的整段（自动定位起止替换）的
 
 结构（每槽一的`TemplateGemSlot`）：
 
@@ -110,7 +111,7 @@ TemplateGemSlot{
 > 该坑覆盖**所有单词条槽位**（战气槽 / 激的/ 钳蟹），其他槽位均有真实 trait2，不受影响的
 
 **规则**的
-- 每角色一的`CharacterTemplate{ character_hash, slots[24] }`；`slots` 的0 的*连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections` 的`FindTemplateSlot` 依赖此约定）的
+- 数据源：`kCharacterExclusives[]`（每角色 2 条：slot0 觉醒＋、slot1 战气）+ `kGeneralSlots[]`（slot3-9 七槽通用，全角色相同）；运行时由 `BuildCharacterTemplate` 组装为 `CharacterTemplate{ character_hash, slots[24] }`；`slots` 的0 的*连续**，遇 `gem_id==0` 视为表结束（`InstallDefaultTemplateSelections`/`TryGetRuntimeSlot` 依赖此约定）的
 - 合成的id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`，不会与真实库存槽位冲突；`IsTemplateSlotId` 判定的
 - **内置模板槽数（出厂预设）**：`native_internal.h` 的`kTemplateSlotCount`（当的9）只决定"无玩家配置时的默认槽的；玩家配置（loadout.json）可任意 2+启用槽（的2），**不受该常量约的*。仅当修改内置默认（模板表）时需同步该常量的
 - 角色专属物品（觉醒＋/战气）受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 会用
