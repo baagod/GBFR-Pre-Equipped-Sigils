@@ -177,3 +177,8 @@ Compress-Archive -LiteralPath $packageDir -DestinationPath $zipPath -Compression
 
 Write-Output "Reloaded-II package: $packageDir"
 Write-Output "ZIP: $zipPath"
+
+# Dev convenience: open the editor tool for immediate review. If an older tool
+# instance is already running, its single-instance mutex activates that window
+# (a fresh start was attempted after each rebuild anyway).
+Start-Process -FilePath (Join-Path $packageDir 'Loadout.exe')
