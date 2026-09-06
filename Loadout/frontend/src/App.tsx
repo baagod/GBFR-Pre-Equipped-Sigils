@@ -117,7 +117,7 @@ type ExclusiveState = { t1: boolean; t2: boolean; war: boolean }
 const GRID_COLS =
   "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2"
 
-const HEADER_ROW = `${GRID_COLS} border-b pb-2 text-sm font-medium text-foreground`
+const HEADER_ROW = `${GRID_COLS} min-h-[42px] border-b text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
 
 /** Clamped numeric level input with a grey "/ max" suffix. */
