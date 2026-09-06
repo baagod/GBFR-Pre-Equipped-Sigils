@@ -510,7 +510,7 @@ export default function App() {
           <TabsTrigger value="exclusive">{t.tabExclusive}</TabsTrigger>
         </TabsList>
       </Tabs>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-0 [scrollbar-gutter:stable]">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-0 [scrollbar-gutter:stable]">
         {status && (
           <div className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
             {status}
