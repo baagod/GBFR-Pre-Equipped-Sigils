@@ -1,6 +1,6 @@
 # Wails build output
 bin/
-LoadoutTool.exe
+Loadout.exe
 
 # Frontend
 frontend/node_modules/

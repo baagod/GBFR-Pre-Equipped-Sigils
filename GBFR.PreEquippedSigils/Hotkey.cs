@@ -156,7 +156,7 @@ internal static class Hotkey
             _hotKeyRegistered = RegisterHotKey(_messageWindow, HotkeyId, ModNoRepeat, (uint)virtualKey);
             _log?.Invoke(
                 _hotKeyRegistered
-                    ? "Hotkey re-registered to the new key."
+                    ? $"Hotkey re-registered to: {HotkeyName(_virtualKey)} (0x{_virtualKey:X2})."
                     : "Hotkey re-registration failed; fallback polling active.");
         }
     }
@@ -213,7 +213,7 @@ internal static class Hotkey
         _hotKeyRegistered = RegisterHotKey(hwnd, HotkeyId, ModNoRepeat, (uint)virtualKey);
         _log?.Invoke(
             _hotKeyRegistered
-                ? "Hotkey registered via RegisterHotKey (message-driven)."
+                ? $"Hotkey registered: {HotkeyName(virtualKey)} (0x{virtualKey:X2}) via RegisterHotKey."
                 : "RegisterHotKey unavailable (key may be taken); fallback polling active.");
 
         while (!_threadExit)
@@ -298,10 +298,10 @@ internal static class Hotkey
             return;
         }
 
-        string toolPath = Path.Combine(_modDirectory, "LoadoutTool.exe");
+        string toolPath = Path.Combine(_modDirectory, "Loadout.exe");
         if (!File.Exists(toolPath))
         {
-            log("LoadoutTool.exe not found in the mod directory.");
+            log("Loadout.exe not found in the mod directory.");
             return;
         }
         using var process = Process.Start(new ProcessStartInfo(
@@ -316,13 +316,21 @@ internal static class Hotkey
     {
         try
         {
-            return Process.GetProcessesByName("LoadoutTool").Length > 0;
+            return Process.GetProcessesByName("Loadout").Length > 0;
         }
         catch
         {
             return false;
         }
     }
+
+    /// <summary>
+    /// Human-readable key name for the configured virtual key.
+    /// </summary>
+    private static string HotkeyName(int virtualKey) =>
+        Enum.IsDefined(typeof(OverlayHotkey), virtualKey)
+            ? ((OverlayHotkey)virtualKey).ToString()
+            : $"0x{virtualKey:X2}";
 
     /// <summary>
     /// Polls until the given virtual key is no longer down (max 400ms) so the

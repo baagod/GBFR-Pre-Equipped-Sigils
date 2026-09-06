@@ -65,7 +65,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
             的的kDefaultTemplates 的(gem_id, trait1/2, 等级)
             的组装 GemData(worn_by=0x887AE0B0 未装的 flags=0) 的SafeCopyToOutput
     的natural bind 追踪: injected==expected 的identity 一的的CommitAuthorizedStatus
-    的日志 "Live battle Trait contribution confirmed for 0x...: N/N"
+    的日志 "Trait contribution confirmed for 0x...: N/N"（会话内首次状态重建报一次；未满 N/M 每次报 incomplete）
 
 维持 (Mod.cs 250ms Tick 的GBFR20_Tick):
   UpdateEditSessionState / ValidateAuthorizedStatuses /
@@ -136,7 +136,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
    - `Installed N built-in template loadout selection(s); inventory-independent.`
    - `Native hook installation completed with N virtual slots; ...`
-   - 进战斗：`Live battle Trait contribution confirmed for 0xE7053919: N/N ...`
+   - 启动/换人/进战斗（context-1 状态重建）：`Trait contribution confirmed for 0xE7053919: N/N ...`（首次；二次出现应为 `incomplete: N/M`）
    - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
 3. 训练场实测词条效果（如豪胆濒死不死、自动复活自起）+ 血条下 buff 图标的
 4. 重启游戏配置保留的

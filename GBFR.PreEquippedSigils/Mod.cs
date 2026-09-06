@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using GBFR.PreEquippedSigils.Configuration;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
@@ -69,6 +70,7 @@ public sealed class Mod : IMod
                     AutoFlush = true,
                 };
             }
+            Log($"GBFR Pre-Equipped Sigils v{ReadModVersion(modDirectory)} (ABI {NativeCore.AbiVersion})");
             long nativeStarted = BeginStartupPhase("native-core");
             NativeCore.Configure(modDirectory);
             bool hooksReady = NativeCore.Initialize(Log);
@@ -105,6 +107,24 @@ public sealed class Mod : IMod
         {
             Log($"Initialization failed: {exception}");
             Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Reads the mod version from the Reloaded-II ModConfig.json manifest so
+    /// the first log line identifies the deployed build (fallback "?").
+    /// </summary>
+    private static string ReadModVersion(string modDirectory)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(
+                File.ReadAllText(Path.Combine(modDirectory, "ModConfig.json")));
+            return doc.RootElement.GetProperty("ModVersion").GetString() ?? "?";
+        }
+        catch
+        {
+            return "?";
         }
     }
 

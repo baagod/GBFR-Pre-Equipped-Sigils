@@ -10,7 +10,7 @@ namespace GBFR.PreEquippedSigils;
 ///
 /// Data model (2026 会话改版):
 ///   sigils.json  : { sigils: [ { hash, zh, en, skill, secondaries[], rarity, player, special } ] }
-///   traits.json  : { traits: [ { hash, zh, en, maxLevel } ] }
+///   skills.json  : { traits: [ { hash, zh, en, cap } ] }
 ///   loadout.json : [ { items: [ {hash, level, zh, en}, {hash, level, zh, en}? ], enabled } ]
 ///                  items[0] = sigil (item), items[1] = secondary trait (optional).
 /// Soft validation: any combination is accepted (no secondaries check yet);
@@ -52,7 +52,7 @@ internal static class LoadoutConfig
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GBFRPreEquippedSigils", "loadout.json");
         _sigilsPath = Path.Combine(modDirectory, "sigils.json");
-        _traitsPath = Path.Combine(modDirectory, "traits.json");
+        _traitsPath = Path.Combine(modDirectory, "skills.json");
         if (LoadTables(log))
             TryApply(log);
         else
@@ -123,7 +123,8 @@ internal static class LoadoutConfig
                     string hash = Hx(entry.GetProperty("hash"));
                     if (hash.Length == 0)
                         continue;
-                    int maxLevel = entry.TryGetProperty("maxLevel", out JsonElement ml) &&
+                    // cap 与 extract/skills.json 的字段名保持一致（词条等级上限）。
+                    int maxLevel = entry.TryGetProperty("cap", out JsonElement ml) &&
                                    ml.TryGetInt32(out int m)
                         ? m
                         : DefaultLevel;

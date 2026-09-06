@@ -16,6 +16,7 @@ std::atomic_uint32_t g_status_owner_character_count{0};
 std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes{};
 std::atomic_uint32_t g_active_getter_calls{0};
 std::atomic_uint32_t g_active_mid_calls{0};
+std::atomic_bool g_live_confirmation_reported{false};
 thread_local uint64_t g_tls_apply_generation = 0;
 thread_local NaturalContributionFrame g_tls_natural_contribution{};
 
@@ -101,12 +102,25 @@ void TrackNaturalContributionResult(
          identity,
          generation,
          g_tls_natural_contribution.slots);
+      // Log the live-battle confirmation only once per session: a healthy
+      // loadout confirms 9/9 every battle, identical every time. Failures
+      // below still report N/M on every occurrence.
+      if (!g_live_confirmation_reported.exchange(true, std::memory_order_acq_rel))
+         SetRuntimeMessage(
+            "Trait contribution confirmed for 0x" +
+               ToUpperHex(identity.character_hash) + ": " +
+               std::to_string(injected) + "/" + std::to_string(expected) +
+               " virtual sigils reached the context-1 status.",
+            false);
+   }
+   else if (expected != 0)
+   {
       SetRuntimeMessage(
-         "Live battle Trait contribution confirmed for 0x" +
+         "Trait contribution incomplete for 0x" +
             ToUpperHex(identity.character_hash) + ": " +
             std::to_string(injected) + "/" + std::to_string(expected) +
             " virtual sigils reached the context-1 status.",
-         false);
+         true);
    }
    g_tls_natural_contribution = {};
 }
@@ -564,9 +578,8 @@ bool InstallHooks()
 
    g_hooks_ready.store(true, std::memory_order_release);
    SetRuntimeMessage(
-      "Native hook installation completed with " +
-         std::to_string(GetVirtualSlotCount()) +
-         " virtual slots; compatibility was resolved synchronously from unique semantic anchors and revalidated before every hook and byte patch.",
+      "Native hooks installed: " +
+         std::to_string(GetVirtualSlotCount()) + " virtual slots.",
       false);
    return true;
 }

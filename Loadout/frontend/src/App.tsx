@@ -63,7 +63,7 @@ interface Trait {
   hash: string
   zh: string
   en: string
-  maxLevel: number
+  cap: number
 }
 
 /* Fixed side columns + factor columns that eat all remaining width. */
@@ -171,13 +171,13 @@ export default function App() {
       try {
         const traitJson = await LoadTraits()
         setTraits(
-          (JSON.parse(traitJson).traits as { hash?: string; zh: string; en?: string; maxLevel?: number }[])
+          (JSON.parse(traitJson).traits as { hash?: string; zh: string; en?: string; cap?: number }[])
             .filter((tr) => tr.hash)
             .map((tr) => ({
               hash: tr.hash as string,
               zh: tr.zh,
               en: tr.en ?? tr.zh,
-              maxLevel: tr.maxLevel ?? 15,
+              cap: tr.cap ?? 15,
             }))
         )
       } catch (e) {
@@ -216,9 +216,9 @@ export default function App() {
   const maxOfMain = (h: string) => {
     const s = sigilByName.get(h)
     const tr = s ? traitByName.get(s.skill) : undefined
-    return tr?.maxLevel ?? 15
+    return tr?.cap ?? 15
   }
-  const maxOfSec = (h: string) => traitByName.get(h)?.maxLevel ?? 15
+  const maxOfSec = (h: string) => traitByName.get(h)?.cap ?? 15
 
   const sigilHashes = sigils.map((s) => s.gem)
   const traitHashes = traits.map((tr) => tr.hash)
@@ -336,52 +336,18 @@ export default function App() {
         </div>
 
         {slots.map((slot, index) => (
-          <div key={index} className={DATA_ROW}>
-            <div>
-              <Checkbox
-                checked={slot.enabled}
-                onCheckedChange={(v) => updateSlot(index, { enabled: v === true })}
-              />
-            </div>
-            <div>
-              <span className="text-muted-foreground tabular-nums">{index + 1}</span>
-            </div>
-            <div className="flex min-w-0 items-center gap-1.5 pr-2">
-              <TraitPicker
-                value={slot.mainHash}
-                traits={sigilHashes}
-                labels={hashLabels}
-                placeholder={t.none}
-                onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(15, maxOfMain(v)) })}
-              />
-              <LevelInput
-                value={slot.mainHash ? slot.mainLevel : 0}
-                max={maxOfMain(slot.mainHash)}
-                min={slot.mainHash ? 1 : 0}
-                onLevel={(n) => updateSlot(index, { mainLevel: n })}
-              />
-            </div>
-            <div className="flex min-w-0 items-center gap-1.5 pl-2">
-              <TraitPicker
-                value={slot.secHash}
-                traits={traitHashes}
-                labels={hashLabels}
-                placeholder={t.none}
-                noneOption
-                noneLabel={t.none}
-                searchPlaceholder={t.search}
-                emptyLabel={t.empty}
-                disabled={!slot.mainHash}
-                onSelect={(v) => updateSlot(index, { secHash: v, secLevel: v ? Math.min(15, maxOfSec(v)) : 0 })}
-              />
-              <LevelInput
-                value={slot.secHash ? slot.secLevel : 0}
-                max={maxOfSec(slot.secHash)}
-                min={slot.secHash ? 1 : 0}
-                onLevel={(n) => updateSlot(index, { secLevel: n })}
-              />
-            </div>
-          </div>
+          <SlotRow
+            key={index}
+            index={index}
+            slot={slot}
+            sigilHashes={sigilHashes}
+            traitHashes={traitHashes}
+            labels={hashLabels}
+            t={t}
+            maxOfMain={maxOfMain}
+            maxOfSec={maxOfSec}
+            updateSlot={updateSlot}
+          />
         ))}
       </div>
 
@@ -395,6 +361,77 @@ export default function App() {
         >
           {lang === "zh" ? "EN" : "中"}
         </Button>
+      </div>
+    </div>
+  )
+}
+
+function SlotRow({
+  index,
+  slot,
+  sigilHashes,
+  traitHashes,
+  labels,
+  t,
+  maxOfMain,
+  maxOfSec,
+  updateSlot,
+}: {
+  index: number
+  slot: Slot
+  sigilHashes: string[]
+  traitHashes: string[]
+  labels: Record<string, string>
+  t: (typeof copy)["zh"] | (typeof copy)["en"]
+  maxOfMain: (h: string) => number
+  maxOfSec: (h: string) => number
+  updateSlot: (i: number, patch: Partial<Slot>) => void
+}) {
+  return (
+    <div className={DATA_ROW}>
+      <div>
+        <Checkbox
+          checked={slot.enabled}
+          onCheckedChange={(v) => updateSlot(index, { enabled: v === true })}
+        />
+      </div>
+      <div>
+        <span className="text-muted-foreground tabular-nums">{index + 1}</span>
+      </div>
+      <div className="flex min-w-0 items-center gap-1.5 pr-2">
+        <TraitPicker
+          value={slot.mainHash}
+          traits={sigilHashes}
+          labels={labels}
+          placeholder={t.none}
+          onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(15, maxOfMain(v)) })}
+        />
+        <LevelInput
+          value={slot.mainHash ? slot.mainLevel : 0}
+          max={maxOfMain(slot.mainHash)}
+          min={slot.mainHash ? 1 : 0}
+          onLevel={(n) => updateSlot(index, { mainLevel: n })}
+        />
+      </div>
+      <div className="flex min-w-0 items-center gap-1.5 pl-2">
+        <TraitPicker
+          value={slot.secHash}
+          traits={traitHashes}
+          labels={labels}
+          placeholder={t.none}
+          noneOption
+          noneLabel={t.none}
+          searchPlaceholder={t.search}
+          emptyLabel={t.empty}
+          disabled={!slot.mainHash}
+          onSelect={(v) => updateSlot(index, { secHash: v, secLevel: v ? Math.min(15, maxOfSec(v)) : 0 })}
+        />
+        <LevelInput
+          value={slot.secHash ? slot.secLevel : 0}
+          max={maxOfSec(slot.secHash)}
+          min={slot.secHash ? 1 : 0}
+          onLevel={(n) => updateSlot(index, { secLevel: n })}
+        />
       </div>
     </div>
   )

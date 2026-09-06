@@ -98,36 +98,7 @@ func main() {
 			// X button = hide to tray; WM_APP+0x10 = internal show request.
 			// A WebviewWindow HWND accessor does not exist in beta.16, so we
 			// filter by message instead: both messages are window-specific.
-			WndProcInterceptor: func(hwnd uintptr, msg uint32, wParam, lParam uintptr) (uintptr, bool) {
-				if win == nil {
-					return 0, false
-				}
-				if msg == 0x0010 { // WM_CLOSE
-					win.Hide()
-					return 0, true
-				}
-				if msg == 0x8010 { // WM_APP+0x10: internal show + focus + repaint nudge
-					win.Show()
-					win.SetSize(759, 799)
-					win.SetSize(760, 800)
-					win.Focus()
-					return 0, true
-				}
-				if msg == 0x8011 { // WM_APP+0x11: internal restore + focus + repaint nudge
-					win.Restore()
-					win.Show()
-					win.SetSize(759, 799)
-					win.SetSize(760, 800)
-					win.Focus()
-					return 0, true
-				}
-				if msg == 0x8012 { // WM_APP+0x12: hide->show bounce (repaints WebView after minimize)
-					win.Hide()
-					win.Show()
-					return 0, true
-				}
-				return 0, false
-			},
+			WndProcInterceptor: handleWndMsg,
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -157,44 +128,7 @@ func main() {
 	tray.SetTooltip("GBFR Pre-Equipped Sigils")
 	tray.AttachWindow(win)
 
-	tray.OnClick(func() {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Printf("tray click panic: %v", r)
-				}
-			}()
-			title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
-			hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
-			if hwnd == 0 {
-				return
-			}
-			// Minimized windows repaint badly after external restore, so bounce
-			// through hide->show; hidden windows just get the internal show.
-			if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
-				procPostMessageW.Call(hwnd, 0x8011, 0, 0)
-			} else if visible, _, _ := procIsWindowVisible.Call(hwnd); visible != 0 {
-				// Visible but possibly behind other windows: bring to front via
-				// the internal show/focus message (Wails handles the foreground
-				// rules) — no fade, no flash. Do nothing when already foreground.
-				if fg, _, _ := procGetForegroundWindow.Call(); fg != hwnd {
-					procPostMessageW.Call(hwnd, 0x8010, 0, 0)
-				}
-			} else {
-				// Layered fade-in: hide the white frame under alpha 0, show,
-				// then fade to opaque once content has rendered.
-				exStyle, _, _ := procGetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19)) // GWL_EXSTYLE=-20
-				procSetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19), exStyle|0x80000) // WS_EX_LAYERED
-				procSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)
-				procPostMessageW.Call(hwnd, 0x8010, 0, 0)
-				go func() {
-					time.Sleep(150 * time.Millisecond)
-					procSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)
-				}()
-			}
-			procSetForegroundWindow.Call(hwnd)
-		}()
-	})
+	tray.OnClick(func() { go trayOnClick() })
 	menu := application.NewMenu()
 	menu.Add("Exit").OnClick(func(*application.Context) { app.Quit() })
 	tray.SetMenu(menu)
@@ -203,4 +137,76 @@ func main() {
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// handleWndMsg filters the window messages we care about (hide-on-close and
+// internal show/restore nudges). Wails exposes no HWND accessor in beta.16,
+// so each message doubles as a window-specific command.
+func handleWndMsg(_ uintptr, msg uint32, _, _ uintptr) (uintptr, bool) {
+	if win == nil {
+		return 0, false
+	}
+	nudge := func() {
+		win.SetSize(759, 799)
+		win.SetSize(760, 800)
+	}
+	switch msg {
+	case 0x0010: // WM_CLOSE
+		win.Hide()
+		return 0, true
+	case 0x8010: // show + focus + repaint nudge
+		win.Show()
+		nudge()
+		win.Focus()
+		return 0, true
+	case 0x8011: // restore + focus + repaint nudge
+		win.Restore()
+		win.Show()
+		nudge()
+		win.Focus()
+		return 0, true
+	case 0x8012: // hide->show bounce (repaints WebView after minimize)
+		win.Hide()
+		win.Show()
+		return 0, true
+	}
+	return 0, false
+}
+
+// trayOnClick shows/restores the window according to its state.
+func trayOnClick() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("tray click panic: %v", r)
+		}
+	}()
+	title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
+	hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
+	if hwnd == 0 {
+		return
+	}
+	// Minimized windows repaint badly after external restore, so bounce
+	// through hide->show; hidden windows just get the internal show.
+	if iconic, _, _ := procIsIconic.Call(hwnd); iconic != 0 {
+		procPostMessageW.Call(hwnd, 0x8011, 0, 0)
+	} else if visible, _, _ := procIsWindowVisible.Call(hwnd); visible != 0 {
+		// Visible but possibly behind other windows: bring to front via the
+		// internal show/focus message (Wails handles the foreground rules) —
+		// no fade, no flash. Nothing to do when already foreground.
+		if fg, _, _ := procGetForegroundWindow.Call(); fg != hwnd {
+			procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+		}
+	} else {
+		// Layered fade-in: hide the white frame under alpha 0, show, then
+		// fade to opaque once content has rendered.
+		exStyle, _, _ := procGetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19)) // GWL_EXSTYLE=-20
+		procSetWindowLong.Call(hwnd, uintptr(^uintptr(0)-19), exStyle|0x80000) // WS_EX_LAYERED
+		procSetLayeredWindowAttributes.Call(hwnd, 0, 0, 0x2)
+		procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+		go func() {
+			time.Sleep(150 * time.Millisecond)
+			procSetLayeredWindowAttributes.Call(hwnd, 0, 255, 0x2)
+		}()
+	}
+	procSetForegroundWindow.Call(hwnd)
 }

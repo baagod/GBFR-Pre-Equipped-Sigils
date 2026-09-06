@@ -4,1201 +4,1201 @@
    "hash": "50079A1C",
    "zh": "攻击力",
    "en": "ATK",
-   "maxLevel": 50
+   "cap": 50
   },
   {
    "hash": "F372F096",
    "zh": "体力",
    "en": "HP",
-   "maxLevel": 50
+   "cap": 50
   },
   {
    "hash": "8D78A19B",
    "zh": "暴击率",
    "en": "Critical Hit Rate",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "CEB700EE",
    "zh": "昏厥",
    "en": "Stun Power",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "3F488339",
    "zh": "背水",
    "en": "Enmity",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "2FC8FBFF",
    "zh": "热血",
    "en": "Stamina",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "1C360C63",
    "zh": "蓄力攻击",
    "en": "Charged Attack DMG",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "3FEC5F80",
    "zh": "协同攻击",
    "en": "Linked Together",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "8D078597",
    "zh": "投掷",
    "en": "Throw DMG",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "C0979A17",
    "zh": "暴击伤害",
    "en": "Critical Hit DMG",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "6B694D6D",
    "zh": "弱点攻击",
    "en": "Weak Point DMG",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "A7A45F28",
    "zh": "连击收招",
    "en": "Combo Finisher DMG",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "B360801D",
    "zh": "集中炮火",
    "en": "Concentrated Fire",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "DC584F60",
    "zh": "伤害上限",
    "en": "DMG Cap",
-   "maxLevel": 65
+   "cap": 65
   },
   {
    "hash": "F17850B9",
    "zh": "连击加成",
    "en": "Combo Booster",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "71F11A9B",
    "zh": "暴君",
    "en": "Tyranny",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "C35B111B",
    "zh": "蓄力会心",
    "en": "Lucky Charge",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "4F1A3683",
    "zh": "弱化状态特效",
    "en": "Injury to Insult",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "A9D17F55",
    "zh": "OVERDRIVE特效",
    "en": "Overdrive Assassin",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "AC9674C1",
    "zh": "破防特效",
    "en": "Break Assassin",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "E6CDBA9C",
    "zh": "坚守",
    "en": "Garrison",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "A1A8E39D",
    "zh": "霸体",
    "en": "Stout Heart",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "E69A4694",
    "zh": "豪胆",
    "en": "Guts",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "973B49AF",
    "zh": "中毒抗性",
    "en": "Poison Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "7C84A6B3",
    "zh": "灼热抗性",
    "en": "Burn Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "D54F8CA7",
    "zh": "泥沙抗性",
    "en": "Sandtomb Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "FB572681",
    "zh": "冰冻抗性",
    "en": "Glaciate Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "3759A5B9",
    "zh": "昏迷抗性",
    "en": "Dizzy Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "2242921F",
    "zh": "麻痹抗性",
    "en": "Paralysis Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "50B453DD",
    "zh": "能力封印抗性",
    "en": "Skill Sealed Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "CFB48782",
    "zh": "奥义封印抗性",
    "en": "SBA Sealed Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "0AA20846",
    "zh": "格挡性能",
    "en": "Improved Guard",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "3C2B57B0",
    "zh": "格挡仇火",
    "en": "Guard Payback",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "8B3BF60C",
    "zh": "躲避性能",
    "en": "Improved Dodge",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7C2E4D64",
    "zh": "躲避仇火",
    "en": "Dodge Payback",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "9389CC06",
    "zh": "回复性能",
    "en": "Improved Healing",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "6085DA25",
    "zh": "自愈",
    "en": "Regen",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "7CCFF74F",
    "zh": "HP吸收",
    "en": "Drain",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "95F3FA86",
    "zh": "自动复活",
    "en": "Autorevive",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "318D12E9",
    "zh": "迅捷能力",
    "en": "Quick Cooldown",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "05F2ECDC",
    "zh": "怒涛",
    "en": "Cascade",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "B5FF9FD3",
    "zh": "激昂",
    "en": "Uplift",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "24883AF3",
    "zh": "药水携带数",
    "en": "Potion Hoarder",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "DC607D75",
    "zh": "匿踪",
    "en": "Low Profile",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "6018372B",
    "zh": "挑衅",
    "en": "Provoke",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "F687C5EF",
    "zh": "获得经验值",
    "en": "Fast Learner",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "C86F3082",
    "zh": "获得金币",
    "en": "Rupie Tycoon",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "EAE321EB",
    "zh": "能力伤害",
    "en": "Skilled Assault",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "E0ABFDFE",
    "zh": "守护",
    "en": "Aegis",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "A2FA9685",
    "zh": "缓速抗性",
    "en": "Slow Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "B6E31F76",
    "zh": "不动",
    "en": "Firm Stance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "9702860F",
    "zh": "灾祸抗性",
    "en": "Blight Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "0053599E",
    "zh": "蓄力强化",
    "en": "Steady Focus",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "1470F860",
    "zh": "坚持",
    "en": "Steel Nerves",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "0EAD65E0",
    "zh": "全弱化效果抗性",
    "en": "Natural Defenses",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "09AA7DB5",
    "zh": "凝神",
    "en": "Nimble Defense",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "D2C8E10A",
    "zh": "明镜止水",
    "en": "Nimble Onslaught",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "29B292A8",
    "zh": "抗争",
    "en": "Precise Resilience",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "7EDD69D0",
    "zh": "怒发冲冠",
    "en": "Precise Wrath",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "8F502F0D",
    "zh": "奋不顾身",
    "en": "Life on the Line",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "84078CB0",
    "zh": "快速蓄力",
    "en": "Quick Charge",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "57E8A93F",
    "zh": "因子强化",
    "en": "Sigil Booster",
-   "maxLevel": 2
+   "cap": 2
   },
   {
    "hash": "CD030268",
    "zh": "英勇神速",
    "en": "Fearless Drive",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A38510E2",
    "zh": "英勇灵气",
    "en": "Fearless Spirit",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "3BFED918",
    "zh": "守护者的决心",
    "en": "Guardian's Conviction",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "F8496336",
    "zh": "守护者的骄傲",
    "en": "Guardian's Honor",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "151E4674",
    "zh": "舵手的指引",
    "en": "Helmsman's Navigation",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A374FDF0",
    "zh": "舵手的坚持",
    "en": "Helmsman's Tenacity",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "B48EEF48",
    "zh": "魔法师的心愿",
    "en": "Mage's Aspiration",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "11AAE5F5",
    "zh": "魔法师的伶利",
    "en": "Mage's Savvy",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "AA83F548",
    "zh": "老兵的智慧",
    "en": "Veteran's Insight",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "921B6B0C",
    "zh": "老兵的天眼",
    "en": "Veteran's Vision",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "23D0F67F",
    "zh": "玫瑰早绽",
    "en": "Rose's Blooming",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "C2A4C7A9",
    "zh": "玫瑰缤纷",
    "en": "Rose's Profusion",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9A9DC170",
    "zh": "圣骑士的剑辉",
    "en": "Holy Knight's Luster",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "522E2388",
    "zh": "圣骑士的威光",
    "en": "Holy Knight's Grandeur",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "5463232F",
    "zh": "古今无双的气概",
    "en": "Eternal Rage's Mettle",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "451D814C",
    "zh": "古今无双的强者",
    "en": "Eternal Rage's Ethos",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D908223D",
    "zh": "幽幻之谊",
    "en": "Phantasm's Concord",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7351D602",
    "zh": "幽幻之应",
    "en": "Phantasm's Harmony",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "29B07BEB",
    "zh": "斩姬梦幻",
    "en": "Butterfly's Grace",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A63B89CD",
    "zh": "斩姬武艺",
    "en": "Butterfly's Valor",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "8CDF9382",
    "zh": "白龙的誓约",
    "en": "White Dragon's Oath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D1012D8C",
    "zh": "白龙的荣耀",
    "en": "White Dragon's Glory",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "2E65A774",
    "zh": "勇士的信念",
    "en": "Hero's Creed",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "16EFF868",
    "zh": "勇士的毅力",
    "en": "Hero's Will",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "E60A735C",
    "zh": "王者行进",
    "en": "Lord's Procession",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "6FF05223",
    "zh": "王者一心",
    "en": "Lord's Ambition",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "86CBCDC4",
    "zh": "屠龙者的威猛",
    "en": "Dragonslayer's Dominance",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "05FA4599",
    "zh": "屠龙者的才智",
    "en": "Dragonslayer's Ingenuity",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "EC3CF174",
    "zh": "极致谋略",
    "en": "Founder's Strategy",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "AF513A9D",
    "zh": "极致真理",
    "en": "Founder's Truth",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "0CD6C625",
    "zh": "变幻自如的迅刃",
    "en": "Swordmaster's Prowess",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A3B49220",
    "zh": "变幻自如的妖剑士",
    "en": "Swordmaster's Art",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "6EBFA176",
    "zh": "真红烈焰",
    "en": "Crimson's Clout",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "F1D5DBD0",
    "zh": "真红翔舞",
    "en": "Crimson's Flight",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7440E869",
    "zh": "冥暗刚刃",
    "en": "Ebony's Presence",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "CD124165",
    "zh": "冥暗自若",
    "en": "Ebony's Poise",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "93A2093C",
    "zh": "异能增长",
    "en": "Versalis Foundation",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7AD0C010",
    "zh": "异能战意",
    "en": "Versalis Ignition",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "1DC9D7E7",
    "zh": "水牢抗性",
    "en": "Held Under Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "DD4A701E",
    "zh": "异能耐受",
    "en": "Darkflame Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "4BF2E191",
    "zh": "攻击DOWN抗性",
    "en": "ATK↓ Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "66DE60B1",
    "zh": "防御DOWN抗性",
    "en": "DEF↓ Resistance",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "082033CB",
    "zh": "钳蟹的共鸣",
    "en": "Crabby Resonance",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "1B0D9897",
    "zh": "钳蟹的报恩",
    "en": "Crabvestment Returns",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9AD8B5E6",
    "zh": "7net",
    "en": "Seven Net",
-   "maxLevel": 6
+   "cap": 6
   },
   {
    "hash": "40223C28",
    "zh": "浩劫",
    "en": "Catastrophe",
-   "maxLevel": 25
+   "cap": 25
   },
   {
    "hash": "1E1CECCE",
    "zh": "浩劫新星",
    "en": "Catastrophe Nova",
-   "maxLevel": 35
+   "cap": 35
   },
   {
    "hash": "74AA75D6",
    "zh": "刚健",
    "en": "Stronghold",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "DC225C96",
    "zh": "修罗",
    "en": "Power Hungry",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "4C588C27",
    "zh": "属性克制转换",
    "en": "War Elemental",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "5E422AE5",
    "zh": "获得MSP",
    "en": "Path to Mastery",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "AF794A87",
    "zh": "躲避距离",
    "en": "Untouchable",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "57AB5B10",
    "zh": "追击",
    "en": "Supplementary DMG",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "82CE278D",
    "zh": "身无长技",
    "en": "Less Is More",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "1568E0E4",
    "zh": "先发制人",
    "en": "Head Start",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "70395731",
    "zh": "穷寇心",
    "en": "Berserker",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "CD18A77D",
    "zh": "万能药",
    "en": "Potent Greens",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "333E5862",
    "zh": "骰子剑",
    "en": "Roll of the Die",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A8A3163B",
    "zh": "刀上舞",
    "en": "Glass Cannon",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "EC1C6779",
    "zh": "摇曳步",
    "en": "Flight over Fight",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "DBE1D775",
    "zh": "α秘纹",
    "en": "Alpha",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "8D2ADB6E",
    "zh": "β秘纹",
    "en": "Beta",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "5C862E13",
    "zh": "γ秘纹",
    "en": "Gamma",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "77C809F5",
    "zh": "剑圣的炼气",
    "en": "Spirit Edge's Rally",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9230E3F5",
    "zh": "剑圣的闪刃",
    "en": "Spirit Edge's Fury",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7B4FC47A",
    "zh": "剑圣的战气",
    "en": "Spirit Edge's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "EF05EC4D",
    "zh": "涯之七星",
    "en": "Seven-Star Boundary",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "E85FF8E0",
    "zh": "魔眼的万箭",
    "en": "Dark Huntress's Volley",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "8572B8AF",
    "zh": "魔眼的凛翔",
    "en": "Dark Huntress's Surge",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "81B293D9",
    "zh": "魔眼的战气",
    "en": "Dark Huntress's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "281214AB",
    "zh": "涯之二王",
    "en": "Two-Crown Boundary",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "DADE14DC",
    "zh": "英勇之心",
    "en": "Fearless Heart",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9AFDFA9E",
    "zh": "守护者的战气",
    "en": "Guardian's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D76F4D24",
    "zh": "舵手的战气",
    "en": "Helmsman's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "C00163B3",
    "zh": "魔法师的战气",
    "en": "Mage's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "0E42BE1B",
    "zh": "老兵的战气",
    "en": "Veteran's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "8519AD4A",
    "zh": "玫瑰的战气",
    "en": "Rose's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "B85202BC",
    "zh": "圣骑士的战气",
    "en": "Holy Knight's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "0F026CF0",
    "zh": "古今无双的战气",
    "en": "Eternal Rage's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A339D642",
    "zh": "幽幻的战气",
    "en": "Phantasm's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "FDD1AD24",
    "zh": "斩姬的战气",
    "en": "Butterfly's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "6316CBEB",
    "zh": "白龙的战气",
    "en": "White Dragon's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D8F66C1C",
    "zh": "勇士的战气",
    "en": "Hero's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "BA504607",
    "zh": "王者的战气",
    "en": "Lord's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "C7D379F1",
    "zh": "屠龙者的战气",
    "en": "Dragonslayer's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "E6B92E34",
    "zh": "极致的战气",
    "en": "Founder's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "DAEFBB27",
    "zh": "变幻自如的战气",
    "en": "Swordmaster's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "4F135217",
    "zh": "真红的战气",
    "en": "Crimson's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D7F9BB88",
    "zh": "冥暗的战气",
    "en": "Ebony's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "B064A634",
    "zh": "异能之心",
    "en": "Versalis Heart",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D3B8C21F",
    "zh": "终极钳蟹因子",
    "en": "Crabmiration",
-   "maxLevel": 45
+   "cap": 45
   },
   {
    "hash": "48A95B8D",
    "zh": "金刚",
    "en": "Greater Aegis",
-   "maxLevel": 30
+   "cap": 30
   },
   {
    "hash": "F71F8997",
    "zh": "自动药水",
    "en": "Auto Potion",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "EE85CD1F",
    "zh": "狂战士",
    "en": "Berserker Echo",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "3D8153A1",
    "zh": "斯巴达",
    "en": "Spartan Echo",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "51C115D2",
    "zh": "超终极精准躲避",
    "en": "Super Ultimate Perfect Dodge",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D40D1E9B",
    "zh": "天司长的灵威",
    "en": "Supreme Primarch's Awe",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "15806DFC",
    "zh": "天司长的风雅",
    "en": "Supreme Primarch's Nimbus",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "4E5F6706",
    "zh": "天司长的战气",
    "en": "Supreme Primarch's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "1A2EF59E",
    "zh": "无态",
    "en": "Ain",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "1DE14C65",
    "zh": "狼王的激昂",
    "en": "Gladiator's Frenzy",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "26956F25",
    "zh": "狼王的大转轮",
    "en": "Gladiator's Top",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "DBA19768",
    "zh": "狼王的战气",
    "en": "Gladiator's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7B5B081D",
    "zh": "刃姬的小夜曲",
    "en": "Bladequeen's Serenade",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9ACE140B",
    "zh": "刃姬的轮舞曲",
    "en": "Bladequeen's Circuit",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "79266456",
    "zh": "刃姬的战气",
    "en": "Bladequeen's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D176D262",
    "zh": "群青的剑光",
    "en": "Ultramarine's Flash",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "461A8E07",
    "zh": "群青的逆境",
    "en": "Ultramarine's Adversity",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "B953CC1E",
    "zh": "群青的战气",
    "en": "Ultramarine's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "7D75D904",
    "zh": "雷狼的弹匣",
    "en": "Thunderwolf's Recharge",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "BE3404B9",
    "zh": "雷狼的慧眼",
    "en": "Thunderwolf's Acuity",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "3EB345D7",
    "zh": "雷狼的战气",
    "en": "Thunderwolf's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "BF78FBFC",
    "zh": "可怕的漆黑钳蟹因子",
    "en": "Immortal Shell",
-   "maxLevel": 20
+   "cap": 20
   },
   {
    "hash": "46EE3116",
    "zh": "漆黑之谊",
    "en": "In a Pinch",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "89C66ACB",
    "zh": "相扑斗力",
    "en": "Sumo Force",
-   "maxLevel": 5
+   "cap": 5
   },
   {
    "hash": "0DE887A0",
    "zh": "天星之炼",
    "en": "Celestial Nyx",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A7726190",
    "zh": "天星之煌",
    "en": "Celestial Lumen",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "9232DC17",
    "zh": "天星之界",
    "en": "Celestial Terra",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "36E3848D",
    "zh": "天星之焰",
    "en": "Celestial Incendo",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "A898E283",
    "zh": "天星之雪",
    "en": "Celestial Aqua",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "D029FE08",
    "zh": "浪迹天涯",
    "en": "Fatebreaker",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "73220725",
    "zh": "天星之止息",
    "en": "Celestial Ventus",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "F26BAEA5",
    "zh": "分歧",
    "en": "Divergence",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "3B71AF12",
    "zh": "伤害上限·轰天",
    "en": "DMG Cap Ecru",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "FFF8CF64",
    "zh": "伤害上限·疾天",
    "en": "DMG Cap Sage",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "235D86EF",
    "zh": "超新星",
    "en": "Supernova",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "AEFEB1BC",
    "zh": "伤害上限·苍天",
    "en": "DMG Cap Cobalt",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "0151CF9E",
    "zh": "伤害上限·红天",
    "en": "DMG Cap Cardinal",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "47384248",
    "zh": "转世的恩宠",
    "en": "Enchantress's Blessing",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "30773197",
    "zh": "转世的跃动",
    "en": "Enchantress's Rhythm",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "807B6684",
    "zh": "转世的战气",
    "en": "Enchantress's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "06719232",
    "zh": "黑龙的咒印",
    "en": "The Black's Mark",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "ED8D8AD8",
    "zh": "黑龙的折跃",
    "en": "The Black's Impulse",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "5559232F",
    "zh": "黑龙的战气",
    "en": "The Black's Warpath",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "BBD77C33",
    "zh": "超凡强击",
    "en": "Unbound Strike",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "020DB733",
    "zh": "超凡技艺",
    "en": "Unbound Technique",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "3F682593",
    "zh": "超凡奥秘",
    "en": "Unbound Exertion",
-   "maxLevel": 15
+   "cap": 15
   },
   {
    "hash": "79027FC8",
    "zh": "超凡破限",
    "en": "Unbound Master",
-   "maxLevel": 55
+   "cap": 55
   }
  ]
 }

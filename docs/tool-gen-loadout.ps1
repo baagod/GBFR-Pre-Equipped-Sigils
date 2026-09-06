@@ -49,7 +49,7 @@ $common = @(
 
 # hash -> item gem lookup (war spirit signature sigils and trait names)
 $root = Split-Path -Parent $PSScriptRoot
-$traitsJson = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\traits.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$traitsJson = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\skills.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $gemOf = @{}
 foreach ($t in $traitsJson.traits) { $gemOf[$t.hash] = $t.gem }
 

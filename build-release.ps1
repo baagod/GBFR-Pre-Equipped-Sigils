@@ -117,7 +117,7 @@ foreach ($requiredFile in @(
     'GBFR.PreEquippedSigils.Native.dll',
     'Loadout.exe',
     'pre-loadout.json',
-    'traits.json'
+    'skills.json'
 )) {
     $requiredPath = Join-Path $packageDir $requiredFile
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {

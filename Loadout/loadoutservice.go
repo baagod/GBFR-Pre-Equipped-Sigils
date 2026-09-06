@@ -13,7 +13,8 @@ import (
 const MaxSlots = 22
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
-// Protocol is shared with the mod: sigils.json (sigil table), traits.json
+// Protocol is shared with the mod: sigils.json (sigil table), skills.json
+// (trait/skill dictionary), loadout.json (player config).
 // (trait dictionary) and loadout.json (player configuration, new array
 // format: [ { items: [{hash,level,zh,en}, {hash,level,zh,en}?], enabled } ]).
 type LoadoutService struct{}
@@ -77,7 +78,7 @@ func userCfgDir() string {
 }
 
 func (s *LoadoutService) LoadTraits() (string, error) {
-	data, err := os.ReadFile(filepath.Join(exeDir(), "traits.json"))
+	data, err := os.ReadFile(filepath.Join(exeDir(), "skills.json"))
 	if err != nil {
 		return "", err
 	}
@@ -107,6 +108,30 @@ func (s *LoadoutService) LoadConfig() (string, error) {
 	return string(data), nil
 }
 
+// validateSlots enforces the shared schema limits.
+func validateSlots(slots []loadoutSlot) error {
+	if len(slots) > MaxSlots {
+		return fmt.Errorf("too many slots: %d (max %d)", len(slots), MaxSlots)
+	}
+	for i, slot := range slots {
+		if len(slot.Items) < 1 || len(slot.Items) > 2 {
+			return fmt.Errorf("slot %d: items must have 1 or 2 entries", i+1)
+		}
+		if slot.Items[0].Gem == "" {
+			return fmt.Errorf("slot %d: item gem is empty", i+1)
+		}
+		if len(slot.Items) == 2 && slot.Items[1].Hash == "" {
+			return fmt.Errorf("slot %d: second item hash is empty", i+1)
+		}
+		for _, item := range slot.Items {
+			if item.Level < 0 || item.Level > 200 {
+				return fmt.Errorf("slot %d: level out of range", i+1)
+			}
+		}
+	}
+	return nil
+}
+
 // SaveLoadout writes the player configuration (same schema as the mod reads:
 // {lang, slots:[{items:[...],enabled}]}; a bare array is accepted too for
 // backwards compatibility). Atomic write (temp + rename) so the mod's 250ms
@@ -128,24 +153,8 @@ func (s *LoadoutService) SaveLoadout(config string) error {
 		}
 		slots = arr
 	}
-	if len(slots) > MaxSlots {
-		return fmt.Errorf("too many slots: %d (max %d)", len(slots), MaxSlots)
-	}
-	for i, slot := range slots {
-		if len(slot.Items) < 1 || len(slot.Items) > 2 {
-			return fmt.Errorf("slot %d: items must have 1 or 2 entries", i+1)
-		}
-		if slot.Items[0].Gem == "" {
-			return fmt.Errorf("slot %d: item gem is empty", i+1)
-		}
-		if len(slot.Items) == 2 && slot.Items[1].Hash == "" {
-			return fmt.Errorf("slot %d: second item hash is empty", i+1)
-		}
-		for _, item := range slot.Items {
-			if item.Level < 0 || item.Level > 200 {
-				return fmt.Errorf("slot %d: level out of range", i+1)
-			}
-		}
+	if err := validateSlots(slots); err != nil {
+		return err
 	}
 	dir := userCfgDir()
 	if err := os.MkdirAll(dir, 0755); err != nil {
