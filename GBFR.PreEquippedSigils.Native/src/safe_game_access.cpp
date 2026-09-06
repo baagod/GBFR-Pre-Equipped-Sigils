@@ -301,8 +301,6 @@ void CommitAuthorizedStatus(
    authorization.generation = generation;
    authorization.slots = slots;
    g_authorized_statuses.emplace(status, authorization);
-   g_last_authorized_character_hash.store(identity.character_hash, std::memory_order_release);
-   g_last_authorized_status_address.store(status, std::memory_order_release);
 }
 
 bool TryGetAuthorizedSelection(
@@ -360,11 +358,6 @@ void EraseAuthorizedStatus(uintptr_t status)
       return;
    std::unique_lock lock(g_authorization_mutex);
    g_authorized_statuses.erase(status);
-   if (g_authorized_statuses.empty())
-   {
-      g_last_authorized_character_hash.store(0, std::memory_order_release);
-      g_last_authorized_status_address.store(0, std::memory_order_release);
-   }
 }
 
 void ValidateAuthorizedStatuses()
@@ -394,11 +387,6 @@ void ValidateAuthorizedStatuses()
          iterator = g_authorized_statuses.erase(iterator);
       else
          ++iterator;
-   }
-   if (g_authorized_statuses.empty())
-   {
-      g_last_authorized_character_hash.store(0, std::memory_order_release);
-      g_last_authorized_status_address.store(0, std::memory_order_release);
    }
 }
 

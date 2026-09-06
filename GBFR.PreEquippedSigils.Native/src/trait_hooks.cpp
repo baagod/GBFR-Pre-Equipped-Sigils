@@ -110,8 +110,7 @@ void TrackNaturalContributionResult(
             "Trait contribution confirmed for 0x" +
                ToUpperHex(identity.character_hash) + ": " +
                std::to_string(injected) + "/" + std::to_string(expected) +
-               " virtual sigils reached the context-1 status.",
-            false);
+               " virtual sigils reached the context-1 status.");
    }
    else if (expected != 0)
    {
@@ -119,8 +118,7 @@ void TrackNaturalContributionResult(
          "Trait contribution incomplete for 0x" +
             ToUpperHex(identity.character_hash) + ": " +
             std::to_string(injected) + "/" + std::to_string(expected) +
-            " virtual sigils reached the context-1 status.",
-         true);
+            " virtual sigils reached the context-1 status.");
    }
    g_tls_natural_contribution = {};
 }
@@ -206,7 +204,7 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
    StatusIdentity identity{};
    const bool valid_identity =
       SafeReadStatusIdentity(reinterpret_cast<uintptr_t>(status), identity) &&
-      identity.context_mode >= 0 && identity.context_mode <= 5;
+      identity.context_mode >= 0 && identity.context_mode <= 2;
 
    const int expanded_slot_count = GetExpandedInternalSlotCount();
    if (slot_index < kNativeInternalSlotCount || slot_index >= expanded_slot_count)
@@ -215,7 +213,7 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
       return result;
    }
    if (g_shutting_down.load(std::memory_order_acquire) || !valid_identity ||
-       identity.context_mode > 2 || output == nullptr)
+       output == nullptr)
       return 0;
 
    uint64_t active_generation = 0;
@@ -517,8 +515,7 @@ bool InstallHooks()
    {
       ResetGameLayout();
       SetRuntimeMessage(
-         "Resolved game layout changed before hook installation; no gameplay hook or byte patch was installed.",
-         true);
+         "Resolved game layout changed before hook installation; no gameplay hook or byte patch was installed.");
       return false;
    }
 
@@ -532,7 +529,7 @@ bool InstallHooks()
    if (!g_get_gem_hook)
    {
       DisableGameplayHooksAndRestore();
-      SetRuntimeMessage("Failed to install the GemData getter hook.", true);
+      SetRuntimeMessage("Failed to install the GemData getter hook.");
       return false;
    }
 
@@ -546,7 +543,7 @@ bool InstallHooks()
    if (!g_trait_fetch_hook)
    {
       DisableGameplayHooksAndRestore();
-      SetRuntimeMessage("Failed to install the trait fetch-path hook.", true);
+      SetRuntimeMessage("Failed to install the trait fetch-path hook.");
       return false;
    }
 
@@ -560,7 +557,7 @@ bool InstallHooks()
    if (!g_status_owner_tick_hook)
    {
       DisableGameplayHooksAndRestore();
-      SetRuntimeMessage("Failed to install the status owner-thread trace hook.", true);
+      SetRuntimeMessage("Failed to install the status owner-thread trace hook.");
       return false;
    }
 
@@ -572,15 +569,14 @@ bool InstallHooks()
    {
       DisableGameplayHooksAndRestore();
       SetRuntimeMessage(
-         "Failed to patch both native trait loop limits; changes were rolled back.", true);
+         "Failed to patch both native trait loop limits; changes were rolled back.");
       return false;
    }
 
    g_hooks_ready.store(true, std::memory_order_release);
    SetRuntimeMessage(
       "Native hooks installed: " +
-         std::to_string(GetVirtualSlotCount()) + " virtual slots.",
-      false);
+         std::to_string(GetVirtualSlotCount()) + " virtual slots.");
    return true;
 }
 }

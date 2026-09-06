@@ -240,7 +240,6 @@ extern std::atomic_bool g_shutdown_complete;
 extern std::atomic<GBFR20_LogCallback> g_log_callback;
 extern std::mutex g_message_mutex;
 extern std::string g_runtime_message;
-extern bool g_runtime_message_is_error;
 
 extern SafetyHookInline g_get_gem_hook;
 extern SafetyHookMid g_trait_fetch_hook;
@@ -251,8 +250,6 @@ extern std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> 
 extern std::unordered_map<uint32_t, uint32_t> g_required_character_by_gem;
 extern std::shared_mutex g_authorization_mutex;
 extern std::unordered_map<uintptr_t, AuthorizedStatus> g_authorized_statuses;
-extern std::atomic<uint32_t> g_last_authorized_character_hash;
-extern std::atomic<uint64_t> g_last_authorized_status_address;
 
 extern std::atomic_int32_t g_edit_session_state;
 extern std::atomic_uint32_t g_observed_character_hash;
@@ -296,8 +293,7 @@ int GetExpandedInternalSlotCount() noexcept;
 void Log(const std::string& message);
 uint64_t BeginStartupPhase(std::string_view phase);
 void CompleteStartupPhase(std::string_view phase, uint64_t started_at_ms, bool succeeded);
-void SetRuntimeMessage(std::string message, bool is_error);
-std::string GetRuntimeMessage(bool& is_error);
+void SetRuntimeMessage(std::string message);
 std::string ToUpperHex(uint32_t value);
 
 bool SafeReadPointer(uintptr_t address, uintptr_t& value) noexcept;

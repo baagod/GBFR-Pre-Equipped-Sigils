@@ -18,7 +18,7 @@ void Initialize()
       g_module, module_path.data(), static_cast<DWORD>(module_path.size()));
    if (module_length == 0 || module_length >= module_path.size())
    {
-      SetRuntimeMessage("Could not resolve the native core directory.", true);
+      SetRuntimeMessage("Could not resolve the native core directory.");
       finish_initialization(false);
       return;
    }
@@ -34,7 +34,7 @@ void Initialize()
    if (executable_length == 0 || executable_length >= executable_path.size())
    {
       CompleteStartupPhase("executable-validation", executable_started, false);
-      SetRuntimeMessage("Could not resolve the game executable path.", true);
+      SetRuntimeMessage("Could not resolve the game executable path.");
       finish_initialization(false);
       return;
    }
@@ -43,7 +43,7 @@ void Initialize()
    if (_wcsicmp(executable.filename().c_str(), L"granblue_fantasy_relink.exe") != 0)
    {
       CompleteStartupPhase("executable-validation", executable_started, false);
-      SetRuntimeMessage("This native core only supports granblue_fantasy_relink.exe.", true);
+      SetRuntimeMessage("This native core only supports granblue_fantasy_relink.exe.");
       finish_initialization(false);
       return;
    }
@@ -56,8 +56,7 @@ void Initialize()
    if (!compatibility_loaded)
    {
       SetRuntimeMessage(
-         "The character-compatibility table is missing or incomplete; gameplay hooks were not installed.",
-         true);
+         "The character-compatibility table is missing or incomplete; gameplay hooks were not installed.");
       finish_initialization(false);
       return;
    }
@@ -107,37 +106,34 @@ void ConsumeApplyResult()
       SetRuntimeMessage(
          prefix.str() + "equipment/test rebuild copied " + std::to_string(injected) + "/" +
             std::to_string(expected) +
-            " selected virtual sigils. Combat reads the same saved selection directly from the native Trait loop.",
-         false);
+            " selected virtual sigils. Combat reads the same saved selection directly from the native Trait loop.");
       break;
    case ApplyResultSavedNoStatus:
-      SetRuntimeMessage(prefix.str() + "no valid equipment-selected character was available.", true);
+      SetRuntimeMessage(prefix.str() + "no valid equipment-selected character was available.");
       break;
    case ApplyResultVirtualCopyFailed:
       SetRuntimeMessage(
          prefix.str() + "native trait build ran, but only " + std::to_string(injected) + "/" +
-            std::to_string(expected) + " sigils were valid, unequipped, and copied.",
-         true);
+            std::to_string(expected) + " sigils were valid, unequipped, and copied.");
       break;
    case ApplyResultOwnerThreadMismatch:
       SetRuntimeMessage(
-         prefix.str() + "overlay callback was not on the verified native status owner thread.", true);
+         prefix.str() + "overlay callback was not on the verified native status owner thread.");
       break;
    case ApplyResultStatusLookupFailed:
-      SetRuntimeMessage(prefix.str() + "the native character status map had no matching status.", true);
+      SetRuntimeMessage(prefix.str() + "the native character status map had no matching status.");
       break;
    case ApplyResultNativeRebuildFailed:
-      SetRuntimeMessage(prefix.str() + "the synchronous native status rebuild failed.", true);
+      SetRuntimeMessage(prefix.str() + "the synchronous native status rebuild failed.");
       break;
    case ApplyResultNativeTraitLoopMissing:
       SetRuntimeMessage(
          prefix.str() + "the native status rebuild returned without completing virtual trait slots 13 through " +
-            std::to_string(GetExpandedInternalSlotCount() - 1) + ".",
-         true);
+            std::to_string(GetExpandedInternalSlotCount() - 1) + ".");
       break;
    case ApplyResultNotifierFailed:
       SetRuntimeMessage(
-         prefix.str() + "traits rebuilt, but the post-rebuild native UI notifier failed.", true);
+         prefix.str() + "traits rebuilt, but the post-rebuild native UI notifier failed.");
       break;
    default:
       break;

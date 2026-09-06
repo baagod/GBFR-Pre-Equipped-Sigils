@@ -21,7 +21,6 @@ std::atomic_bool g_shutdown_complete{false};
 std::atomic<GBFR20_LogCallback> g_log_callback{nullptr};
 std::mutex g_message_mutex;
 std::string g_runtime_message = "Waiting for initialization.";
-bool g_runtime_message_is_error = false;
 
 std::atomic_int32_t g_edit_session_state{EditSessionUnknownLocked};
 std::atomic_uint32_t g_observed_character_hash{0};
@@ -85,21 +84,13 @@ void CompleteStartupPhase(
       std::to_string(elapsed_ms) + ".");
 }
 
-void SetRuntimeMessage(std::string message, bool is_error)
+void SetRuntimeMessage(std::string message)
 {
    {
       std::scoped_lock lock(g_message_mutex);
       g_runtime_message = std::move(message);
-      g_runtime_message_is_error = is_error;
    }
    Log(g_runtime_message);
-}
-
-std::string GetRuntimeMessage(bool& is_error)
-{
-   std::scoped_lock lock(g_message_mutex);
-   is_error = g_runtime_message_is_error;
-   return g_runtime_message;
 }
 
 std::string ToUpperHex(uint32_t value)

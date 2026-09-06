@@ -6,8 +6,6 @@ std::shared_mutex g_selection_mutex;
 std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> g_character_selections;
 std::shared_mutex g_authorization_mutex;
 std::unordered_map<uintptr_t, AuthorizedStatus> g_authorized_statuses;
-std::atomic<uint32_t> g_last_authorized_character_hash{0};
-std::atomic<uint64_t> g_last_authorized_status_address{0};
 
 std::atomic_bool g_pending_refresh{false};
 std::atomic<uint32_t> g_pending_character_hash{0};
@@ -197,11 +195,6 @@ void ProcessPendingHotApply()
       {
          std::unique_lock lock(g_authorization_mutex);
          g_authorized_statuses.erase(status);
-         if (g_authorized_statuses.empty())
-         {
-            g_last_authorized_character_hash.store(0, std::memory_order_release);
-            g_last_authorized_status_address.store(0, std::memory_order_release);
-         }
       }
       else if (restored_identity.character_hash == character_hash &&
                restored_identity.context_mode == original_identity.context_mode)

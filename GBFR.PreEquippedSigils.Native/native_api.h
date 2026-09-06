@@ -14,7 +14,6 @@
 // All selector/inventory/preset/input/present/state APIs of the derived
 // original were removed.
 constexpr uint32_t GBFR20_ABI_VERSION = 16;
-constexpr uint32_t GBFR20_VIRTUAL_SLOT_CAPACITY = 24;
 
 using GBFR20_LogCallback = void(GBFR20_CALL*)(const char* message);
 
