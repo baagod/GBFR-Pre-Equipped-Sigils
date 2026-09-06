@@ -235,7 +235,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - 托盘/窗口：三态激活（隐藏/最小化/遮挡）、隐藏恢复透明淡入（**解决 WebView2 恢复白闪**，Win32 WS_EX_LAYERED + alpha 渐入）、固定 760×800（禁最大化）、游戏因子图标（go:embed）。
 - 热键：mod 激活前等待按键释放（防止按键尾落到工具导致"弹出即隐藏"）；工具内 Esc 也可隐藏；mod 发布 `tool-hotkey.txt` 供工具同步键位。
 - 上限：MaxSlots 22 → **12**（工具 + 托管 LoadoutConfig 同步）。
-- 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 loadout.exe 等 9 文件。
+- 发布材料：GitHub README 增加 Build 段（Nexus 审核用）；发布包内置 Loadout.exe 等 9 文件。
 
 ### 已验证（实测通过的
 - 主控 + AI 角色都吃注入（明镜止的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认的

@@ -77,7 +77,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Push-Location $toolDir
 try {
-    & go build -ldflags "-H windowsgui" -o loadout.exe .
+    & go build -ldflags "-H windowsgui" -o Loadout.exe .
     if ($LASTEXITCODE -ne 0) {
         throw "Tool build failed with exit code $LASTEXITCODE."
     }
@@ -106,7 +106,7 @@ if (Test-Path -LiteralPath $zipPath) {
 New-Item -ItemType Directory -Path $packageDir | Out-Null
 Copy-Item -Path (Join-Path $managedOutput '*') -Destination $packageDir -Recurse -Force
 
-$toolExe = Join-Path $toolDir 'loadout.exe'
+$toolExe = Join-Path $toolDir 'Loadout.exe'
 if (-not (Test-Path -LiteralPath $toolExe -PathType Leaf)) {
     throw "Loadout tool exe was not built: $toolExe"
 }
@@ -115,7 +115,7 @@ Copy-Item -Path $toolExe -Destination $packageDir -Force
 foreach ($requiredFile in @(
     'GBFR.PreEquippedSigils.dll',
     'GBFR.PreEquippedSigils.Native.dll',
-    'loadout.exe',
+    'Loadout.exe',
     'pre-loadout.json',
     'traits.json'
 )) {

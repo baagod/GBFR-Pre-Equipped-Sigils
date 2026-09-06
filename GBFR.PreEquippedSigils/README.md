@@ -37,4 +37,4 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 The release package contains:
 - `GBFR.PreEquippedSigils.dll` — C# (Reloaded-II mod hook, built by uild-release.ps1),
 - `GBFR.PreEquippedSigils.Native.dll` — C++ (game hook, same script),
-- `loadout.exe` — Wails v3 (Go) GUI tool (its frontend is also built by the script; no external assets are downloaded at build time).
+- `Loadout.exe` — Wails v3 (Go) GUI tool (its frontend is also built by the script; no external assets are downloaded at build time).
