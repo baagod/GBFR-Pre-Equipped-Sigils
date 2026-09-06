@@ -20,8 +20,7 @@
 build-release.ps1                    构建+打包脚本（MSBuild native、dotnet managed、zip）
 docs/
   MAINTENANCE.md                     本手册
-  tool-extract-exclusives.ps1        提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条）
-  tool-gen-loadout.ps1               生成 kDefaultTemplates[] 数组文本
+  tool-gen-loadout.ps1               生成 kCharacterExclusives[]/kGeneralSlots[] 数组文本与 pre-loadout.json
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
   NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
@@ -84,7 +83,6 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-extract-exclusives.ps1` | 从 compatibility.tsv + 名字表提取每角色专属因子（觉醒＋ gem、两个专属词条、战气词条） |
 | `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据，生成 `kCharacterExclusives[]`/`kGeneralSlots[]` 数组文本 |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出）——**运行时不依赖**，仅开发用。 |
 
@@ -223,7 +221,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ## 9. 已知限制与未来方向
 
-- 配装表编译期内置（**配置化已完成**，2026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）、ABI v16，详见 [docs/PLAN-loadout-config.md](PLAN-loadout-config.md)（计划已执行，偏差记录见该文档头部）。
+- 配装表编译期内置（**配置化已完成**，2026-09-04）：`loadout.json` + Wails v3 工具（`Loadout/`，托盘/单实例/自动保存/每词条最大等级）+ RegisterHotKey 热键（默认 F1）、ABI v16（配置化计划已执行，偏差记录见仓库提交历史）。
 - 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色觉醒＋/战气 hash。
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效；日志出现 layout failed 时等更新
   方案或重新逆向。
