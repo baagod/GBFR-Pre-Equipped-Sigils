@@ -138,12 +138,32 @@ function LevelInput({
   disabled?: boolean
   onLevel: (n: number) => void
 }) {
-  // Wheel is left native: a focused number input steps with the wheel
-  // (clamped by min/max); unfocused, the wheel does nothing and scrolls
-  // the page as usual.
+  const groupRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  // Wheel adjusts the level over the WHOLE input group (suffix "/ max"
+  // included), but only while the number input is focused — otherwise the
+  // wheel is left alone and scrolls the page. Native listener with
+  // passive: false so preventDefault can suppress the scroll (React's
+  // synthetic onWheel is passive and cannot be prevented).
+  useEffect(() => {
+    const el = groupRef.current
+    const input = inputRef.current
+    if (!el || disabled) return
+    const onWheel = (e: WheelEvent) => {
+      if (input === null || document.activeElement !== input) return
+      e.preventDefault()
+      const step = e.deltaY < 0 ? 1 : -1
+      onLevel(Math.max(min, Math.min(max, value + step)))
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  }, [disabled, min, max, value, onLevel])
+
   return (
-    <InputGroup className="w-20 shrink-0">
+    <InputGroup ref={groupRef} className="w-20 shrink-0">
       <InputGroupInput
+        ref={inputRef}
         type="number"
         min={min}
         max={max}
