@@ -138,8 +138,26 @@ function LevelInput({
   disabled?: boolean
   onLevel: (n: number) => void
 }) {
+  const groupRef = useRef<HTMLDivElement | null>(null)
+
+  // Wheel works over the whole input group (suffix / max included), not just
+  // the number input. A native listener with passive: false is required so
+  // preventDefault can stop the page scroll (React's synthetic onWheel is
+  // passive and cannot be prevented).
+  useEffect(() => {
+    const el = groupRef.current
+    if (!el || disabled) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const step = e.deltaY < 0 ? 1 : -1
+      onLevel(Math.max(min, Math.min(max, value + step)))
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  }, [disabled, min, max, value, onLevel])
+
   return (
-    <InputGroup className="w-20 shrink-0">
+    <InputGroup ref={groupRef} className="w-20 shrink-0">
       <InputGroupInput
         type="number"
         min={min}
@@ -513,11 +531,11 @@ export default function App() {
   // configurable; the mod publishes it in tool-hotkey.txt). Pressed here it
   // minimises the window; pressed in the game it brings the tool back. The
   // hide is deferred until AFTER the key-up so the press is fully consumed
-  // here and never leaks to the game window.
+  // here and never leaks to the game window. Escape is deliberately NOT a
+  // hide key: it must keep cancelling/closeing dropdowns and dialogs.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
-    const match = (e: KeyboardEvent) =>
-      (e.keyCode || e.which) === hideKey || e.key === "Escape"
+    const match = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
     const onKeyDown = (e: KeyboardEvent) => {
       if (!match(e)) return
       clearTimeout(timer)

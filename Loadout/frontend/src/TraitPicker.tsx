@@ -81,6 +81,15 @@ export function TraitPicker({
           <Button
             variant="outline"
             disabled={disabled}
+            onKeyDownCapture={(e) => {
+              // Base UI opens the list on ArrowUp/ArrowDown from the trigger.
+              // Swallow them in the capture phase so arrow keys stay free for
+              // field navigation (and the number inputs' own stepper).
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault()
+                e.stopPropagation()
+              }
+            }}
             className={
               invalid
                 ? "min-w-0 flex-1 justify-between border-destructive font-normal text-destructive"
