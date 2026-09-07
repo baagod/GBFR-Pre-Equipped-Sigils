@@ -25,6 +25,7 @@ public sealed class Mod : IMod
     private System.Threading.Timer? _tickTimer;
     private bool _nativeCoreActive;
     private bool _disposed;
+    private bool _startRequested;
     private HotkeyConfig? _hotkeyConfiguration;
 
     public Action Disposing => Dispose;
@@ -51,6 +52,11 @@ public sealed class Mod : IMod
 
     private void QueueStart(IModLoaderV1 loaderApi)
     {
+        // Idempotent: Start/StartEx are alternative loader entry points;
+        // re-entry would duplicate the upkeep timer.
+        if (_startRequested)
+            return;
+        _startRequested = true;
         long started = Stopwatch.GetTimestamp();
         try
         {

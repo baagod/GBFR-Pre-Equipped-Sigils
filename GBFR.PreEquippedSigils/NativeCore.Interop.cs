@@ -50,7 +50,4 @@ internal static unsafe partial class NativeCore
     private static extern int GBFR20_SetExclusiveOverrides(
         ExclusiveOverrideNative[]? overrides,
         uint count);
-
-    internal static bool ApplyExclusiveOverrides(ExclusiveOverrideNative[]? overrides) =>
-        GBFR20_SetExclusiveOverrides(overrides, (uint)(overrides?.Length ?? 0)) != 0;
 }

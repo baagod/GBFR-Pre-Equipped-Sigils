@@ -111,8 +111,7 @@ internal static class Hotkey
 
         if (_hotkeyThread != null && _messageWindow != IntPtr.Zero)
         {
-            UnregisterHotKey(_messageWindow, HotkeyId);
-            _hotKeyRegistered = RegisterHotKey(_messageWindow, HotkeyId, ModNoRepeat, (uint)virtualKey);
+            _hotKeyRegistered = ReregisterHotkey(_messageWindow);
             return;
         }
 
@@ -133,13 +132,22 @@ internal static class Hotkey
         PublishHotkey(virtualKey);
         if (_messageWindow != IntPtr.Zero)
         {
-            UnregisterHotKey(_messageWindow, HotkeyId);
-            _hotKeyRegistered = RegisterHotKey(_messageWindow, HotkeyId, ModNoRepeat, (uint)virtualKey);
+            _hotKeyRegistered = ReregisterHotkey(_messageWindow);
             _log?.Invoke(
                 _hotKeyRegistered
                     ? $"Hotkey re-registered to: {HotkeyName(_virtualKey)} (0x{_virtualKey:X2})."
                     : "Hotkey re-registration failed; fallback polling active.");
         }
+    }
+
+    /// <summary>
+    /// Re-arms the hotkey on the message window with the current virtual key
+    /// (shared by Configure's re-entry path and UpdateHotkey).
+    /// </summary>
+    private static bool ReregisterHotkey(IntPtr window)
+    {
+        UnregisterHotKey(window, HotkeyId);
+        return RegisterHotKey(window, HotkeyId, ModNoRepeat, (uint)_virtualKey);
     }
 
     /// <summary>

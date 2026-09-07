@@ -13,9 +13,10 @@ import (
 const MaxSlots = 12
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
-// Protocol is shared with the mod: sigils.json (sigil table), skills.json
-// (trait/skill dictionary) and loadout.json (player configuration; array
-// format: [ { items: [{hash,level,zh,en}, {hash,level,zh,en}?], enabled } ]).
+// Protocol is shared with the mod: sigils.json (merged sigil/trait table:
+// item rows gem != "", non-holdable trait rows gem == "") and loadout.json
+// (player configuration; array format: [ { items: [{hash,level,zh,en},
+// {hash,level,zh,en}?], enabled } ]).
 type LoadoutService struct{}
 
 // MinimiseApp hides the window to the tray; the process stays alive so the
@@ -69,15 +70,14 @@ func exeDir() string {
 }
 
 // userCfgDir is where the player configuration (loadout.json) lives. The mod
-// folder is replaced on every update; this location survives them.
+// folder is replaced on every update; this location survives them. Must match
+// the C# side (Environment.SpecialFolder.LocalApplicationData): do NOT fall
+// back to os.UserConfigDir() here — on Windows that returns %AppData%
+// (Roaming), which would diverge from the mod's LocalAppData path.
 func userCfgDir() string {
 	base := os.Getenv("LOCALAPPDATA")
 	if base == "" {
-		if d, err := os.UserConfigDir(); err == nil {
-			base = d
-		} else {
-			base = exeDir()
-		}
+		base = exeDir()
 	}
 	return filepath.Join(base, "GBFRPreEquippedSigils")
 }

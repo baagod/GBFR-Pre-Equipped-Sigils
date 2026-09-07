@@ -98,6 +98,9 @@ internal static unsafe partial class NativeCore
         return GBFR20_SetCustomLoadout(slots, (uint)(slots?.Length ?? 0)) != 0;
     }
 
+    internal static bool ApplyExclusiveOverrides(ExclusiveOverrideNative[]? overrides) =>
+        GBFR20_SetExclusiveOverrides(overrides, (uint)(overrides?.Length ?? 0)) != 0;
+
     internal static void Shutdown()
     {
         try

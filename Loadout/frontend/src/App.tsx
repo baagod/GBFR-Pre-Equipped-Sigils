@@ -147,7 +147,10 @@ function LevelInput({
         value={value}
         disabled={disabled}
         onChange={(e) => {
-          const n = Math.max(min, Math.floor(Math.min(Number(e.target.value), max)))
+          const raw = Number(e.target.value)
+          const n = Number.isFinite(raw)
+            ? Math.max(min, Math.floor(Math.min(raw, max)))
+            : min
           onLevel(n)
           if (e.target.value !== String(n)) e.target.value = String(n)
         }}
@@ -166,7 +169,7 @@ const emptySlot = (): Slot => ({ mainHash: "", mainLevel: 0, secHash: "", secLev
  * Stored gems are mapped to display names via the sigil table; unknown gems
  * keep their raw value. */
 function configToSlots(
-  parsed: { slots?: unknown; lang?: string },
+  parsed: { slots?: unknown },
   sigils: Sigil[]
 ): Slot[] {
   const fromCfg = slotsFromConfig(parsed?.slots)
@@ -266,15 +269,7 @@ export default function App() {
       }
       try {
         const configJson = await LoadConfig()
-        const parsed = JSON.parse(configJson)
-        skipSave.current = true
-        if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
-        setSlots(pad12(configToSlots(parsed, sigilsLoaded)))
-        setExclusiveState(
-          parsed?.exclusive && typeof parsed.exclusive === "object"
-            ? parsed.exclusive
-            : undefined
-        )
+        applyConfig(JSON.parse(configJson), sigilsLoaded)
       } catch (e) {
         setStatus(t.configFail(e))
       }
@@ -332,13 +327,14 @@ export default function App() {
     return byName
   }, [sigils])
 
-  // Exclusive-slot sigils (special=true) and per-character exclusive sigils
-  // (player != "") are managed on the Exclusives tab / built-in slots; they
-  // are not offered as a general-slot main.
+  // General mains: only rows with an item (gem != "") and no character
+  // exclusivity (player == "") qualify. Special rows (crab family etc.) stay
+  // selectable as mains — their secondary combination is hinted as illegal
+  // via specialMainNames.
   const sigilGroups = useMemo(
     () =>
       [...groupedByName.entries()]
-        .filter(([, variants]) => variants.some((v) => v.player === "" && !v.special))
+        .filter(([, variants]) => variants.some((v) => v.player === "" && v.gem !== ""))
         .map(([name, variants]) => ({
           name,
           zh: variants[0]?.zh ?? name,
@@ -346,9 +342,22 @@ export default function App() {
     [groupedByName]
   )
 
+  // Special mains (crab family / 相扑斗力 / special rows) cannot legally take
+  // any secondary: the secondary list is shown fully as illegal (existing
+  // grey/red styles) — choosing and saving are not blocked, nothing is cleared.
+  const specialMainNames = useMemo(() => {
+    const names = new Set<string>()
+    for (const [name, variants] of groupedByName) {
+      if (variants.some((v) => v.special || v.zh.includes("钳蟹") || v.zh.includes("相扑斗力")))
+        names.add(name)
+    }
+    return names
+  }, [groupedByName])
+
   // Exclusive-slot / quest-locked traits (crab family, 相扑斗力 etc.): these can
-  // never appear as a secondary. Everything else is legal — game synthesis (2.0.5)
-  // freely combines same/cross-category and even duplicate traits.
+  // never appear as a secondary for a regular main. Everything else is legal —
+  // game synthesis (2.0.5) freely combines same/cross-category and even
+  // duplicate traits.
   const { exclusiveTraits, allTraitHashes } = useMemo(() => {
     const exclusive = new Set<string>()
     for (const s of sigils) {
@@ -359,11 +368,16 @@ export default function App() {
     return { exclusiveTraits: exclusive, allTraitHashes: traits.map((tr) => tr.hash) }
   }, [sigils, traits])
 
-  // Hint only; generation is never blocked.
-  const legalByMain = (name: string) =>
-    new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
+  // Hint only; generation is never blocked. The legal set is the same for
+  // every regular main (only exclusive traits are excluded); special mains
+  // get an empty set so every secondary shows the illegal style.
+  const legalByMain = useMemo(() => {
+    const legal = new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
+    const none: Set<string> = new Set()
+    return (name: string) => (specialMainNames.has(name) ? none : legal)
+  }, [allTraitHashes, exclusiveTraits, specialMainNames])
 
-  const traitHashes = traits.map((tr) => tr.hash)
+  const traitHashes = useMemo(() => traits.map((tr) => tr.hash), [traits])
 
   // Data is pool-only per name group; the first variant IS the family gem.
   const gemFor = (name: string): string => {
@@ -398,22 +412,32 @@ export default function App() {
   const reloadConfig = async () => {
     try {
       const configJson = await LoadConfig()
-      const parsed = JSON.parse(configJson)
-      skipSave.current = true
-      if (typeof parsed?.lang === "string") setLang(parsed.lang as Lang)
-      setSlots(pad12(configToSlots(parsed, sigils)))
-      setExclusiveState(
-        parsed?.exclusive && typeof parsed.exclusive === "object"
-          ? parsed.exclusive
-          : undefined
-      )
+      applyConfig(JSON.parse(configJson), sigils)
     } catch (e) {
       setStatus(t.configFail(e))
     }
   }
 
+  /** Load a saved config into the editor state (first render skips saving). */
+  const applyConfig = (parsed: unknown, sigilTable: Sigil[]) => {
+    const cfg = (parsed ?? {}) as {
+      lang?: unknown
+      slots?: unknown
+      exclusive?: unknown
+    }
+    skipSave.current = true
+    if (typeof cfg.lang === "string") setLang(cfg.lang as Lang)
+    setSlots(pad12(configToSlots(cfg, sigilTable)))
+    setExclusiveState(
+      cfg.exclusive && typeof cfg.exclusive === "object"
+        ? (cfg.exclusive as ExclusiveState)
+        : undefined
+    )
+  }
+
   // Header check box: select all / clear all (official Table pattern).
-  const allEnabled = slots.length > 0 && slots.every((s) => s.enabled)
+  // slots is always padded to MAX_SLOTS, so the length check is unnecessary.
+  const allEnabled = slots.every((s) => s.enabled)
   const toggleAll = () => {
     setSlots((prev) => prev.map((slot) => ({ ...slot, enabled: !allEnabled })))
   }
@@ -713,13 +737,19 @@ function ExclusivePanel({
     if (!s) return gem
     return lang === "zh" ? s.zh || s.name || gem : s.name || s.zh || gem
   }
+  // One row per shared player code (Gran/Djeeta both PL0000 with the same
+  // exclusives): the toggle is linked for both in-game characters.
+  const rows = useMemo(() => {
+    const seen = new Set<string>()
+    return table.filter((e) => {
+      if (seen.has(e.player)) return false
+      seen.add(e.player)
+      return true
+    })
+  }, [table])
   return (
     <div>
-      {/* One row per shared player code (Gran/Djeeta both PL0000 with the same
-          exclusives): the toggle is linked for both in-game characters. */}
-      {table
-        .filter((e, index) => table.findIndex((x) => x.player === e.player) === index)
-        .map((e) => {
+      {rows.map((e) => {
           const st = state?.[e.player]
           const row = [
             { key: e.t1, on: st?.[e.t1] ?? true, gem: e.t1Gem },

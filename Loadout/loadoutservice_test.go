@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func slot(gem, sec string, lvl, secLvl int) loadoutSlot {
 	items := []loadoutItem{{Gem: gem, Level: lvl}}
@@ -8,6 +11,15 @@ func slot(gem, sec string, lvl, secLvl int) loadoutSlot {
 		items = append(items, loadoutItem{Hash: sec, Level: secLvl})
 	}
 	return loadoutSlot{Items: items, Enabled: true}
+}
+
+func TestUserCfgDirMatchesModPath(t *testing.T) {
+	base := filepath.Join("C:", "Users", "someone", "AppData", "Local")
+	t.Setenv("LOCALAPPDATA", base)
+	want := filepath.Join(base, "GBFRPreEquippedSigils")
+	if got := userCfgDir(); got != want {
+		t.Errorf("userCfgDir() = %q, want %q", got, want)
+	}
 }
 
 func TestValidateSlots(t *testing.T) {

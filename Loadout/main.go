@@ -63,22 +63,9 @@ func ensureSingleInstance() (release func()) {
 	}
 }
 
-// trayIcon returns the embedded game trait icon (tray + window).
-func trayIcon() []byte {
-	return trayIconBytes
-}
-
 func main() {
 	releaseMutex := ensureSingleInstance()
 	defer releaseMutex()
-
-	// "--minimized" (used by old pre-warm) starts hidden; kept for compat.
-	hidden := false
-	for _, arg := range os.Args {
-		if arg == "--minimized" {
-			hidden = true
-		}
-	}
 
 	app = application.New(application.Options{
 		Name: "Loadout",
@@ -91,30 +78,24 @@ func main() {
 		},
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
-			// Soft compositing avoids the white GPU frame flash when a hidden
-			// WebView2 window is woken back up.
-			AdditionalBrowserArgs: []string{},
 			// X button = hide to tray; WM_APP+0x10 = internal show request.
-			// A WebviewWindow HWND accessor does not exist in beta.16, so we
-			// filter by message instead: both messages are window-specific.
+			// A WebviewWindow HWND accessor is not exposed by this Wails
+			// version, so each message doubles as a window-specific command.
 			WndProcInterceptor: handleWndMsg,
-		},
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
 
 	win = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:               "GBFR Pre-Equipped Sigils",
+		Title: "GBFR Pre-Equipped Sigils",
+		// Wails v3 sizes are the full window frame (incl. title bar) in DIP.
+		// Fixed size: DisableResize removes the resize border, so the user
+		// cannot resize; the maximise button is disabled too.
 		Width:               760,
 		Height:              840,
-		MinWidth:            760, // fully locked at 760x840
-		MaxWidth:            760,
-		MinHeight:           840,
-		MaxHeight:           840,
+		DisableResize:       true,
 		MaximiseButtonState: application.ButtonDisabled,
 		URL:                 "/",
-		Hidden:              hidden,
+		Hidden:              false,
 		BackgroundColour:    application.NewRGB(10, 10, 10),
 	})
 	// Force the WebView2 backing colour to the theme background so restoring
@@ -123,7 +104,7 @@ func main() {
 
 	// System tray: single click toggles the window; menu offers quit.
 	tray := app.SystemTray.New()
-	tray.SetIcon(trayIcon())
+	tray.SetIcon(trayIconBytes)
 	tray.SetTooltip("GBFR Pre-Equipped Sigils")
 	tray.AttachWindow(win)
 
@@ -139,15 +120,18 @@ func main() {
 }
 
 // handleWndMsg filters the window messages we care about (hide-on-close and
-// internal show/restore nudges). Wails exposes no HWND accessor in beta.16,
-// so each message doubles as a window-specific command.
+// internal show/restore nudges). 0x8010 is the shared activation message
+// (the mod's hotkey also posts it) and doubles as the show command.
 func handleWndMsg(_ uintptr, msg uint32, _, _ uintptr) (uintptr, bool) {
 	if win == nil {
 		return 0, false
 	}
+	// Repaint nudge: a 1px size round-trip forces the hidden WebView2 frame to
+	// redraw after activation. With no Min/Max set, SetSize has no hidden
+	// min/max side effects, so the round-trip ends at the design size.
 	nudge := func() {
 		win.SetSize(759, 799)
-		win.SetSize(760, 800)
+		win.SetSize(760, 840)
 	}
 	switch msg {
 	case 0x0010: // WM_CLOSE

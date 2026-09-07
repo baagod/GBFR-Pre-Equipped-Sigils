@@ -97,7 +97,7 @@ export function TraitPicker({
         <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
         <ComboboxList className="max-h-[264px]">
           {(item) => {
-            const isLegal = !legal || legal.size === 0 || item.value === "" || legal.has(item.value)
+            const isLegal = !legal || item.value === "" || legal.has(item.value)
             return (
               <ComboboxItem
                 key={item.value}

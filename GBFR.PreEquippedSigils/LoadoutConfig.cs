@@ -104,7 +104,9 @@ internal static class LoadoutConfig
                                    ml.TryGetInt32(out int m)
                         ? m
                         : DefaultLevel;
-                    Traits[hash] = new TraitInfo { MaxLevel = maxLevel };
+                    // First row wins for a repeated skill hash (mirrors the
+                    // tool's first-row trait dictionary).
+                    Traits.TryAdd(hash, new TraitInfo { MaxLevel = maxLevel });
                     traitCount++;
                     string gem = Hx(entry.GetProperty("gem"));
                     if (gem.Length == 0)
@@ -160,8 +162,6 @@ internal static class LoadoutConfig
             var overrides = ParseExclusiveOverrides(doc.RootElement);
             var slots = ParseAndValidate(doc.RootElement);
             bool ok;
-            if (!NativeCore.ApplyExclusiveOverrides(overrides))
-                throw new InvalidDataException("native rejected the exclusive overrides");
             if (slots.Count == 0)
             {
                 // An existing (even empty) config means "no built-in general
@@ -175,16 +175,20 @@ internal static class LoadoutConfig
                 if (ok)
                     log($"Applied custom loadout with {slots.Count} slot(s).");
             }
-            if (ok)
-            {
-                _lastAppliedUtc = mtime;
-                _lastAttemptUtc = DateTime.MinValue;
-            }
-            else
+            if (!ok)
             {
                 log("Native rejected the custom loadout; kept previous configuration.");
                 _lastAttemptUtc = mtime;
+                return;
             }
+            // Apply the exclusive overrides after the loadout: the native path
+            // only fails while the runtime is shutting down, so rejecting a
+            // loadout above leaves the previous exclusive state untouched
+            // instead of a mixed new/old state.
+            if (!NativeCore.ApplyExclusiveOverrides(overrides))
+                throw new InvalidDataException("native rejected the exclusive overrides");
+            _lastAppliedUtc = mtime;
+            _lastAttemptUtc = DateTime.MinValue;
         }
         catch (Exception exception)
         {
