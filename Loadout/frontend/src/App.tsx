@@ -656,14 +656,7 @@ function SlotRow({
           traits={sigilNames}
           labels={labels}
           placeholder={t.none}
-          onSelect={(v) =>
-            updateSlot(index, {
-              mainHash: v,
-              mainLevel: Math.min(15, maxOfMain(v)),
-              secHash: v ? slot.secHash : "",
-              secLevel: v ? slot.secLevel : 0,
-            })
-          }
+          onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(15, maxOfMain(v)) })}
         />
         <LevelInput
           value={slot.mainHash ? slot.mainLevel : 0}
