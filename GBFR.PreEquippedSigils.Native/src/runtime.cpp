@@ -25,7 +25,7 @@ void Initialize()
 
    g_module_directory = std::filesystem::path(module_path.data()).parent_path();
    g_compatibility_path =
-      g_module_directory / L"GBFR.PreEquippedSigils.compatibility.tsv";
+      g_module_directory / L"sigils.json";
 
    const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');
@@ -56,7 +56,7 @@ void Initialize()
    if (!compatibility_loaded)
    {
       SetRuntimeMessage(
-         "The character-compatibility table is missing or incomplete; gameplay hooks were not installed.");
+         "Character restrictions (sigils.json) are missing or incomplete; gameplay hooks were not installed.");
       finish_initialization(false);
       return;
    }

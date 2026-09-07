@@ -61,7 +61,10 @@ inline constexpr int kNativeInternalSlotCount = 13;
 // kBuiltinExclusiveSlotCount + config count.
 inline constexpr int kBuiltinExclusiveSlotCount = 3;
 inline constexpr int kVirtualSlotCapacity = 24;
-inline constexpr uint32_t kExpectedCompatibilityMappingCount = 199;
+// Character restrictions are extracted from sigils.json (the "character"
+// field on exclusive rows, maintained by docs/tool-gen-sigils-required.js):
+// 29 characters x 3 template exclusives minus the 3 captain-shared dupes.
+inline constexpr uint32_t kExpectedCompatibilityMappingCount = 84;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;

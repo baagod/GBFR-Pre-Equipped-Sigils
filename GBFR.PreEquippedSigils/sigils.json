@@ -1090,7 +1090,8 @@
    "player": "PL2700",
    "special": false,
    "cap": 15,
-   "sort": 8590
+   "sort": 8590,
+   "character": "9B15CFB1"
   },
   {
    "key": "F964A4CA",
@@ -1103,46 +1104,8 @@
    "player": "PL2700",
    "special": false,
    "cap": 15,
-   "sort": 8580
-  },
-  {
-   "key": "GEEN_172_74",
-   "gem": "F1267035",
-   "name": "Ain",
-   "zh": "无态",
-   "skill": "1A2EF59E",
-   "sec": "6085DA25",
-   "category": "5",
-   "player": "PL2100",
-   "special": false,
-   "cap": 15,
-   "sort": 8720
-  },
-  {
-   "key": "GEEN_170_74",
-   "gem": "C4DD863A",
-   "name": "Seven-Star Boundary",
-   "zh": "涯之七星",
-   "skill": "EF05EC4D",
-   "sec": "6085DA25",
-   "category": "5",
-   "player": "PL2200",
-   "special": false,
-   "cap": 15,
-   "sort": 8640
-  },
-  {
-   "key": "GEEN_171_74",
-   "gem": "43DDE5DD",
-   "name": "Two-Crown Boundary",
-   "zh": "涯之二王",
-   "skill": "281214AB",
-   "sec": "6085DA25",
-   "category": "5",
-   "player": "PL2300",
-   "special": false,
-   "cap": 15,
-   "sort": 8680
+   "sort": 8580,
+   "character": "9B15CFB1"
   },
   {
    "key": "GEEN_172_91",
@@ -1155,7 +1118,8 @@
    "player": "PL2100",
    "special": false,
    "cap": 15,
-   "sort": 8690
+   "sort": 8690,
+   "character": "718E1A14"
   },
   {
    "key": "GEEN_176_93",
@@ -1168,7 +1132,8 @@
    "player": "PL2700",
    "special": false,
    "cap": 15,
-   "sort": 8600
+   "sort": 8600,
+   "character": "9B15CFB1"
   },
   {
    "key": "0523A202",
@@ -1181,7 +1146,8 @@
    "player": "PL2900",
    "special": false,
    "cap": 15,
-   "sort": 8760
+   "sort": 8760,
+   "character": "74DD4C79"
   },
   {
    "key": "0723F7EC",
@@ -1194,7 +1160,8 @@
    "player": "PL2900",
    "special": false,
    "cap": 15,
-   "sort": 8770
+   "sort": 8770,
+   "character": "74DD4C79"
   },
   {
    "key": "GEEN_178_93",
@@ -1207,7 +1174,8 @@
    "player": "PL2900",
    "special": false,
    "cap": 15,
-   "sort": 8780
+   "sort": 8780,
+   "character": "74DD4C79"
   },
   {
    "key": "113035D8",
@@ -1233,7 +1201,8 @@
    "player": "PL2500",
    "special": false,
    "cap": 15,
-   "sort": 8860
+   "sort": 8860,
+   "character": "25D46F4B"
   },
   {
    "key": "EC9FFE77",
@@ -1246,7 +1215,8 @@
    "player": "PL2500",
    "special": false,
    "cap": 15,
-   "sort": 8850
+   "sort": 8850,
+   "character": "25D46F4B"
   },
   {
    "key": "GEEN_174_93",
@@ -1259,7 +1229,8 @@
    "player": "PL2500",
    "special": false,
    "cap": 15,
-   "sort": 8870
+   "sort": 8870,
+   "character": "25D46F4B"
   },
   {
    "key": "282DBFF0",
@@ -1272,7 +1243,8 @@
    "player": "PL2400",
    "special": false,
    "cap": 15,
-   "sort": 8820
+   "sort": 8820,
+   "character": "1BB37EF0"
   },
   {
    "key": "F21404B1",
@@ -1285,7 +1257,8 @@
    "player": "PL2400",
    "special": false,
    "cap": 15,
-   "sort": 8830
+   "sort": 8830,
+   "character": "1BB37EF0"
   },
   {
    "key": "GEEN_173_93",
@@ -1298,7 +1271,8 @@
    "player": "PL2400",
    "special": false,
    "cap": 15,
-   "sort": 8840
+   "sort": 8840,
+   "character": "1BB37EF0"
   },
   {
    "key": "3C0F5461",
@@ -1363,7 +1337,8 @@
    "player": "PL2800",
    "special": false,
    "cap": 15,
-   "sort": 8730
+   "sort": 8730,
+   "character": "646C3168"
   },
   {
    "key": "BA28C81C",
@@ -1376,7 +1351,8 @@
    "player": "PL2800",
    "special": false,
    "cap": 15,
-   "sort": 8740
+   "sort": 8740,
+   "character": "646C3168"
   },
   {
    "key": "GEEN_177_93",
@@ -1389,7 +1365,8 @@
    "player": "PL2800",
    "special": false,
    "cap": 15,
-   "sort": 8750
+   "sort": 8750,
+   "character": "646C3168"
   },
   {
    "key": "76786869",
@@ -1454,7 +1431,8 @@
    "player": "PL2600",
    "special": false,
    "cap": 15,
-   "sort": 8550
+   "sort": 8550,
+   "character": "9A8AF295"
   },
   {
    "key": "D4117FF3",
@@ -1467,7 +1445,8 @@
    "player": "PL2600",
    "special": false,
    "cap": 15,
-   "sort": 8560
+   "sort": 8560,
+   "character": "9A8AF295"
   },
   {
    "key": "GEEN_175_93",
@@ -1480,7 +1459,8 @@
    "player": "PL2600",
    "special": false,
    "cap": 15,
-   "sort": 8570
+   "sort": 8570,
+   "character": "9A8AF295"
   },
   {
    "key": "B289A9AD",
@@ -1532,7 +1512,8 @@
    "player": "PL0000",
    "special": false,
    "cap": 15,
-   "sort": 8010
+   "sort": 8010,
+   "character": "2A26B1B2"
   },
   {
    "key": "GEEN_114_92",
@@ -1545,7 +1526,8 @@
    "player": "PL0000",
    "special": false,
    "cap": 15,
-   "sort": 8020
+   "sort": 8020,
+   "character": "2A26B1B2"
   },
   {
    "key": "GEEN_114_93",
@@ -1558,7 +1540,8 @@
    "player": "PL0000",
    "special": false,
    "cap": 15,
-   "sort": 8030
+   "sort": 8030,
+   "character": "2A26B1B2"
   },
   {
    "key": "GEEN_115_91",
@@ -1571,7 +1554,8 @@
    "player": "PL0200",
    "special": false,
    "cap": 15,
-   "sort": 8040
+   "sort": 8040,
+   "character": "18E2F9F9"
   },
   {
    "key": "GEEN_115_92",
@@ -1584,7 +1568,8 @@
    "player": "PL0200",
    "special": false,
    "cap": 15,
-   "sort": 8050
+   "sort": 8050,
+   "character": "18E2F9F9"
   },
   {
    "key": "GEEN_115_93",
@@ -1597,7 +1582,8 @@
    "player": "PL0200",
    "special": false,
    "cap": 15,
-   "sort": 8060
+   "sort": 8060,
+   "character": "18E2F9F9"
   },
   {
    "key": "GEEN_116_91",
@@ -1610,7 +1596,8 @@
    "player": "PL0300",
    "special": false,
    "cap": 15,
-   "sort": 8070
+   "sort": 8070,
+   "character": "079DF0CC"
   },
   {
    "key": "GEEN_116_92",
@@ -1623,7 +1610,8 @@
    "player": "PL0300",
    "special": false,
    "cap": 15,
-   "sort": 8080
+   "sort": 8080,
+   "character": "079DF0CC"
   },
   {
    "key": "GEEN_116_93",
@@ -1636,7 +1624,8 @@
    "player": "PL0300",
    "special": false,
    "cap": 15,
-   "sort": 8090
+   "sort": 8090,
+   "character": "079DF0CC"
   },
   {
    "key": "GEEN_117_91",
@@ -1649,7 +1638,8 @@
    "player": "PL0400",
    "special": false,
    "cap": 15,
-   "sort": 8100
+   "sort": 8100,
+   "character": "4D0A60C3"
   },
   {
    "key": "GEEN_117_92",
@@ -1662,7 +1652,8 @@
    "player": "PL0400",
    "special": false,
    "cap": 15,
-   "sort": 8110
+   "sort": 8110,
+   "character": "4D0A60C3"
   },
   {
    "key": "GEEN_117_93",
@@ -1675,7 +1666,8 @@
    "player": "PL0400",
    "special": false,
    "cap": 15,
-   "sort": 8120
+   "sort": 8120,
+   "character": "4D0A60C3"
   },
   {
    "key": "GEEN_118_91",
@@ -1688,7 +1680,8 @@
    "player": "PL0500",
    "special": false,
    "cap": 15,
-   "sort": 8130
+   "sort": 8130,
+   "character": "DD7A151E"
   },
   {
    "key": "GEEN_118_92",
@@ -1701,7 +1694,8 @@
    "player": "PL0500",
    "special": false,
    "cap": 15,
-   "sort": 8140
+   "sort": 8140,
+   "character": "DD7A151E"
   },
   {
    "key": "GEEN_118_93",
@@ -1714,7 +1708,8 @@
    "player": "PL0500",
    "special": false,
    "cap": 15,
-   "sort": 8150
+   "sort": 8150,
+   "character": "DD7A151E"
   },
   {
    "key": "GEEN_119_91",
@@ -1727,7 +1722,8 @@
    "player": "PL0600",
    "special": false,
    "cap": 15,
-   "sort": 8160
+   "sort": 8160,
+   "character": "C8616284"
   },
   {
    "key": "GEEN_119_92",
@@ -1740,7 +1736,8 @@
    "player": "PL0600",
    "special": false,
    "cap": 15,
-   "sort": 8170
+   "sort": 8170,
+   "character": "C8616284"
   },
   {
    "key": "GEEN_119_93",
@@ -1753,7 +1750,8 @@
    "player": "PL0600",
    "special": false,
    "cap": 15,
-   "sort": 8180
+   "sort": 8180,
+   "character": "C8616284"
   },
   {
    "key": "GEEN_120_91",
@@ -1766,7 +1764,8 @@
    "player": "PL0700",
    "special": false,
    "cap": 15,
-   "sort": 8250
+   "sort": 8250,
+   "character": "C3FFD418"
   },
   {
    "key": "GEEN_120_92",
@@ -1779,7 +1778,8 @@
    "player": "PL0700",
    "special": false,
    "cap": 15,
-   "sort": 8260
+   "sort": 8260,
+   "character": "C3FFD418"
   },
   {
    "key": "GEEN_120_93",
@@ -1792,7 +1792,8 @@
    "player": "PL0700",
    "special": false,
    "cap": 15,
-   "sort": 8270
+   "sort": 8270,
+   "character": "C3FFD418"
   },
   {
    "key": "GEEN_121_91",
@@ -1805,7 +1806,8 @@
    "player": "PL0800",
    "special": false,
    "cap": 15,
-   "sort": 8310
+   "sort": 8310,
+   "character": "22E437E5"
   },
   {
    "key": "GEEN_121_92",
@@ -1818,7 +1820,8 @@
    "player": "PL0800",
    "special": false,
    "cap": 15,
-   "sort": 8320
+   "sort": 8320,
+   "character": "22E437E5"
   },
   {
    "key": "GEEN_121_93",
@@ -1831,7 +1834,8 @@
    "player": "PL0800",
    "special": false,
    "cap": 15,
-   "sort": 8330
+   "sort": 8330,
+   "character": "22E437E5"
   },
   {
    "key": "GEEN_122_91",
@@ -1844,7 +1848,8 @@
    "player": "PL0900",
    "special": false,
    "cap": 15,
-   "sort": 8340
+   "sort": 8340,
+   "character": "2EBE91D5"
   },
   {
    "key": "GEEN_122_92",
@@ -1857,7 +1862,8 @@
    "player": "PL0900",
    "special": false,
    "cap": 15,
-   "sort": 8350
+   "sort": 8350,
+   "character": "2EBE91D5"
   },
   {
    "key": "GEEN_122_93",
@@ -1870,7 +1876,8 @@
    "player": "PL0900",
    "special": false,
    "cap": 15,
-   "sort": 8360
+   "sort": 8360,
+   "character": "2EBE91D5"
   },
   {
    "key": "GEEN_123_91",
@@ -1883,7 +1890,8 @@
    "player": "PL1000",
    "special": false,
    "cap": 15,
-   "sort": 8370
+   "sort": 8370,
+   "character": "BDEF7181"
   },
   {
    "key": "GEEN_123_92",
@@ -1896,7 +1904,8 @@
    "player": "PL1000",
    "special": false,
    "cap": 15,
-   "sort": 8380
+   "sort": 8380,
+   "character": "BDEF7181"
   },
   {
    "key": "GEEN_123_93",
@@ -1909,7 +1918,8 @@
    "player": "PL1000",
    "special": false,
    "cap": 15,
-   "sort": 8390
+   "sort": 8390,
+   "character": "BDEF7181"
   },
   {
    "key": "GEEN_124_91",
@@ -1922,7 +1932,8 @@
    "player": "PL1100",
    "special": false,
    "cap": 15,
-   "sort": 8400
+   "sort": 8400,
+   "character": "627BCB0D"
   },
   {
    "key": "GEEN_124_92",
@@ -1935,7 +1946,8 @@
    "player": "PL1100",
    "special": false,
    "cap": 15,
-   "sort": 8410
+   "sort": 8410,
+   "character": "627BCB0D"
   },
   {
    "key": "GEEN_124_93",
@@ -1948,7 +1960,8 @@
    "player": "PL1100",
    "special": false,
    "cap": 15,
-   "sort": 8420
+   "sort": 8420,
+   "character": "627BCB0D"
   },
   {
    "key": "GEEN_125_91",
@@ -1961,7 +1974,8 @@
    "player": "PL1200",
    "special": false,
    "cap": 15,
-   "sort": 8190
+   "sort": 8190,
+   "character": "FD3BE362"
   },
   {
    "key": "GEEN_125_92",
@@ -1974,7 +1988,8 @@
    "player": "PL1200",
    "special": false,
    "cap": 15,
-   "sort": 8200
+   "sort": 8200,
+   "character": "FD3BE362"
   },
   {
    "key": "GEEN_125_93",
@@ -1987,7 +2002,8 @@
    "player": "PL1200",
    "special": false,
    "cap": 15,
-   "sort": 8210
+   "sort": 8210,
+   "character": "FD3BE362"
   },
   {
    "key": "GEEN_126_91",
@@ -2000,7 +2016,8 @@
    "player": "PL1300",
    "special": false,
    "cap": 15,
-   "sort": 8460
+   "sort": 8460,
+   "character": "FC6CDF7B"
   },
   {
    "key": "GEEN_126_92",
@@ -2013,7 +2030,8 @@
    "player": "PL1300",
    "special": false,
    "cap": 15,
-   "sort": 8470
+   "sort": 8470,
+   "character": "FC6CDF7B"
   },
   {
    "key": "GEEN_126_93",
@@ -2026,7 +2044,8 @@
    "player": "PL1300",
    "special": false,
    "cap": 15,
-   "sort": 8480
+   "sort": 8480,
+   "character": "FC6CDF7B"
   },
   {
    "key": "GEEN_127_91",
@@ -2039,7 +2058,8 @@
    "player": "PL1400",
    "special": false,
    "cap": 15,
-   "sort": 8280
+   "sort": 8280,
+   "character": "E7053919"
   },
   {
    "key": "GEEN_127_92",
@@ -2052,7 +2072,8 @@
    "player": "PL1400",
    "special": false,
    "cap": 15,
-   "sort": 8290
+   "sort": 8290,
+   "character": "E7053919"
   },
   {
    "key": "GEEN_127_93",
@@ -2065,7 +2086,8 @@
    "player": "PL1400",
    "special": false,
    "cap": 15,
-   "sort": 8300
+   "sort": 8300,
+   "character": "E7053919"
   },
   {
    "key": "GEEN_128_91",
@@ -2078,7 +2100,8 @@
    "player": "PL1500",
    "special": false,
    "cap": 15,
-   "sort": 8220
+   "sort": 8220,
+   "character": "978E4B18"
   },
   {
    "key": "GEEN_128_92",
@@ -2091,7 +2114,8 @@
    "player": "PL1500",
    "special": false,
    "cap": 15,
-   "sort": 8230
+   "sort": 8230,
+   "character": "978E4B18"
   },
   {
    "key": "GEEN_128_93",
@@ -2104,7 +2128,8 @@
    "player": "PL1500",
    "special": false,
    "cap": 15,
-   "sort": 8240
+   "sort": 8240,
+   "character": "978E4B18"
   },
   {
    "key": "GEEN_129_91",
@@ -2117,7 +2142,8 @@
    "player": "PL1800",
    "special": false,
    "cap": 15,
-   "sort": 8430
+   "sort": 8430,
+   "character": "AA66178A"
   },
   {
    "key": "GEEN_129_92",
@@ -2130,7 +2156,8 @@
    "player": "PL1800",
    "special": false,
    "cap": 15,
-   "sort": 8440
+   "sort": 8440,
+   "character": "AA66178A"
   },
   {
    "key": "GEEN_129_93",
@@ -2143,7 +2170,8 @@
    "player": "PL1800",
    "special": false,
    "cap": 15,
-   "sort": 8450
+   "sort": 8450,
+   "character": "AA66178A"
   },
   {
    "key": "GEEN_130_91",
@@ -2156,7 +2184,8 @@
    "player": "PL1900",
    "special": false,
    "cap": 15,
-   "sort": 8790
+   "sort": 8790,
+   "character": "A3A3CB2F"
   },
   {
    "key": "GEEN_130_92",
@@ -2169,7 +2198,8 @@
    "player": "PL1900",
    "special": false,
    "cap": 15,
-   "sort": 8800
+   "sort": 8800,
+   "character": "A3A3CB2F"
   },
   {
    "key": "GEEN_130_93",
@@ -2182,7 +2212,8 @@
    "player": "PL1900",
    "special": false,
    "cap": 15,
-   "sort": 8810
+   "sort": 8810,
+   "character": "A3A3CB2F"
   },
   {
    "key": "GEEN_131_91",
@@ -2195,7 +2226,8 @@
    "player": "PL1600",
    "special": false,
    "cap": 15,
-   "sort": 8490
+   "sort": 8490,
+   "character": "0D21B430"
   },
   {
    "key": "GEEN_131_92",
@@ -2208,7 +2240,8 @@
    "player": "PL1600",
    "special": false,
    "cap": 15,
-   "sort": 8500
+   "sort": 8500,
+   "character": "0D21B430"
   },
   {
    "key": "GEEN_131_93",
@@ -2221,7 +2254,8 @@
    "player": "PL1600",
    "special": false,
    "cap": 15,
-   "sort": 8510
+   "sort": 8510,
+   "character": "0D21B430"
   },
   {
    "key": "GEEN_132_91",
@@ -2234,7 +2268,8 @@
    "player": "PL1700",
    "special": false,
    "cap": 15,
-   "sort": 8520
+   "sort": 8520,
+   "character": "F0EB77EF"
   },
   {
    "key": "GEEN_132_92",
@@ -2247,7 +2282,8 @@
    "player": "PL1700",
    "special": false,
    "cap": 15,
-   "sort": 8530
+   "sort": 8530,
+   "character": "F0EB77EF"
   },
   {
    "key": "GEEN_132_93",
@@ -2260,7 +2296,8 @@
    "player": "PL1700",
    "special": false,
    "cap": 15,
-   "sort": 8540
+   "sort": 8540,
+   "character": "F0EB77EF"
   },
   {
    "key": "GEEN_141_04",
@@ -2325,7 +2362,8 @@
    "player": "PL2200",
    "special": false,
    "cap": 15,
-   "sort": 8610
+   "sort": 8610,
+   "character": "296471BE"
   },
   {
    "key": "GEEN_170_92",
@@ -2338,7 +2376,8 @@
    "player": "PL2200",
    "special": false,
    "cap": 15,
-   "sort": 8620
+   "sort": 8620,
+   "character": "296471BE"
   },
   {
    "key": "GEEN_170_93",
@@ -2351,7 +2390,8 @@
    "player": "PL2200",
    "special": false,
    "cap": 15,
-   "sort": 8630
+   "sort": 8630,
+   "character": "296471BE"
   },
   {
    "key": "GEEN_171_91",
@@ -2364,7 +2404,8 @@
    "player": "PL2300",
    "special": false,
    "cap": 15,
-   "sort": 8650
+   "sort": 8650,
+   "character": "BAD16E3B"
   },
   {
    "key": "GEEN_171_92",
@@ -2377,7 +2418,8 @@
    "player": "PL2300",
    "special": false,
    "cap": 15,
-   "sort": 8660
+   "sort": 8660,
+   "character": "BAD16E3B"
   },
   {
    "key": "GEEN_171_93",
@@ -2390,7 +2432,8 @@
    "player": "PL2300",
    "special": false,
    "cap": 15,
-   "sort": 8670
+   "sort": 8670,
+   "character": "BAD16E3B"
   },
   {
    "key": "GEEN_172_92",
@@ -2403,7 +2446,8 @@
    "player": "PL2100",
    "special": false,
    "cap": 15,
-   "sort": 8700
+   "sort": 8700,
+   "character": "718E1A14"
   },
   {
    "key": "GEEN_172_93",
@@ -2416,7 +2460,8 @@
    "player": "PL2100",
    "special": false,
    "cap": 15,
-   "sort": 8710
+   "sort": 8710,
+   "character": "718E1A14"
   },
   {
    "key": "GEEN_233_34",

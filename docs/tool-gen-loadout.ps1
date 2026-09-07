@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 
 # ============================================================================
 # 专属因子权威数据（改这里的 Hash/T1/T2/War/Awake 后重新生成）：
@@ -41,15 +41,13 @@ $chars = @(
 # 仓库根、数据文件
 $root = Split-Path -Parent $PSScriptRoot
 
-# compatibility.tsv (mod runtime data)：gem -> character_key (PL 码)，用于输出游戏一致的 player 字段
-$tsvPath = Join-Path $root 'GBFR.PreEquippedSigils.Native\GBFR.PreEquippedSigils.compatibility.tsv'
+# sigils.json (merged table) 的专属行：gem -> player (PL 码)，用于输出游戏一致的 player 字段
+$sigilsForPlayer = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $playerOfGem = @{}
-foreach ($line in Get-Content $tsvPath) {
-    if ($line -match '^#') { continue }
-    $p = $line -split "`t"
-    if ($p.Count -ge 4 -and $p[0] -match '^[0-9A-Fa-f]{8}$') {
-        $key = $p[0].ToUpper()
-        if (-not $playerOfGem.ContainsKey($key)) { $playerOfGem[$key] = $p[3] }
+foreach ($s in $sigilsForPlayer.sigils) {
+    if ($s.player -and $s.gem) {
+        $key = $s.gem.ToUpper()
+        if (-not $playerOfGem.ContainsKey($key)) { $playerOfGem[$key] = $s.player }
     }
 }
 

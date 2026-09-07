@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.4（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.5（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -27,7 +27,7 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   LoadoutConfig.cs                   解析 loadout.json（通用槽 + exclusive 段）→ ABI
   ModConfig.json                     ModId/版本/描述（发布信息）
-  sigils.json                     运行时因子表（合并单表；含词条 cap/sort，见 §4.1）
+  sigils.json                     运行时因子表（合并单表；含词条 cap/sort 与专属行 character 字段，见 §4.1）
   character-exclusives.json          每角色专属因子表（生成器产物；工具"专属因子"页数据源）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的 C ABI（v17，8 个导出 + GemData 结构）
@@ -54,7 +54,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
   Reloaded-II：Mod.cs → NativeCore.Initialize → exports.GBFR20_Initialize
     → runtime.Initialize:
         executable-validation (必须 granblue_fantasy_relink.exe)
-        compatibility-table     (compatibility.tsv, 199 条，失败即停)
+        character-restrictions (sigils.json 专属行 character 字段，84 条，失败即停)
         semantic-layout-resolution (layout_resolver, 失败即停)
         template-selection-install (InstallDefaultTemplateSelections: 以 0xFE000000+i 合成 id 写入角色选择)
         native-hook-install    (2 个 hook + 2 处循环上限 patch)
@@ -82,7 +82,8 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War/Awake），从 sigils.json 推导变体 gem、从 compatibility.tsv 解析 PL 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
+| `docs/tool-gen-sigils-required.js` | sigils.json 规范化器：剔除觉醒合体行（按 gem 判定，绝不按名称）+ 为专属行注入 `character`（幂等） |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 gem 与 player 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出），运行时不依赖 |
 
 **改配装的标准流程**：改 `tool-gen-loadout.ps1` 数据表 → 运行脚本 → 把输出替换进 `template_loadout.cpp`
@@ -205,7 +206,9 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查。
   *SafeInvokeStatusRebuild 已复核（2026-09）：调用前校验 status.character_hash == 目标角色；
   写入仅 context_mode 销 0（单字段对齐原子写 + 同步 + SEH，无撕裂读风险）；勿再引入 8 字节原子写。*
-- `compatibility.tsv` 缺失或条目数 != 199 则启动失败（fail-closed）。
+- 角色限制改判据：`sigils.json` 专属行 `character` 字段缺失或条目数 != 84 则启动失败（fail-closed）。
+  数据由 `docs/tool-gen-sigils-required.js` 维护（84 = 29 角色 × 3 专属 gem − 3 条古兰/姬塔共享；原版
+  compatibility.tsv 199 条中的其余 115 条为模板外的游戏专属物品/觉醒合体版，配装路径不可达，不再校验）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=17`）与 `NativeCore.Interop.cs`、
   `NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
 - **可选配置**：无 `loadout.json` = 内置专属全开、通用全空；有 = 3 专属（exclusive 段开关，
@@ -243,9 +246,17 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.4（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.5（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
+
+### 0.5.5 发布记录（2026-09-07）
+- **数据单源化**：`compatibility.tsv` 退役——角色限制合并进 `sigils.json`（专属行新增 `character` 字段，
+  由 `docs/tool-gen-sigils-required.js` 维护）；`tool-gen-loadout.ps1` 的 PL 码反查改读 sigils.json；
+  原生加载器改为按字段契约提取（`name_tables.cpp`，fail-closed 84 条不变）。
+- **数据清理**：剔除 3 个觉醒合体版条目（无态/涯之七星/涯之二王——不带"觉醒"字样，按 gem 判定）；
+  sigils.json 197 条（专属 84）。
+- **原生改动**：仅加载器与路径（hook/布局零改动，ABI 17 不变）。
 
 ### 0.5.4 发布记录（2026-09-07）
 - **工具 UX**：专属因子页首行紧贴选项卡（移除 tab 下共享 8px 空隙，通用页表头上间距保留 `mt-2`）；

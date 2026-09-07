@@ -23,8 +23,5 @@
     <None Include="..\GBFR.PreEquippedSigils.Native\bin\$(Configuration)\GBFR.PreEquippedSigils.Native.dll"
           Link="GBFR.PreEquippedSigils.Native.dll"
           CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\GBFR.PreEquippedSigils.Native\GBFR.PreEquippedSigils.compatibility.tsv"
-          Link="GBFR.PreEquippedSigils.compatibility.tsv"
-          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
