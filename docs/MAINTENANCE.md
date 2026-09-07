@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.2（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.3（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -240,9 +240,19 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.2（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.3（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
+
+### 0.5.3 发布记录（2026-09-07）
+- **工具**：固定窗口（`DisableResize`；修复激活 nudge 每次缩窗 40px 与 Min 被污染的问题，终态恒 760×840）；
+  钳蟹系/特殊主因子副组合改为**仅提示不合法**（灰显+红框；选择/保存/注入均不拦截、不清空已选副值）；
+  主下拉规则改为 `gem != "" && player == ""`（钳蟹系/相扑斗力特殊行可作主；无物品行不作主）。
+- **托管层**：loadout 目录与 Go 工具统一为 LocalAppData（去掉 Roaming 回退）+ 单测；幂等 QueueStart；
+  loadout/exclusive 原子提交顺序；词条 cap 首行胜；热键重注册抽公共方法。
+- **工程**：新增 `deploy.ps1`（停工具→覆盖 Mods→自动重开，游戏运行守卫）；`package-lock.json` 入库；
+  `@wailsio/runtime` 固定 3.0.0-beta.17；shadcn 移 devDependencies；MAINTENANCE §2/§4.1 重写（核对合并单表与合法性规则）。
+- **原生零改动**（ABI 17 不变；无布局/钩子变化，游戏版本锚点不受影响）。
 
 ### 0.5.2 发布记录（2026-09-07）
 - **简洁化**：删除无消费者的 status-owner 遥测 mid-hook（5 个只写原子量、SafeReadOwnerCharacterHashes、
