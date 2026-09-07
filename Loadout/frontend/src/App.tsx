@@ -531,26 +531,49 @@ export default function App() {
   // configurable; the mod publishes it in tool-hotkey.txt). Pressed here it
   // minimises the window; pressed in the game it brings the tool back. The
   // hide is deferred until AFTER the key-up so the press is fully consumed
-  // here and never leaks to the game window. Escape is deliberately NOT a
-  // hide key: it must keep cancelling/closeing dropdowns and dialogs.
+  // here and never leaks to the game window. Escape also hides the window,
+  // EXCEPT when an overlay (combobox list / dialog) has the focus: there it
+  // belongs to the overlay and only closes it. The overlay check runs on
+  // keydown (Base UI unmounts the popup during keydown, so keyup can no
+  // longer see it) and is remembered for the keyup decision.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
-    const match = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
+    let overlayEscOnKeyDown = false
+    const hideKeyPressed = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
+    const isInOverlay = (e: KeyboardEvent) =>
+      !!(e.target as HTMLElement | null)?.closest?.(
+        '[data-slot="combobox-content"], [role="dialog"]'
+      )
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!match(e)) return
+      if (!hideKeyPressed(e) && e.key !== "Escape") return
+      if (e.key === "Escape") {
+        if (isInOverlay(e)) {
+          overlayEscOnKeyDown = true
+          return
+        }
+      }
       clearTimeout(timer)
       e.preventDefault()
     }
     const onKeyUp = (e: KeyboardEvent) => {
-      if (!match(e)) return
+      if (!hideKeyPressed(e) && e.key !== "Escape") return
+      if (e.key === "Escape") {
+        if (overlayEscOnKeyDown) {
+          overlayEscOnKeyDown = false
+          return
+        }
+      }
       clearTimeout(timer)
       timer = setTimeout(() => void MinimiseApp(), 150)
     }
-    document.addEventListener("keydown", onKeyDown)
-    document.addEventListener("keyup", onKeyUp)
+    // Capture phase: Base UI unmounts the popup while React processes the
+    // keydown, so a bubble-phase listener would see a detached target and
+    // wrongly hide the window. In the capture phase the popup is still live.
+    document.addEventListener("keydown", onKeyDown, true)
+    document.addEventListener("keyup", onKeyUp, true)
     return () => {
-      document.removeEventListener("keydown", onKeyDown)
-      document.removeEventListener("keyup", onKeyUp)
+      document.removeEventListener("keydown", onKeyDown, true)
+      document.removeEventListener("keyup", onKeyUp, true)
       clearTimeout(timer)
     }
   }, [hideKey])
