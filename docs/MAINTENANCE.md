@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.1（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.2（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -57,7 +57,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
         compatibility-table     (compatibility.tsv, 199 条，失败即停)
         semantic-layout-resolution (layout_resolver, 失败即停)
         template-selection-install (InstallDefaultTemplateSelections: 以 0xFE000000+i 合成 id 写入角色选择)
-        native-hook-install    (3 个 hook + 2 处循环上限 patch)
+        native-hook-install    (2 个 hook + 2 处循环上限 patch)
 
 运行:
   游戏状态重建：GetGemDataByIndexDetour（slot 13 起共 count 个）
@@ -159,7 +159,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 - **独占词条** = 仅出现在 `special`（single/觉醒＋）行的词条 = 3 个：`082033CB` 钳蟹的共鸣、
   `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子。
 - **自由词条** = 所有自由变体的主词条（86 个），任何主因子可组合（非独占）。
-- UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**保存不再拦截**（模组侧 C# 校验兜底）。
+- UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**保存不拦截**非法组合（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）。
 - 装配 gem 解析：副因子命中某固定变体 `sec` → 用该变体 gem；否则（池内/无副/自由词条）→
   池版变体 gem（无池则首个变体）。
 
@@ -248,9 +248,19 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.1（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.2（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
+
+### 0.5.2 发布记录（2026-09-07）
+- **简洁化**：删除无消费者的 status-owner 遥测 mid-hook（5 个只写原子量、SafeReadOwnerCharacterHashes、
+  布局字段与对应预检、ApplyResultOwnerThreadMismatch 日志分支）；清理未用导出/导入（TabsContent、
+  InputGroupText/Textarea、textarea.tsx）与 3 个无引用 npm 依赖（radix-ui/clsx/tailwind-merge）；
+  App.tsx 分组去重、loadout.json 单次解析、save 表未就绪提示；gofmt。
+- **依赖升级**：wails v3 全栈 beta.16→beta.17（Go 模块/JS runtime/wails3 CLI 同步）；TS 5.9→7.0
+  （tsconfig baseUrl 迁移 + 新增 vite-env.d.ts）；@types/node 26；cn 0.2.6；NuGet 无更新；
+  third_party（safetyhook/Zydis）未动。
+- **文档**：新增 §13 跨语言协议常量表；§3 hook 数 3→2。
 
 ### 0.5.1 发布记录（2026-09-07）
 - **专属因子 3 独立槽重构**（native/C#/工具/数据表，ABI 不变）：原生表 = `{hash, t1Gem, t1, t2Gem, t2, warGem, war}`；
@@ -278,3 +288,20 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   数字由 Jina Reader 抓取（可能有误差），仅参考。
 - Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌视作弊）。
 - 槽位/版本/数据改动后需同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1。
+
+## 13. 跨语言协议常量表（改动需同步，勿漂移）
+
+| 常量 | 值 | 位置 |
+|---|---|---|
+| 通用槽上限 MaxSlots | 12 | C# LoadoutConfig.cs / Go loadoutservice.go / TS App.tsx |
+| 默认等级 DefaultLevel | 15 | C# LoadoutConfig.cs / TS App.tsx |
+| 未穿戴哨兵 UnwornCharacterHash | 0x887AE0B0 | C# LoadoutConfig.cs / C++ native_internal.h（单词条 trait2 必须用它，不能用 0） |
+| 模板槽 ID 基址 | 0xFE000000 | C++ native_internal.h |
+| 热键默认 / 工具隐藏键 | F1 (0x70) | C# HotkeyConfig.cs / Go loadoutservice.go / TS App.tsx |
+| 工具窗口标题 | GBFR Pre-Equipped Sigils | C# Hotkey.cs / Go main.go |
+| 内部显示消息 WM_APP+0x10 | 0x8010 | C# Hotkey.cs / Go main.go |
+| 单实例互斥体名 | Local\GBFRPreEquippedSigilsTool | Go main.go |
+| 工具热键发布文件 | tool-hotkey.txt（exe 同目录） | C# Hotkey.cs / Go loadoutservice.go |
+| 用户配置路径 | %LocalAppData%\GBFRPreEquippedSigils\loadout.json | C# LoadoutConfig.cs / Go loadoutservice.go |
+| 原生 ABI 版本 | 17 | native_api.h / C# NativeCore.cs AbiVersion |
+| 原生结构尺寸 | TemplateSlot 0x18 / ExclusiveOverride 0x08 | native_api.h static_assert / C# native 侧 runtime 校验 |

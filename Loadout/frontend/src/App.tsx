@@ -18,7 +18,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
 
 const MAX_SLOTS = 12 // fixed rows shown in the editor
@@ -45,6 +45,7 @@ const copy = {
     resetDesc: "将删除当前配置，专属全开。",
     resetConfirm: "重置",
     cancel: "取消",
+    tablesNotReady: "数据表未加载，无法保存",
   },
   en: {
     tabGeneral: "General",
@@ -65,6 +66,7 @@ const copy = {
     resetDesc: "Removes the current configuration; exclusives back to full.",
     resetConfirm: "Reset",
     cancel: "Cancel",
+    tablesNotReady: "Tables not loaded yet; cannot save",
   },
 } as const
 
@@ -319,19 +321,25 @@ export default function App() {
   const sigilByGem = useMemo(() => new Map(sigils.map((s) => [s.gem, s])), [sigils])
 
   // Variants grouped by display name: one entry per name (unique picker item).
-  const sigilGroups = useMemo(() => {
+  const groupedByName = useMemo(() => {
     const byName = new Map<string, Sigil[]>()
     for (const s of sigils) {
       const g = byName.get(s.name)
       if (g) g.push(s)
       else byName.set(s.name, [s])
     }
-    return [...byName.entries()].map(([name, variants]) => ({
-      name,
-      zh: variants[0]?.zh ?? name,
-      poolGem: variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? "",
-    }))
+    return byName
   }, [sigils])
+
+  const sigilGroups = useMemo(
+    () =>
+      [...groupedByName.entries()].map(([name, variants]) => ({
+        name,
+        zh: variants[0]?.zh ?? name,
+        poolGem: variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? "",
+      })),
+    [groupedByName]
+  )
 
   // Exclusive traits: used ONLY by special (single/awakening) sigils; a free
   // main can combine every non-exclusive trait. Computed from the tables.
@@ -359,15 +367,9 @@ export default function App() {
   }, [sigils, traits])
 
   const { legalSecs, freeNames } = useMemo(() => {
-    const byName = new Map<string, Sigil[]>()
-    for (const s of sigils) {
-      const g = byName.get(s.name)
-      if (g) g.push(s)
-      else byName.set(s.name, [s])
-    }
     const m = new Map<string, Set<string>>()
     const free = new Set<string>()
-    for (const [name, variants] of byName) {
+    for (const [name, variants] of groupedByName) {
       const legal = new Set<string>()
       let hasFree = false
       for (const v of variants) {
@@ -379,7 +381,7 @@ export default function App() {
       if (hasFree) free.add(name)
     }
     return { legalSecs: m, freeNames: free }
-  }, [sigils])
+  }, [groupedByName])
 
   const legalByMain = (name: string) => {
     if (freeNames.has(name)) {
@@ -395,15 +397,16 @@ export default function App() {
   // Locate the gem to write for (name, secHash): fixed variant if secHash
   // matches a fixed sec, otherwise the pool-backed variant gem.
   const gemFor = (name: string, secHash: string): string => {
-    const variants = sigils.filter((s) => s.name === name)
+    const variants = groupedByName.get(name)
+    if (!variants) return ""
     const fixed = secHash ? variants.find((v) => v.sec === secHash) : undefined
     if (fixed) return fixed.gem
     return variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? ""
   }
 
   const maxOfMain = (name: string) => {
-    const variants = sigils.filter((s) => s.name === name)
-    const tr = variants.length > 0 ? traitByName.get(variants[0].skill) : undefined
+    const variants = groupedByName.get(name)
+    const tr = variants && variants.length > 0 ? traitByName.get(variants[0].skill) : undefined
     return tr?.cap ?? 15
   }
   const maxOfSec = (h: string) => traitByName.get(h)?.cap ?? 15
@@ -450,7 +453,10 @@ export default function App() {
   }
 
   const save = async () => {
-    if (sigils.length === 0 || traits.length === 0) return // tables not loaded yet
+    if (sigils.length === 0 || traits.length === 0) {
+      setStatus(t.tablesNotReady)
+      return
+    }
     const filled = slots.filter((s) => s.mainHash !== "")
     const cfg = filled.map((s) => {
       const gem = gemFor(s.mainHash, s.secHash)

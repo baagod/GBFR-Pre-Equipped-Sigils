@@ -7,13 +7,7 @@ namespace gbfr::native
 {
 SafetyHookInline g_get_gem_hook;
 SafetyHookMid g_trait_fetch_hook;
-SafetyHookMid g_status_owner_tick_hook;
 
-std::atomic_uint64_t g_status_owner_manager_address{0};
-std::atomic_uint32_t g_status_owner_thread_id{0};
-std::atomic_uint64_t g_status_owner_tick_count{0};
-std::atomic_uint32_t g_status_owner_character_count{0};
-std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes{};
 std::atomic_uint32_t g_active_getter_calls{0};
 std::atomic_uint32_t g_active_mid_calls{0};
 std::atomic_bool g_live_confirmation_reported{false};
@@ -325,26 +319,6 @@ void OnTraitFetch(safetyhook::Context& context)
    context.rip = g_image_base + g_game_layout.trait_category_getter_return_rva;
 }
 
-void OnStatusOwnerCharacterLoop(safetyhook::Context& context)
-{
-   ActiveCallGuard active_call(g_active_mid_calls);
-   if (g_shutting_down.load(std::memory_order_acquire))
-      return;
-
-   g_status_owner_manager_address.store(context.rbx, std::memory_order_release);
-   g_status_owner_thread_id.store(GetCurrentThreadId(), std::memory_order_release);
-   g_status_owner_tick_count.fetch_add(1, std::memory_order_acq_rel);
-
-   std::array<uint32_t, 4> hashes{};
-   const uint32_t count = SafeReadOwnerCharacterHashes(context.rbx, hashes);
-   for (uint32_t index = 0; index < count; ++index)
-      g_status_owner_character_hashes[index].store(hashes[index], std::memory_order_release);
-
-   for (uint32_t index = count; index < g_status_owner_character_hashes.size(); ++index)
-      g_status_owner_character_hashes[index].store(0, std::memory_order_release);
-   g_status_owner_character_count.store(count, std::memory_order_release);
-}
-
 uint64_t BuildLifecycleSignature(
    uint32_t character_hash,
    uintptr_t status,
@@ -432,8 +406,6 @@ namespace
 void DisableGameplayHooksAndRestore() noexcept
 {
    g_hooks_ready.store(false, std::memory_order_release);
-   if (g_status_owner_tick_hook)
-      (void)g_status_owner_tick_hook.disable();
    if (g_trait_fetch_hook)
       (void)g_trait_fetch_hook.disable();
    if (g_get_gem_hook)
@@ -470,7 +442,6 @@ void DisableGameplayHooksAndRestore() noexcept
       }
    }
 
-   g_status_owner_tick_hook.reset();
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
    {
@@ -494,7 +465,6 @@ void ShutdownHooks()
    g_observed_character_hash.store(0, std::memory_order_release);
    g_observed_status_address.store(0, std::memory_order_release);
    g_observed_status_context.store(-1, std::memory_order_release);
-   g_status_owner_manager_address.store(0, std::memory_order_release);
 
    DisableGameplayHooksAndRestore();
 }
@@ -550,20 +520,6 @@ bool InstallHooks()
    {
       DisableGameplayHooksAndRestore();
       SetRuntimeMessage("Failed to install the trait fetch-path hook.");
-      return false;
-   }
-
-   const uint64_t owner_hook_started = BeginStartupPhase("status-owner-hook");
-   g_status_owner_tick_hook = safetyhook::create_mid(
-      reinterpret_cast<void*>(
-         g_image_base + g_game_layout.status_owner_character_loop_rva),
-      &OnStatusOwnerCharacterLoop);
-   CompleteStartupPhase(
-      "status-owner-hook", owner_hook_started, static_cast<bool>(g_status_owner_tick_hook));
-   if (!g_status_owner_tick_hook)
-   {
-      DisableGameplayHooksAndRestore();
-      SetRuntimeMessage("Failed to install the status owner-thread trace hook.");
       return false;
    }
 

@@ -116,10 +116,6 @@ void ConsumeApplyResult()
          prefix.str() + "native trait build ran, but only " + std::to_string(injected) + "/" +
             std::to_string(expected) + " sigils were valid, unequipped, and copied.");
       break;
-   case ApplyResultOwnerThreadMismatch:
-      SetRuntimeMessage(
-         prefix.str() + "overlay callback was not on the verified native status owner thread.");
-      break;
    case ApplyResultStatusLookupFailed:
       SetRuntimeMessage(prefix.str() + "the native character status map had no matching status.");
       break;

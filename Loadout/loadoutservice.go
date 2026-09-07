@@ -14,8 +14,7 @@ const MaxSlots = 12
 
 // LoadoutService reads/writes the mod directory data files next to the exe.
 // Protocol is shared with the mod: sigils.json (sigil table), skills.json
-// (trait/skill dictionary), loadout.json (player config).
-// (trait dictionary) and loadout.json (player configuration, new array
+// (trait/skill dictionary) and loadout.json (player configuration; array
 // format: [ { items: [{hash,level,zh,en}, {hash,level,zh,en}?], enabled } ]).
 type LoadoutService struct{}
 
@@ -43,7 +42,7 @@ func (s *LoadoutService) GetHotkey() (int, error) {
 }
 
 type loadoutItem struct {
-	Gem   string `json:"gem"` // items[0]: gem (物品) hash
+	Gem   string `json:"gem"`  // items[0]: gem (物品) hash
 	Hash  string `json:"hash"` // items[1]: trait (词条) hash
 	Level int    `json:"level"`
 	Zh    string `json:"zh"`

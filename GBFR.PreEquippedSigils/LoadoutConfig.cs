@@ -179,8 +179,9 @@ internal static class LoadoutConfig
             string json = File.ReadAllText(_loadoutPath);
             if (json.Length > 1024 * 1024)
                 throw new InvalidDataException("loadout.json exceeds 1 MB");
-            var overrides = ParseExclusiveOverrides(json);
-            var slots = ParseAndValidate(json);
+            using JsonDocument doc = JsonDocument.Parse(json);
+            var overrides = ParseExclusiveOverrides(doc.RootElement);
+            var slots = ParseAndValidate(doc.RootElement);
             bool ok;
             if (!NativeCore.ApplyExclusiveOverrides(overrides))
                 throw new InvalidDataException("native rejected the exclusive overrides");
@@ -328,10 +329,8 @@ internal static class LoadoutConfig
     /// ({ characterHashHex: { t1, t2, war } }) is still accepted; absent
     /// "exclusive" yields null (all enabled).
     /// </summary>
-    private static NativeCore.ExclusiveOverrideNative[]? ParseExclusiveOverrides(string json)
+    private static NativeCore.ExclusiveOverrideNative[]? ParseExclusiveOverrides(JsonElement root)
     {
-        using JsonDocument doc = JsonDocument.Parse(json);
-        JsonElement root = doc.RootElement;
         if (root.ValueKind != JsonValueKind.Object ||
             !root.TryGetProperty("exclusive", out JsonElement exclusive) ||
             exclusive.ValueKind != JsonValueKind.Object)
@@ -360,11 +359,9 @@ internal static class LoadoutConfig
         return result.Count == 0 ? null : result.ToArray();
     }
 
-    private static List<NativeCore.TemplateSlotNative> ParseAndValidate(string json)
+    private static List<NativeCore.TemplateSlotNative> ParseAndValidate(JsonElement root)
     {
         var result = new List<NativeCore.TemplateSlotNative>();
-        using JsonDocument doc = JsonDocument.Parse(json);
-        JsonElement root = doc.RootElement;
         if (root.ValueKind == JsonValueKind.Object)
         {
             // new config shape: { lang, slots: [...] } — lang is tool-side only

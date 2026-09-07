@@ -253,12 +253,6 @@ void ApplyExclusiveStateLocked(
    character.slots[2] = built.slots[2];
 }
 
-
-
-
-
-
-
 }
 
 std::shared_mutex g_template_mutex;

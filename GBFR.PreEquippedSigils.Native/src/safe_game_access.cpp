@@ -156,38 +156,6 @@ bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept
    }
 }
 
-uint32_t SafeReadOwnerCharacterHashes(
-   uintptr_t manager,
-   std::array<uint32_t, 4>& hashes) noexcept
-{
-   for (uint32_t& hash : hashes)
-      hash = 0;
-   if (manager == 0)
-      return 0;
-
-   __try
-   {
-      const uintptr_t begin = *reinterpret_cast<const uintptr_t*>(manager + 0x20);
-      const uintptr_t end = *reinterpret_cast<const uintptr_t*>(manager + 0x28);
-      if (begin == 0 || end < begin)
-         return 0;
-      const uintptr_t byte_count = end - begin;
-      if ((byte_count % sizeof(uint32_t)) != 0 || byte_count > 0x1000)
-         return 0;
-      const uint32_t count = static_cast<uint32_t>(std::min<uintptr_t>(
-         byte_count / sizeof(uint32_t), hashes.size()));
-      for (uint32_t index = 0; index < count; ++index)
-         hashes[index] = reinterpret_cast<const uint32_t*>(begin)[index];
-      return count;
-   }
-   __except (EXCEPTION_EXECUTE_HANDLER)
-   {
-      for (uint32_t& hash : hashes)
-         hash = 0;
-      return 0;
-   }
-}
-
 bool SafeResolveStatusByMapKey(
    uintptr_t manager,
    uint32_t map_key,

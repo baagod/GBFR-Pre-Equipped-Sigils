@@ -497,15 +497,7 @@ bool ValidateResolvedGameLayout(
           layout.get_gem_data_by_index_rva,
           kGetterPreflight) ||
        !MatchesBytesAtRva(image, layout.status_rebuild_rva, kStatusRebuildPreflight) ||
-       !MatchesBytesAtRva(image, layout.status_notifier_rva, kStatusNotifierPreflight) ||
-       !MatchesBytesAtRva(
-          image,
-          layout.status_owner_tick_rva,
-          kStatusOwnerTickPreflight) ||
-       !MatchesBytesAtRva(
-          image,
-          layout.status_owner_character_loop_rva,
-          kStatusOwnerCharacterLoopPreflight))
+       !MatchesBytesAtRva(image, layout.status_notifier_rva, kStatusNotifierPreflight))
       return false;
 
    const uintptr_t writable_globals[] = {
@@ -612,7 +604,6 @@ bool ResolveGameLayout()
    layout.trait_fetch_call_path_rva = category_loop + 0x60;
    layout.trait_category_getter_return_rva = category_loop + 0x6E;
    layout.status_notifier_rva = notifier;
-   layout.status_owner_character_loop_rva = owner_loop;
 
    uint8_t apply_limit = 0;
    uint8_t category_limit = 0;
@@ -648,7 +639,6 @@ bool ResolveGameLayout()
        !MatchesBytesAtRva(
           image, owner_function.begin, kStatusOwnerTickPreflight))
       return FailResolution("runtime-function boundaries");
-   layout.status_owner_tick_rva = owner_function.begin;
    if (!FindStatusRebuild(image, apply_helper, layout.status_rebuild_rva))
       return FailResolution("status rebuild call graph");
 

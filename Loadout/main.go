@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"syscall"
-"time"
+	"time"
 	"unsafe"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -31,8 +31,8 @@ var (
 	procSetForegroundWindow        = user32.NewProc("SetForegroundWindowW")
 	procShowWindow                 = user32.NewProc("ShowWindow")
 	procGetWindowLong              = user32.NewProc("GetWindowLongW")
-	procSetWindowLong                = user32.NewProc("SetWindowLongW")
-	procSetLayeredWindowAttributes  = user32.NewProc("SetLayeredWindowAttributes")
+	procSetWindowLong              = user32.NewProc("SetWindowLongW")
+	procSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
 	procCreateMutexW               = kernel32.NewProc("CreateMutexW")
 	procGetLastError               = kernel32.NewProc("GetLastError")
@@ -81,8 +81,8 @@ func main() {
 	}
 
 	app = application.New(application.Options{
-		Name:     "Loadout",
-		Icon:     trayIconBytes,
+		Name: "Loadout",
+		Icon: trayIconBytes,
 		Services: []application.Service{
 			application.NewService(&LoadoutService{}),
 		},

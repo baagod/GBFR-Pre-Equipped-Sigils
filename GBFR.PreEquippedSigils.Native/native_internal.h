@@ -36,8 +36,6 @@ struct ResolvedGameLayout
    uintptr_t get_gem_data_by_index_rva = 0;
    uintptr_t status_rebuild_rva = 0;
    uintptr_t status_notifier_rva = 0;
-   uintptr_t status_owner_tick_rva = 0;
-   uintptr_t status_owner_character_loop_rva = 0;
    uintptr_t system_data_global_rva = 0;
    uintptr_t status_manager_global_rva = 0;
    uintptr_t ui_manager_global_rva = 0;
@@ -247,7 +245,6 @@ extern std::string g_runtime_message;
 
 extern SafetyHookInline g_get_gem_hook;
 extern SafetyHookMid g_trait_fetch_hook;
-extern SafetyHookMid g_status_owner_tick_hook;
 
 extern std::shared_mutex g_selection_mutex;
 extern std::unordered_map<uint32_t, std::array<uint32_t, kVirtualSlotCapacity>> g_character_selections;
@@ -263,11 +260,6 @@ extern std::atomic_uint64_t g_lifecycle_rebind_signature;
 extern std::atomic_uint32_t g_lifecycle_signature_attempts;
 extern std::atomic_uint64_t g_lifecycle_rebind_not_before_ms;
 
-extern std::atomic_uint64_t g_status_owner_manager_address;
-extern std::atomic_uint32_t g_status_owner_thread_id;
-extern std::atomic_uint64_t g_status_owner_tick_count;
-extern std::atomic_uint32_t g_status_owner_character_count;
-extern std::array<std::atomic_uint32_t, 4> g_status_owner_character_hashes;
 extern std::atomic_bool g_pending_refresh;
 extern std::atomic<uint32_t> g_pending_character_hash;
 extern std::atomic_uint32_t g_pending_injected_count;
@@ -307,7 +299,6 @@ void SafeReadUiModes(int32_t& ui_mode, int32_t& source_mode) noexcept;
 void UpdateEditSessionState() noexcept;
 bool SafeReadGem(uintptr_t address, GemData& value) noexcept;
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept;
-uint32_t SafeReadOwnerCharacterHashes(uintptr_t manager, std::array<uint32_t, 4>& hashes) noexcept;
 bool SafeResolveStatusByMapKey(uintptr_t manager, uint32_t map_key, uintptr_t& status) noexcept;
 bool SafeResolveCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status) noexcept;
 bool SafeResolveSelectedCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status, StatusIdentity& identity) noexcept;
