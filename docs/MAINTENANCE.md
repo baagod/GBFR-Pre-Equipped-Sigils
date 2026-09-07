@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.5（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.6（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -246,9 +246,14 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.5（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.6（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
+
+### 0.5.6 发布记录（2026-09-07）
+- **健壮性**：修复提取器"空白行会以 substr(npos) 抛异常终止进程"（改为跳过空白行，保持 fail-closed）；
+  `g_compatibility_path` 改名 `g_sigils_path`；提取器头部补 FORMAT CONTRACT 契约段（与
+  `docs/tool-gen-sigils-required.js` 同步维护）。行为零变化（0.5.5 真机 10/10 已验证）。
 
 ### 0.5.5 发布记录（2026-09-07）
 - **数据单源化**：`compatibility.tsv` 退役——角色限制合并进 `sigils.json`（专属行新增 `character` 字段，
