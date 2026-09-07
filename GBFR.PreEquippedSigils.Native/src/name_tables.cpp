@@ -64,15 +64,19 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
          line.pop_back();
 
       const std::string_view trimmed = std::string_view(line).substr(line.find_first_not_of(" \t"));
-      if (trimmed == "}," || trimmed == "}" || trimmed == "]\n" || trimmed == "]")
+      if (trimmed == "}," || trimmed == "}" || trimmed == "]")
       {
-         // End of a sigil object: commit the pair when it is an exclusive row.
-         if (gem_seen != character_seen)
-            return false; // malformed row (one of gem/character missing) - fail closed
-         if (gem_seen)
+         // End of a sigil object: a gem with a character field is an
+         // exclusive row (commit the pair). A gem without character is a
+         // regular row (legal, ignored). A character without gem is malformed.
+         if (gem_seen && character_seen)
          {
             g_required_character_by_gem[current_gem] = current_character;
             ++loaded;
+         }
+         else if (character_seen && !gem_seen)
+         {
+            return false; // malformed row - fail closed
          }
          current_gem = 0;
          current_character = 0;
