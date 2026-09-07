@@ -121,7 +121,7 @@ type ExclusiveState = Record<string, Record<string, boolean>>
 const GRID_COLS =
   "grid grid-cols-[2.5rem_2rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2"
 
-const HEADER_ROW = `${GRID_COLS} min-h-[44px] border-b text-sm font-medium text-foreground`
+const HEADER_ROW = `${GRID_COLS} mt-2 min-h-[44px] border-b text-sm font-medium text-foreground`
 const DATA_ROW = `${GRID_COLS} border-b py-2 text-sm transition-colors last:border-b-0 hover:bg-muted/50`
 
 /** Clamped numeric level input with a grey "/ max" suffix. */
@@ -138,26 +138,11 @@ function LevelInput({
   disabled?: boolean
   onLevel: (n: number) => void
 }) {
-  const groupRef = useRef<HTMLDivElement | null>(null)
-
-  // Wheel works over the whole input group (suffix / max included), not just
-  // the number input. A native listener with passive: false is required so
-  // preventDefault can stop the page scroll (React's synthetic onWheel is
-  // passive and cannot be prevented).
-  useEffect(() => {
-    const el = groupRef.current
-    if (!el || disabled) return
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const step = e.deltaY < 0 ? 1 : -1
-      onLevel(Math.max(min, Math.min(max, value + step)))
-    }
-    el.addEventListener("wheel", onWheel, { passive: false })
-    return () => el.removeEventListener("wheel", onWheel)
-  }, [disabled, min, max, value, onLevel])
-
+  // Wheel is left native: a focused number input steps with the wheel
+  // (clamped by min/max); unfocused, the wheel does nothing and scrolls
+  // the page as usual.
   return (
-    <InputGroup ref={groupRef} className="w-20 shrink-0">
+    <InputGroup className="w-20 shrink-0">
       <InputGroupInput
         type="number"
         min={min}
@@ -632,7 +617,7 @@ export default function App() {
           </div>
         </div>
       </Tabs>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-0 [scrollbar-gutter:stable]">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-gutter:stable]">
         {status && (
           <div className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
             {status}
