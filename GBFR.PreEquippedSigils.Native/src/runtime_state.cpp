@@ -9,7 +9,7 @@ namespace gbfr::native
 HMODULE g_module = nullptr;
 uintptr_t g_image_base = 0;
 std::filesystem::path g_module_directory;
-std::filesystem::path g_compatibility_path;
+std::filesystem::path g_sigils_path;
 
 std::once_flag g_initialize_once;
 std::atomic_bool g_initialized{false};

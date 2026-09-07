@@ -24,8 +24,9 @@ void Initialize()
    }
 
    g_module_directory = std::filesystem::path(module_path.data()).parent_path();
-   g_compatibility_path =
-      g_module_directory / L"sigils.json";
+   // Character restrictions live in the merged tool table (sigils.json):
+   // exclusive rows carry a "character" field; scanned via the stable contract.
+   g_sigils_path = g_module_directory / L"sigils.json";
 
    const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');
@@ -50,7 +51,7 @@ void Initialize()
    CompleteStartupPhase("executable-validation", executable_started, true);
 
    const uint64_t compatibility_started = BeginStartupPhase("compatibility-table");
-   const bool compatibility_loaded = LoadCompatibilityTable(g_compatibility_path);
+   const bool compatibility_loaded = LoadCompatibilityTable(g_sigils_path);
    CompleteStartupPhase(
       "compatibility-table", compatibility_started, compatibility_loaded);
    if (!compatibility_loaded)

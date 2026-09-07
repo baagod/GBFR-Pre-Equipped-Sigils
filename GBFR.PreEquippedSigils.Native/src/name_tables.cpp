@@ -36,11 +36,15 @@ bool ReadHexField(const std::string& line, std::string_view field, uint32_t& val
 }
 
 // Contract-based loader from the tool's merged table (sigils.json, produced by
-// the extract pipeline + docs/tool-gen-sigils-required.js). Exclusive rows are
-// marked with a non-empty "player" and carry "character" (required character
-// hash); only those pairs become the gem -> character map. The loader never
-// parses generic JSON: it scans the stable field layout (flat objects, one
-// field per line) and fails closed on any deviation.
+// the extract pipeline + docs/tool-gen-sigils-required.js).
+//
+// == FORMAT CONTRACT (change here in lockstep with docs/tool-gen-sigils-required.js) ==
+//  - flat JSON objects, one field per line, UTF-8, LF or CRLF
+//  - field names: "gem" and "character", values are 8 hex digits (no 0x)
+//  - exclusive rows (player != "") also carry "character"; regular rows do not
+//  - the "character" field is the last one of the object (no trailing comma)
+// The loader never parses generic JSON: it scans the stable field layout and
+// fails closed on any deviation (expected count check below).
 bool LoadCompatibilityTable(const std::filesystem::path& path)
 {
    g_required_character_by_gem.clear();
