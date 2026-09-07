@@ -345,60 +345,27 @@ export default function App() {
     [groupedByName]
   )
 
-  // Secondary legality (hint-only: dimmed / red trigger, save never blocked):
-  //   legal = pool ∪ fixed ∪ free traits ∪ (free mains: every non-special trait)
-  //   minus special-only traits (appear only on special/single rows).
-  const { exclusiveTraits, allTraitHashes, freeTraits } = useMemo(() => {
-    const specialUse = new Set<string>()
-    const regularUse = new Set<string>()
-    const freeTraits = new Set<string>()
+  // Exclusive-slot / quest-locked traits (crab family, 相扑斗力 etc.): these can
+  // never appear as a secondary. Everything else is legal — game synthesis (2.0.5)
+  // freely combines same/cross-category and even duplicate traits.
+  const { exclusiveTraits, allTraitHashes } = useMemo(() => {
+    const exclusive = new Set<string>()
     for (const s of sigils) {
       if (s.special) {
-        specialUse.add(s.skill)
-        if (s.sec) specialUse.add(s.sec)
-      } else {
-        regularUse.add(s.skill)
-        if (s.sec) regularUse.add(s.sec)
-        for (const h of s.pool) regularUse.add(h)
-        if (s.sec === "" && s.pool.length === 0) freeTraits.add(s.skill)
+        exclusive.add(s.skill)
+        if (s.sec) exclusive.add(s.sec)
+      }
+      if (s.zh.includes("钳蟹") || s.zh.includes("相扑斗力")) {
+        exclusive.add(s.skill)
+        if (s.sec) exclusive.add(s.sec)
       }
     }
-    const exclusive = new Set([...specialUse].filter((h) => !regularUse.has(h)))
-    return {
-      exclusiveTraits: exclusive,
-      allTraitHashes: traits.map((tr) => tr.hash),
-      freeTraits,
-    }
+    return { exclusiveTraits: exclusive, allTraitHashes: traits.map((tr) => tr.hash) }
   }, [sigils, traits])
 
-  const { legalSecs, freeNames } = useMemo(() => {
-    const m = new Map<string, Set<string>>()
-    const free = new Set<string>()
-    for (const [name, variants] of groupedByName) {
-      const legal = new Set<string>()
-      let hasFree = false
-      for (const v of variants) {
-        for (const h of v.pool) legal.add(h)
-        if (v.sec) legal.add(v.sec)
-        else if (v.pool.length === 0 && !v.special) hasFree = true
-      }
-      m.set(name, legal)
-      if (hasFree) free.add(name)
-    }
-    return { legalSecs: m, freeNames: free }
-  }, [groupedByName])
-
-  // Legal secondaries for a main sigil name (hint only; generation is not blocked).
-  const legalByMain = (name: string) => {
-    if (freeNames.has(name)) {
-      // free main combines with any non-special trait
-      return new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
-    }
-    const base = legalSecs.get(name) ?? new Set<string>()
-    const out = new Set(base)
-    for (const h of freeTraits) if (!exclusiveTraits.has(h)) out.add(h)
-    return out
-  }
+  // Hint only; generation is never blocked.
+  const legalByMain = (name: string) =>
+    new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
 
   const traitHashes = traits.map((tr) => tr.hash)
 
