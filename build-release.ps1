@@ -82,7 +82,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Tool frontend build failed with exit code $LASTEXITCODE."
     }
-    & go build -ldflags "-H windowsgui" -o Loadout.exe .
+    & go build -trimpath -ldflags "-H windowsgui -s -w" -o Loadout.exe .
     if ($LASTEXITCODE -ne 0) {
         throw "Tool build failed with exit code $LASTEXITCODE."
     }
