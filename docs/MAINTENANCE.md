@@ -229,7 +229,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 9. 已知限制与未来方向
 
 - 配置化已完成（loadout.json + Wails v3 工具 `Loadout/`：托盘/单实例/自动保存/热键 F1；ABI v17）。
-  后续方向：预设集丰富（狂战/斯巴达的伤害上限/天星系等）作玩家侧模板；物品权威组合表。
+  后续方向：物品权威组合表。
 - 当前已覆盖全角色；扩展新角色 = 生成器数据表加条目 + 查该角色专属因子 hash。
 - 游戏更新后需回归：`layout_resolver` 锚点可能失效；日志出现 layout failed 时等更新方案或重新逆向。
 
@@ -284,9 +284,6 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ### 已验证 / 原则
 - 主控 + AI 角色都吃注入（明镜止水的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认。
-- 市场：823 转化率已追平原版 657；竞品 87/819 不撞车；坚持"合理扩展"（拒绝顶配，话术 = "平衡 + 可配置"）；
-  数字由 Jina Reader 抓取（可能有误差），仅参考。
-- Reddit 反营销严格——**不要主动在 Reddit 自荐**（社区敌视作弊）。
 - 槽位/版本/数据改动后需同步：MAINTENANCE 头部、README×2、ModConfig、build-release.ps1。
 
 ## 13. 跨语言协议常量表（改动需同步，勿漂移）
