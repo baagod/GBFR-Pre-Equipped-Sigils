@@ -331,18 +331,23 @@ export default function App() {
     return byName
   }, [sigils])
 
+  // Exclusive-slot sigils (special=true) and per-character exclusive sigils
+  // (player != "") are managed on the Exclusives tab / built-in slots; they
+  // are not offered as a general-slot main.
   const sigilGroups = useMemo(
     () =>
-      [...groupedByName.entries()].map(([name, variants]) => ({
-        name,
-        zh: variants[0]?.zh ?? name,
-        poolGem: variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? "",
-      })),
+      [...groupedByName.entries()]
+        .filter(([, variants]) => variants.some((v) => v.player === "" && !v.special))
+        .map(([name, variants]) => ({
+          name,
+          zh: variants[0]?.zh ?? name,
+        })),
     [groupedByName]
   )
 
-  // Exclusive traits: used ONLY by special (single/awakening) sigils; a free
-  // main can combine every non-exclusive trait. Computed from the tables.
+  // Secondary legality (hint-only: dimmed / red trigger, save never blocked):
+  //   legal = pool ∪ fixed ∪ free traits ∪ (free mains: every non-special trait)
+  //   minus special-only traits (appear only on special/single rows).
   const { exclusiveTraits, allTraitHashes, freeTraits } = useMemo(() => {
     const specialUse = new Set<string>()
     const regularUse = new Set<string>()
@@ -383,9 +388,10 @@ export default function App() {
     return { legalSecs: m, freeNames: free }
   }, [groupedByName])
 
+  // Legal secondaries for a main sigil name (hint only; generation is not blocked).
   const legalByMain = (name: string) => {
     if (freeNames.has(name)) {
-      // free main can combine every non-exclusive trait (200 - exclusive)
+      // free main combines with any non-special trait
       return new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
     }
     const base = legalSecs.get(name) ?? new Set<string>()
@@ -393,6 +399,8 @@ export default function App() {
     for (const h of freeTraits) if (!exclusiveTraits.has(h)) out.add(h)
     return out
   }
+
+  const traitHashes = traits.map((tr) => tr.hash)
 
   // Locate the gem to write for (name, secHash): fixed variant if secHash
   // matches a fixed sec, otherwise the pool-backed variant gem.
@@ -414,7 +422,6 @@ export default function App() {
   // Picker item values: main = unique display names; secondary = trait hashes
   // (labels provided by hashLabels).
   const sigilNames = sigilGroups.map((g) => g.name)
-  const traitHashes = traits.map((tr) => tr.hash)
   const hashLabels = useMemo(
     () =>
       Object.fromEntries([
@@ -769,7 +776,7 @@ function ExclusivePanel({
             key={e.hash}
             className="flex h-[42px] items-center border-b text-sm last:border-b-0"
           >
-            <div className="grid w-full grid-cols-[minmax(6rem,8rem)_1fr_1fr_1fr] items-center gap-x-4">
+            <div className="grid w-full grid-cols-[7rem_1fr_1fr_1fr] items-center gap-x-2">
               <span className="truncate font-medium">{characterName}</span>
               {row.map((r) => (
                 <label key={r.key} className="flex min-w-0 items-center gap-1.5">

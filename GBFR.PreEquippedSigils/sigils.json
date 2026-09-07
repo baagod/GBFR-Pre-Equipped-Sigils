@@ -4871,18 +4871,6 @@
    "special": false
   },
   {
-   "key": "GEEN_176_90",
-   "gem": "23953FD4",
-   "name": "Thunderwolf's Awakening",
-   "zh": "雷狼之觉醒",
-   "skill": "7D75D904",
-   "sec": "BE3404B9",
-   "pool": [],
-   "category": "5",
-   "player": "PL2700",
-   "special": true
-  },
-  {
    "key": "GEEN_176_93",
    "gem": "D8C61507",
    "name": "Thunderwolf's Warpath",
@@ -4917,18 +4905,6 @@
    "category": "5",
    "player": "PL2900",
    "special": false
-  },
-  {
-   "key": "GEEN_178_90",
-   "gem": "A8A0CBFF",
-   "name": "The Black's Awakening",
-   "zh": "黑龙之觉醒",
-   "skill": "06719232",
-   "sec": "ED8D8AD8",
-   "pool": [],
-   "category": "5",
-   "player": "PL2900",
-   "special": true
   },
   {
    "key": "GEEN_178_93",
@@ -5052,18 +5028,6 @@
    "special": false
   },
   {
-   "key": "GEEN_174_90",
-   "gem": "D8A464F1",
-   "name": "Bladequeen's Awakening",
-   "zh": "刃姬之觉醒",
-   "skill": "7B5B081D",
-   "sec": "9ACE140B",
-   "pool": [],
-   "category": "5",
-   "player": "PL2500",
-   "special": true
-  },
-  {
    "key": "GEEN_174_93",
    "gem": "EB766D87",
    "name": "Bladequeen's Warpath",
@@ -5098,18 +5062,6 @@
    "category": "5",
    "player": "PL2400",
    "special": false
-  },
-  {
-   "key": "GEEN_173_90",
-   "gem": "895ABBF6",
-   "name": "Gladiator's Awakening",
-   "zh": "狼王之觉醒",
-   "skill": "1DE14C65",
-   "sec": "26956F25",
-   "pool": [],
-   "category": "5",
-   "player": "PL2400",
-   "special": true
   },
   {
    "key": "GEEN_173_93",
@@ -5340,18 +5292,6 @@
    "category": "5",
    "player": "PL2800",
    "special": false
-  },
-  {
-   "key": "GEEN_177_90",
-   "gem": "5A360EA8",
-   "name": "Enchantress's Awakening",
-   "zh": "转世之觉醒",
-   "skill": "47384248",
-   "sec": "30773197",
-   "pool": [],
-   "category": "5",
-   "player": "PL2800",
-   "special": true
   },
   {
    "key": "GEEN_177_93",
@@ -5742,18 +5682,6 @@
    "special": false
   },
   {
-   "key": "GEEN_175_90",
-   "gem": "95CC3CB8",
-   "name": "Ultramarine's Awakening",
-   "zh": "群青之觉醒",
-   "skill": "D176D262",
-   "sec": "461A8E07",
-   "pool": [],
-   "category": "5",
-   "player": "PL2600",
-   "special": true
-  },
-  {
    "key": "GEEN_175_93",
    "gem": "51E98A7C",
    "name": "Ultramarine's Warpath",
@@ -5831,18 +5759,6 @@
    "special": false
   },
   {
-   "key": "GEEN_114_90",
-   "gem": "52A6E299",
-   "name": "Fearless Soul",
-   "zh": "英勇之魂",
-   "skill": "CD030268",
-   "sec": "A38510E2",
-   "pool": [],
-   "category": "5",
-   "player": "PL0000",
-   "special": true
-  },
-  {
    "key": "GEEN_114_91",
    "gem": "33F01810",
    "name": "Fearless Drive",
@@ -5877,18 +5793,6 @@
    "category": "5",
    "player": "PL0000",
    "special": false
-  },
-  {
-   "key": "GEEN_115_90",
-   "gem": "9ADA3E00",
-   "name": "Guardian's Awakening",
-   "zh": "守护者之觉醒",
-   "skill": "3BFED918",
-   "sec": "F8496336",
-   "pool": [],
-   "category": "5",
-   "player": "PL0200",
-   "special": true
   },
   {
    "key": "GEEN_115_91",
@@ -5927,18 +5831,6 @@
    "special": false
   },
   {
-   "key": "GEEN_116_90",
-   "gem": "98A6D249",
-   "name": "Helmsman's Awakening",
-   "zh": "舵手之觉醒",
-   "skill": "151E4674",
-   "sec": "A374FDF0",
-   "pool": [],
-   "category": "5",
-   "player": "PL0300",
-   "special": true
-  },
-  {
    "key": "GEEN_116_91",
    "gem": "9F08F697",
    "name": "Helmsman's Navigation",
@@ -5973,18 +5865,6 @@
    "category": "5",
    "player": "PL0300",
    "special": false
-  },
-  {
-   "key": "GEEN_117_90",
-   "gem": "E2B380E5",
-   "name": "Mage's Awakening",
-   "zh": "魔法师之觉醒",
-   "skill": "B48EEF48",
-   "sec": "11AAE5F5",
-   "pool": [],
-   "category": "5",
-   "player": "PL0400",
-   "special": true
   },
   {
    "key": "GEEN_117_91",
@@ -6023,18 +5903,6 @@
    "special": false
   },
   {
-   "key": "GEEN_118_90",
-   "gem": "1BBE919C",
-   "name": "Veteran's Awakening",
-   "zh": "老兵之觉醒",
-   "skill": "AA83F548",
-   "sec": "921B6B0C",
-   "pool": [],
-   "category": "5",
-   "player": "PL0500",
-   "special": true
-  },
-  {
    "key": "GEEN_118_91",
    "gem": "64D63823",
    "name": "Veteran's Insight",
@@ -6069,18 +5937,6 @@
    "category": "5",
    "player": "PL0500",
    "special": false
-  },
-  {
-   "key": "GEEN_119_90",
-   "gem": "9BD1CC24",
-   "name": "Rose's Awakening",
-   "zh": "玫瑰之觉醒",
-   "skill": "23D0F67F",
-   "sec": "C2A4C7A9",
-   "pool": [],
-   "category": "5",
-   "player": "PL0600",
-   "special": true
   },
   {
    "key": "GEEN_119_91",
@@ -6119,18 +5975,6 @@
    "special": false
   },
   {
-   "key": "GEEN_120_90",
-   "gem": "B441275D",
-   "name": "Phantasm's Awakening",
-   "zh": "幽幻之觉醒",
-   "skill": "D908223D",
-   "sec": "7351D602",
-   "pool": [],
-   "category": "5",
-   "player": "PL0700",
-   "special": true
-  },
-  {
    "key": "GEEN_120_91",
    "gem": "E073EA65",
    "name": "Phantasm's Concord",
@@ -6165,18 +6009,6 @@
    "category": "5",
    "player": "PL0700",
    "special": false
-  },
-  {
-   "key": "GEEN_121_90",
-   "gem": "E19B1965",
-   "name": "White Dragon's Awakening",
-   "zh": "白龙之觉醒",
-   "skill": "8CDF9382",
-   "sec": "D1012D8C",
-   "pool": [],
-   "category": "5",
-   "player": "PL0800",
-   "special": true
   },
   {
    "key": "GEEN_121_91",
@@ -6215,18 +6047,6 @@
    "special": false
   },
   {
-   "key": "GEEN_122_90",
-   "gem": "673C5D8F",
-   "name": "Hero's Awakening",
-   "zh": "勇士之觉醒",
-   "skill": "2E65A774",
-   "sec": "16EFF868",
-   "pool": [],
-   "category": "5",
-   "player": "PL0900",
-   "special": true
-  },
-  {
    "key": "GEEN_122_91",
    "gem": "9D5BC5BF",
    "name": "Hero's Creed",
@@ -6261,18 +6081,6 @@
    "category": "5",
    "player": "PL0900",
    "special": false
-  },
-  {
-   "key": "GEEN_123_90",
-   "gem": "02472C43",
-   "name": "Lord's Awakening",
-   "zh": "王者之觉醒",
-   "skill": "E60A735C",
-   "sec": "6FF05223",
-   "pool": [],
-   "category": "5",
-   "player": "PL1000",
-   "special": true
   },
   {
    "key": "GEEN_123_91",
@@ -6311,18 +6119,6 @@
    "special": false
   },
   {
-   "key": "GEEN_124_90",
-   "gem": "AB835493",
-   "name": "Dragonslayer's Awakening",
-   "zh": "屠龙者之觉醒",
-   "skill": "86CBCDC4",
-   "sec": "05FA4599",
-   "pool": [],
-   "category": "5",
-   "player": "PL1100",
-   "special": true
-  },
-  {
    "key": "GEEN_124_91",
    "gem": "C0B5128E",
    "name": "Dragonslayer's Dominance",
@@ -6357,18 +6153,6 @@
    "category": "5",
    "player": "PL1100",
    "special": false
-  },
-  {
-   "key": "GEEN_125_90",
-   "gem": "AEEF8343",
-   "name": "Holy Knight's Awakening",
-   "zh": "圣骑士之觉醒",
-   "skill": "9A9DC170",
-   "sec": "522E2388",
-   "pool": [],
-   "category": "5",
-   "player": "PL1200",
-   "special": true
   },
   {
    "key": "GEEN_125_91",
@@ -6407,18 +6191,6 @@
    "special": false
   },
   {
-   "key": "GEEN_126_90",
-   "gem": "119B24A8",
-   "name": "Swordmaster's Awakening",
-   "zh": "变幻自如之觉醒",
-   "skill": "0CD6C625",
-   "sec": "A3B49220",
-   "pool": [],
-   "category": "5",
-   "player": "PL1300",
-   "special": true
-  },
-  {
    "key": "GEEN_126_91",
    "gem": "E7624711",
    "name": "Swordmaster's Prowess",
@@ -6453,18 +6225,6 @@
    "category": "5",
    "player": "PL1300",
    "special": false
-  },
-  {
-   "key": "GEEN_127_90",
-   "gem": "1A57AEF1",
-   "name": "Butterfly's Awakening",
-   "zh": "斩姬之觉醒",
-   "skill": "29B07BEB",
-   "sec": "A63B89CD",
-   "pool": [],
-   "category": "5",
-   "player": "PL1400",
-   "special": true
   },
   {
    "key": "GEEN_127_91",
@@ -6503,18 +6263,6 @@
    "special": false
   },
   {
-   "key": "GEEN_128_90",
-   "gem": "CE16D68B",
-   "name": "Eternal Rage's Awakening",
-   "zh": "古今无双之觉醒",
-   "skill": "5463232F",
-   "sec": "451D814C",
-   "pool": [],
-   "category": "5",
-   "player": "PL1500",
-   "special": true
-  },
-  {
    "key": "GEEN_128_91",
    "gem": "7D318FF7",
    "name": "Eternal Rage's Mettle",
@@ -6549,18 +6297,6 @@
    "category": "5",
    "player": "PL1500",
    "special": false
-  },
-  {
-   "key": "GEEN_129_90",
-   "gem": "02B1F8C0",
-   "name": "Founder's Awakening",
-   "zh": "极致之觉醒",
-   "skill": "EC3CF174",
-   "sec": "AF513A9D",
-   "pool": [],
-   "category": "5",
-   "player": "PL1800",
-   "special": true
   },
   {
    "key": "GEEN_129_91",
@@ -6599,18 +6335,6 @@
    "special": false
   },
   {
-   "key": "GEEN_130_90",
-   "gem": "AF8E7E7E",
-   "name": "Versalis Soul",
-   "zh": "异能之魂",
-   "skill": "93A2093C",
-   "sec": "7AD0C010",
-   "pool": [],
-   "category": "5",
-   "player": "PL1900",
-   "special": true
-  },
-  {
    "key": "GEEN_130_91",
    "gem": "B98A0F22",
    "name": "Versalis Foundation",
@@ -6647,18 +6371,6 @@
    "special": false
   },
   {
-   "key": "GEEN_131_90",
-   "gem": "4F01D6CA",
-   "name": "Crimson's Awakening",
-   "zh": "真红之觉醒",
-   "skill": "6EBFA176",
-   "sec": "F1D5DBD0",
-   "pool": [],
-   "category": "5",
-   "player": "PL1600",
-   "special": true
-  },
-  {
    "key": "GEEN_131_91",
    "gem": "B74C207B",
    "name": "Crimson's Clout",
@@ -6693,18 +6405,6 @@
    "category": "5",
    "player": "PL1600",
    "special": false
-  },
-  {
-   "key": "GEEN_132_90",
-   "gem": "E4F986D9",
-   "name": "Ebony's Awakening",
-   "zh": "冥暗之觉醒",
-   "skill": "7440E869",
-   "sec": "CD124165",
-   "pool": [],
-   "category": "5",
-   "player": "PL1700",
-   "special": true
   },
   {
    "key": "GEEN_132_91",
@@ -6791,18 +6491,6 @@
    "special": false
   },
   {
-   "key": "GEEN_170_90",
-   "gem": "6AAE4B8F",
-   "name": "Spirit Edge's Awakening",
-   "zh": "剑圣之觉醒",
-   "skill": "77C809F5",
-   "sec": "9230E3F5",
-   "pool": [],
-   "category": "5",
-   "player": "PL2200",
-   "special": true
-  },
-  {
    "key": "GEEN_170_91",
    "gem": "12DFD310",
    "name": "Spirit Edge's Rally",
@@ -6839,18 +6527,6 @@
    "special": false
   },
   {
-   "key": "GEEN_171_90",
-   "gem": "8ECBB0A3",
-   "name": "Dark Huntress's Awakening",
-   "zh": "魔眼之觉醒",
-   "skill": "E85FF8E0",
-   "sec": "8572B8AF",
-   "pool": [],
-   "category": "5",
-   "player": "PL2300",
-   "special": true
-  },
-  {
    "key": "GEEN_171_91",
    "gem": "EB4AD96D",
    "name": "Dark Huntress's Volley",
@@ -6885,18 +6561,6 @@
    "category": "5",
    "player": "PL2300",
    "special": false
-  },
-  {
-   "key": "GEEN_172_90",
-   "gem": "B8C44D5E",
-   "name": "Supreme Primarch's Awakening",
-   "zh": "天司长之觉醒",
-   "skill": "D40D1E9B",
-   "sec": "15806DFC",
-   "pool": [],
-   "category": "5",
-   "player": "PL2100",
-   "special": true
   },
   {
    "key": "GEEN_172_92",
