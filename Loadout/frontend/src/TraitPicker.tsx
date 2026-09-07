@@ -72,7 +72,7 @@ export function TraitPicker({
       autoHighlight={true}
       disabled={disabled}
       onValueChange={(item) => {
-        if (item && !disabled) onSelect(item.value)
+        if (item) onSelect(item.value)
       }}
     >
       <ComboboxTrigger

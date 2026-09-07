@@ -639,7 +639,7 @@ function SlotRow({
 }) {
   const mainValid = slot.mainHash !== "" && sigilNames.includes(slot.mainHash)
   const legal = mainValid ? legalOfMain(slot.mainHash) : new Set<string>()
-  const secIllegal = slot.secHash !== "" && !legal.has(slot.secHash)
+  const secIllegal = mainValid && slot.secHash !== "" && !legal.has(slot.secHash)
   return (
     <div className={DATA_ROW}>
       <div>
