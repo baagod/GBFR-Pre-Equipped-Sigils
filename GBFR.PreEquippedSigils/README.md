@@ -20,7 +20,8 @@
 
 1. 安装 [Reloaded-II](https://github.com/Reloaded-Project/Reloaded-II)，2. 把 zip 解压到 Reloaded-II 的 Mods 目录，3. 启用 Mod 后启动游戏。
 ## 致谢（Credit）
-- - 派生自 [GBFR Extra Sigil Slots](https://www.nexusmods.com/granbluefantasyrelink/mods/657) ( 作者：Hiyajomaho-num9 )，**经作者许可发布**。- 数据核实参考社区工具链：[Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) ( 官方 ID 表 ) 与 [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) ( 解包/导出 )。
+- 派生自 [GBFR Extra Sigil Slots](https://www.nexusmods.com/granbluefantasyrelink/mods/657)（作者：Hiyajomaho-num9），**经作者许可发布**。
+- 数据核实参考社区工具链：[Nenkai/relink-modding](https://nenkai.github.io/relink-modding/)（官方 ID 表）与 [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools)（解包/导出）。
 ---
 
 ## Build (for review)
@@ -29,10 +30,10 @@ Source: https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 
 Requirements: Windows x64, Visual Studio 2022 Build Tools (MSVC v143 + Windows SDK), .NET 8 SDK, Go, Node.js.
 
-`powershell
+```powershell
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 # outputs dist\GBFR-Pre-Equipped-Sigils-<version>.zip
-`
+```
 
 The release package contains:
 - `GBFR.PreEquippedSigils.dll` — C# (Reloaded-II mod hook, built by build-release.ps1),

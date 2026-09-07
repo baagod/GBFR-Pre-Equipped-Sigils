@@ -51,6 +51,8 @@ if ($LASTEXITCODE -ne 0) {
     throw "Native build failed with exit code $LASTEXITCODE."
 }
 
+# NuGetAudit=false keeps offline builds green; check vulnerabilities with a
+# one-off `dotnet list package --vulnerable` when the environment allows it.
 & dotnet restore $managedProject `
     --ignore-failed-sources `
     --nologo `

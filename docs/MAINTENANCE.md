@@ -27,7 +27,7 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   LoadoutConfig.cs                   解析 loadout.json（通用槽 + exclusive 段）→ ABI
   ModConfig.json                     ModId/版本/描述（发布信息）
-  sigils.json / skills.json          运行时因子表/词条字典（extract 管线生成，见 §4.1）
+  sigils.json                     运行时因子表（合并单表；含词条 cap/sort，见 §4.1）
   character-exclusives.json          每角色专属因子表（生成器产物；工具"专属因子"页数据源）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的 C ABI（v17，8 个导出 + GemData 结构）
@@ -123,48 +123,44 @@ TemplateGemSlot{
 - **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数（≤12）。
 - 角色专属物品受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 用 `GetRequiredCharacterHash(gem_id)` 校验，
   只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
-- 词条 hash 查询：`extract/skills.json`（词条 hash/名）或 `sigils_all_full.xlsx` 的
+- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `sigils_all_full.xlsx` 的
   `gem_key`/`skill1_hash` 列（Ctrl+F 搜名字）。
 - 角色 hash：compatibility.tsv 的 character_key 列；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、
   娜露梅 `E7053919`、芙劳 `646C3168`、菲迪埃 `74DD4C79`。
 
-## 4.1 数据文件生成（mod 运行时表：sigils.json / skills.json）
+## 4.1 数据文件生成（mod 运行时表：sigils.json）
 
-mod 目录下的 `sigils.json`（279 因子）与 `skills.json`（200 词条）**不是手工维护的**，
-由 `extract` 管线一次性导出（源 → 导出 → 运行时子集）：
+mod 目录下的 `sigils.json`（**合并单表**，200 行 = 188 物品行 + 12 非持有品词条行）**不是手工维护的**，
+由 extract 管线一次性导出（管线在仓库外；本仓库只保存产物）。字段：
+`{ key, gem, name, zh, skill, sec, category, player, special, cap, sort }`：
 
-```
-extract/skills.json（词条字典，200 条）──┐
-                                          ├── export_runtime_data.py ──> mod 目录
-extract/loadout.json（因子物品表，279 条）─┘                             sigils.json + skills.json
-```
+- 物品行（`gem != ""`，188 行）：`skill` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
+  `cap`/`sort` 主词条属性、`name`/`zh` 物品名（原样）；`player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
+- 非持有品词条行（`gem == ""`，12 行，`sort = -1`）：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、
+  超新星、超凡奥秘/强击/技艺/破限。
+- 词条字典（副下拉）= 按 `skill` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名）；主下拉 =
+  `gem != "" && player == ""`（**含钳蟹系/相扑斗力等特殊行**；`gem == ""` 的无物品行不作主；专属因子 `player != ""` 不作主）。
 
-| 文件 | 字段 | 说明 |
-| 运行时表 | 说明 |
-|---|---|
-| `sigils.json` | **合并单表**（200 行，原 skills.json 已并入）：`{ key, gem, name, zh, skill, sec, category, player, special, cap, sort }` —— 物品行 188（`name`/\zh 物品名（原样）；`skill` 主词条 hash、`sec` 固定第二词条 hash（无副="", 如永恒钳蟹因子=D3B8C21F）；`cap`/`sort` 主词条属性）+ 非持有品词条行 12（`gem=""`，`sort:-1`：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、超新星、超凡奥秘/强击/技艺/破限）。词条字典（副下拉）按 `skill` 去重派生（取首行，即“以词条命名的物品行”：zh/name=词条名）。主下拉 = `gem≠"" 且 player=="" 且 !special`（无物品行不作为主） |
-1. 改 `extract` 侧源表（`skills.json` / `loadout.json`，生成方式见 `extract/GENERATING.md` §1/§7）；
-2. 跑 `extract/export_runtime_data.py` → 写 mod 目录 `sigils.json` + `skills.json`；
-3. 校验：`extract/verify_parser.py`（模拟 C# 解析：主词条存在/等级不超 cap/哨兵规则）；
-4. 数据版本从 `extract/loadout.json` 行数核对（当前 279）。
+**派生规则**：
+- 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；仅专属因子（`player != ""`）不作通用主
+  （由"专属因子"页管理）；钳蟹系/相扑斗力等 `special` 行**可作为通用主因子**（作主时副组合按下方"特殊主因子"提示规则）。
+- **副因子合法性**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**——同类/跨类/自我复制（伤害上限+伤害上限、…）；
+  **一切组合均允许**，下表"非法"仅为 UI 提示样式，不禁止选择/保存/实装）。提示分两档，按**主因子**裁定：
+  - **普通主因子**下不可配的提示项 = **独占词条**：只出现在特殊行的词条（钳蟹系）：`082033CB` 钳蟹的共鸣、
+    `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子等 + **`sort:-1` 非持有品词条**（伤害上限·疾天/红天/苍天/轰天、
+    因子强化、浩劫、浩劫新星、超凡奥秘/强击/技艺/破限、超新星）；非持有品保留在字典可见（角色可持有该技能）。
+  - **特殊主因子** = 变体行 `special` 或其 `zh` 含"钳蟹/相扑斗力"（当前命中"可怕的漆黑钳蟹因子" Immortal Shell：
+    该行 `special=False` 但属钳蟹系，故仍进主下拉）：作主时**任意副因子均显示不合法**（副列表整体灰显、已选副红框）。
+    `special=True` 的钳蟹行仍不作主（见上一条）。
+- UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**仅提示，不禁止**——选择、自动保存、C# 解析与原生注入
+  均不拦截（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）；特殊主因子的已选副值**不会被清空**。
+- 装配 gem：sigils.json 每名字组只保留池版行 → 主因子一律使用该组首个（=池版）gem；副词条随配置写入
+  （mod 合成形态，与 2.0.5 合成规则一致；无池版组 = plain/专属组原样）。工具界面就地重载预设，不重启进程。
 
-- 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；专属因子（`player != ""`）与
-  special（觉醒条目已从数据移除；钳蟹系等无角色代号的 special）不作为通用主因子（由"专属因子"页/独占槽管理）。
-- 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；专属因子（`player != ""`）与
-  special（觉醒条目已从数据移除；钳蟹系等无角色代号的 special）不作为通用主因子（由"专属因子"页/独占槽管理）。
-- **副因子合法性**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**——同类/跨类/自我复制（伤害上限+伤害上限、
-- **独占词条** = 只出现在特殊行的词条（钳蟹系）：`082033CB` 钳蟹的共鸣、`89C66ACB` 相扑斗力、
-  `D3B8C21F` 终极钳蟹因子等 + **`sort:-1` 非持有品词条**（伤害上限·疾天/红天/苍天/轰天、因子强化、浩劫、浩劫新星、
-  超凡奥秘/强击/技艺/破限、超新星），任何主因子不可配；非持有品保留在字典可见（角色可持有该技能）。
-- UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**保存不拦截**非法组合（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）。
-- 装配 gem：sigils.json 每名字组只保留池版行 → 主因子一律使用该组首个（=池版）gem；副词条随配置写入（mod 合成形态，与 2.0.5 合成规则一致；无池版组=plain/专属组原样）。
-界面就地重载预设，不重启进程。
-
-**字段名约定**：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；`key`（GEEN_/SKILL_ 内部名）
-只在 extract 源表保留，不进运行时。
+**字段名约定**：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；`key`（GEEN_/SKILL_ 内部名）只在 extract 源表保留，不进运行时。
 
 **与模板表的关系**：§4 的 `kCharacterExclusives[]` 是**内置专属默认**（直接内嵌 C++，不走 JSON）；
-`sigils.json`/`skills.json` 只是**玩家配置**（`loadout.json`）解析用的 ID→名称/上限映射，两者独立。
+`sigils.json` 只是**玩家配置**（`loadout.json`）解析用的 ID→名称/上限映射，两者独立。
 
 ## 5. 构建与部署
 
@@ -175,8 +171,11 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip；脚本结束会自动启动工具（Loadout.exe）
 ```
 
+- 一键部署（构建后）：`.\deploy.ps1` —— 自动停止运行的 Loadout.exe、覆盖 Mods 目标目录（默认
+  `C:\Users\baago\Desktop\Reloaded-II\Mods\GBFR.PreEquippedSigils`，可用 `-Target` 覆盖）、完成后自动重新打开工具；游戏在运行会直接报错。
 - 部署：**游戏必须退出**，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到 Reloaded-II 的 `Mods\`
   （覆盖前先删旧目录；工具进程运行时文件被占用，先停 Loadout.exe）。
+  本机示例：`C:\Users\baago\Desktop\Reloaded-II\Mods\GBFR.PreEquippedSigils`。
 
 ### 发布（版本号同步）
 1. 同改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；

@@ -67,7 +67,11 @@ build-release.ps1                一键构建脚本
 # 构建（需 VS2022 Build Tools + .NET 8 SDK）
 powershell -ExecutionPolicy Bypass -File .\build-release.ps1
 
-# 部署：游戏退出后，把 dist\GBFR.PreEquippedSigils 复制到 Reloaded-II 的 Mods\
+# 一键部署（自动停工具 -> 覆盖 Mods -> 自动重开工具）：
+powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+
+# 手动部署：游戏退出后，把 dist\GBFR.PreEquippedSigils 复制到 Reloaded-II 的 Mods\
+# 本机路径示例：C:\Users\baago\Desktop\Reloaded-II\Mods\GBFR.PreEquippedSigils
 ```
 
 改配装、加槽位、加角色的具体步骤见 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) 第 4、10 节。
