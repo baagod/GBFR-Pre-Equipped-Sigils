@@ -72,7 +72,7 @@ export function TraitPicker({
       autoHighlight={true}
       disabled={disabled}
       onValueChange={(item) => {
-        if (item) onSelect(item.value)
+        if (item && !disabled) onSelect(item.value)
       }}
     >
       <ComboboxTrigger
@@ -80,6 +80,7 @@ export function TraitPicker({
         render={
           <Button
             variant="outline"
+            disabled={disabled}
             className={
               invalid
                 ? "min-w-0 flex-1 justify-between border-destructive font-normal text-destructive"
