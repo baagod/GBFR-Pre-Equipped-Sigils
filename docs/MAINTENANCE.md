@@ -142,7 +142,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 | 文件 | 字段 | 说明 |
 |---|---|---|
 | `skills.json` | `{ hash, zh, en, cap }` | 词条 ID（hash）+ 双语名 + 等级上限；源 = extract/skills.json（含 key/desc/player，导出时仅留运行时字段） |
-| `sigils.json` | `{ key, gem, name, zh, skill, sec, pool, category, player, special }` | 物品变体行（不合并，279 行）：`name`（英文名）为分组键；`sec`=固定副词条（固定变体）、`pool`=随机池候选（池版变体）；`category` 替代原 rarity；源 = extract/loadout.json |
+| `sigils.json` | `{ key, gem, name, zh, skill, category, player, special }` | 每名字组只保留**池版行**（无池版组保留原行，188 行）：`name`（英文名）为分组键；`category` 替代原 rarity；`sec`/`pool` 已随固定/池版合并移除（装配见下）；源 = extract/loadout.json |
 
 **重建/更新流程**（只动源数据，不手改 mod 产物）：
 1. 改 `extract` 侧源表（`skills.json` / `loadout.json`，生成方式见 `extract/GENERATING.md` §1/§7）；
@@ -159,6 +159,7 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 - **独占词条** = special 行词条 + 钳蟹系/相扑斗力等 quest 词条（钳蟹的共鸣、终极钳蟹因子、相扑斗力、钳蟹的报恩、
   可怕的漆黑钳蟹因子等），任何主因子不可配。
 - UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**保存不拦截**非法组合（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）。
+- 装配 gem：sigils.json 每名字组只保留池版行 → 主因子一律使用该组首个（=池版）gem；副词条随配置写入（mod 合成形态，与 2.0.5 合成规则一致；无池版组=plain/专属组原样）。
 界面就地重载预设，不重启进程。
 
 **字段名约定**：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；`key`（GEEN_/SKILL_ 内部名）

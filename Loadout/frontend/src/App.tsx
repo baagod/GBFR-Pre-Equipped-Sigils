@@ -84,8 +84,6 @@ interface Sigil {
   name: string // display name (base, level suffix stripped); grouping key
   zh: string
   skill: string // primary trait hash
-  sec: string // fixed second trait hash ("" for pool-backed / plain)
-  pool: string[] // random-pool candidates ([] for fixed / plain)
   category: string
   player: string
   special: boolean
@@ -253,8 +251,6 @@ export default function App() {
             name: s.name ?? s.zh ?? s.gem as string,
             zh: s.zh ?? "",
             skill: s.skill ?? "",
-            sec: s.sec ?? "",
-            pool: Array.isArray(s.pool) ? (s.pool as string[]) : [],
             category: s.category ?? "",
             player: s.player ?? "",
             special: s.special === true,
@@ -351,14 +347,8 @@ export default function App() {
   const { exclusiveTraits, allTraitHashes } = useMemo(() => {
     const exclusive = new Set<string>()
     for (const s of sigils) {
-      if (s.special) {
-        exclusive.add(s.skill)
-        if (s.sec) exclusive.add(s.sec)
-      }
-      if (s.zh.includes("钳蟹") || s.zh.includes("相扑斗力")) {
-        exclusive.add(s.skill)
-        if (s.sec) exclusive.add(s.sec)
-      }
+      if (s.special) exclusive.add(s.skill)
+      if (s.zh.includes("钳蟹") || s.zh.includes("相扑斗力")) exclusive.add(s.skill)
     }
     return { exclusiveTraits: exclusive, allTraitHashes: traits.map((tr) => tr.hash) }
   }, [sigils, traits])
@@ -369,14 +359,10 @@ export default function App() {
 
   const traitHashes = traits.map((tr) => tr.hash)
 
-  // Locate the gem to write for (name, secHash): fixed variant if secHash
-  // matches a fixed sec, otherwise the pool-backed variant gem.
-  const gemFor = (name: string, secHash: string): string => {
+  // Data is pool-only per name group; the first variant IS the family gem.
+  const gemFor = (name: string): string => {
     const variants = groupedByName.get(name)
-    if (!variants) return ""
-    const fixed = secHash ? variants.find((v) => v.sec === secHash) : undefined
-    if (fixed) return fixed.gem
-    return variants.find((v) => v.pool.length > 0)?.gem ?? variants[0]?.gem ?? ""
+    return variants && variants.length > 0 ? variants[0].gem : ""
   }
 
   const maxOfMain = (name: string) => {
@@ -433,7 +419,7 @@ export default function App() {
     }
     const filled = slots.filter((s) => s.mainHash !== "")
     const cfg = filled.map((s) => {
-      const gem = gemFor(s.mainHash, s.secHash)
+      const gem = gemFor(s.mainHash)
       const main = {
         gem,
         level: s.mainLevel,
