@@ -637,7 +637,8 @@ function SlotRow({
   maxOfSec: (h: string) => number
   updateSlot: (i: number, patch: Partial<Slot>) => void
 }) {
-  const legal = slot.mainHash ? legalOfMain(slot.mainHash) : new Set<string>()
+  const mainValid = slot.mainHash !== "" && sigilNames.includes(slot.mainHash)
+  const legal = mainValid ? legalOfMain(slot.mainHash) : new Set<string>()
   const secIllegal = slot.secHash !== "" && !legal.has(slot.secHash)
   return (
     <div className={DATA_ROW}>
@@ -678,14 +679,14 @@ function SlotRow({
           noneLabel={t.none}
           searchPlaceholder={t.search}
           emptyLabel={t.empty}
-          disabled={!slot.mainHash}
+          disabled={!mainValid}
           onSelect={(v) => updateSlot(index, { secHash: v, secLevel: v ? Math.min(15, maxOfSec(v)) : 0 })}
         />
         <LevelInput
           value={slot.secHash ? slot.secLevel : 0}
           max={maxOfSec(slot.secHash)}
           min={slot.secHash ? 1 : 0}
-          disabled={!slot.secHash}
+          disabled={!slot.secHash || !mainValid}
           onLevel={(n) => updateSlot(index, { secLevel: n })}
         />
       </div>
