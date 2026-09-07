@@ -238,6 +238,7 @@ export default function App() {
         const traitById = new Map<string, Trait>()
         for (const s of rows) {
           if (!s.skill || traitById.has(s.skill)) continue
+          if (s.player) continue // exclusive-slot sigils: traits never offered
           traitById.set(s.skill, {
             hash: s.skill,
             zh: s.zh ?? "",
