@@ -82,15 +82,8 @@ func userCfgDir() string {
 	return filepath.Join(base, "GBFRPreEquippedSigils")
 }
 
-func (s *LoadoutService) LoadTraits() (string, error) {
-	data, err := os.ReadFile(filepath.Join(exeDir(), "skills.json"))
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-// LoadSigils returns the sigil table (sigils.json) used for the primary picker.
+// LoadSigils returns the merged sigil/trait table (sigils.json): item rows
+// plus non-holdable trait rows (gem == ""). All pickers read from it.
 func (s *LoadoutService) LoadSigils() (string, error) {
 	data, err := os.ReadFile(filepath.Join(exeDir(), "sigils.json"))
 	if err != nil {

@@ -18,7 +18,6 @@
   <ItemGroup>
     <None Include="ModConfig.json" CopyToOutputDirectory="Always" />
     <None Include="README.md" CopyToOutputDirectory="Always" />
-    <None Include="skills.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="sigils.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="character-exclusives.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\GBFR.PreEquippedSigils.Native\bin\$(Configuration)\GBFR.PreEquippedSigils.Native.dll"

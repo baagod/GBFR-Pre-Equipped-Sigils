@@ -6,9 +6,12 @@
    "name": "War Elemental",
    "zh": "属性克制转换",
    "skill": "4C588C27",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2320
   },
   {
    "key": "E14E1598",
@@ -16,9 +19,12 @@
    "name": "Celestial Aqua",
    "zh": "天星之雪",
    "skill": "A898E283",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2225
   },
   {
    "key": "GEEN_063_24",
@@ -26,9 +32,12 @@
    "name": "Improved Dodge",
    "zh": "躲避性能",
    "skill": "8B3BF60C",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 5070
   },
   {
    "key": "20492635",
@@ -36,9 +45,12 @@
    "name": "Celestial Lumen",
    "zh": "天星之煌",
    "skill": "A7726190",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2025
   },
   {
    "key": "5BF84FD1",
@@ -46,9 +58,12 @@
    "name": "Fatebreaker",
    "zh": "浪迹天涯",
    "skill": "D029FE08",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2226
   },
   {
    "key": "9300FADB",
@@ -56,9 +71,12 @@
    "name": "Celestial Ventus",
    "zh": "天星之止息",
    "skill": "73220725",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2065
   },
   {
    "key": "D29CD8E0",
@@ -66,9 +84,12 @@
    "name": "Celestial Terra",
    "zh": "天星之界",
    "skill": "9232DC17",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2055
   },
   {
    "key": "74061B0C",
@@ -76,9 +97,12 @@
    "name": "Celestial Incendo",
    "zh": "天星之焰",
    "skill": "36E3848D",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2215
   },
   {
    "key": "8B8085C0",
@@ -86,9 +110,12 @@
    "name": "Celestial Nyx",
    "zh": "天星之炼",
    "skill": "0DE887A0",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2015
   },
   {
    "key": "7B4AAB30",
@@ -96,9 +123,12 @@
    "name": "Divergence",
    "zh": "分歧",
    "skill": "F26BAEA5",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 4025
   },
   {
    "key": "GEEN_000_24",
@@ -106,9 +136,12 @@
    "name": "Attack Power",
    "zh": "攻击力",
    "skill": "50079A1C",
+   "sec": "",
    "category": "1",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 50,
+   "sort": 1010
   },
   {
    "key": "GEEN_001_24",
@@ -116,9 +149,12 @@
    "name": "Health",
    "zh": "体力",
    "skill": "F372F096",
+   "sec": "",
    "category": "1",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 50,
+   "sort": 1020
   },
   {
    "key": "GEEN_003_24",
@@ -126,9 +162,12 @@
    "name": "Critical Hit Rate",
    "zh": "暴击率",
    "skill": "8D78A19B",
+   "sec": "",
    "category": "1",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 1030
   },
   {
    "key": "GEEN_004_24",
@@ -136,9 +175,12 @@
    "name": "Stun Power",
    "zh": "昏厥",
    "skill": "CEB700EE",
+   "sec": "",
    "category": "1",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 1040
   },
   {
    "key": "GEEN_005_24",
@@ -146,9 +188,12 @@
    "name": "Enmity",
    "zh": "背水",
    "skill": "3F488339",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2010
   },
   {
    "key": "GEEN_006_24",
@@ -156,9 +201,12 @@
    "name": "Stamina",
    "zh": "热血",
    "skill": "2FC8FBFF",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2020
   },
   {
    "key": "GEEN_008_24",
@@ -166,9 +214,12 @@
    "name": "Charged Attack",
    "zh": "蓄力攻击",
    "skill": "1C360C63",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2150
   },
   {
    "key": "GEEN_009_24",
@@ -176,9 +227,12 @@
    "name": "Linked Together",
    "zh": "协同攻击",
    "skill": "3FEC5F80",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2090
   },
   {
    "key": "GEEN_012_24",
@@ -186,9 +240,12 @@
    "name": "Throw",
    "zh": "投掷",
    "skill": "8D078597",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2190
   },
   {
    "key": "GEEN_013_24",
@@ -196,9 +253,12 @@
    "name": "Critical Damage",
    "zh": "暴击伤害",
    "skill": "C0979A17",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2030
   },
   {
    "key": "GEEN_014_24",
@@ -206,9 +266,12 @@
    "name": "Exploiter",
    "zh": "弱点攻击",
    "skill": "6B694D6D",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 2040
   },
   {
    "key": "GEEN_017_24",
@@ -216,9 +279,12 @@
    "name": "Combo Finisher",
    "zh": "连击收招",
    "skill": "A7A45F28",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2140
   },
   {
    "key": "GEEN_018_24",
@@ -226,9 +292,12 @@
    "name": "Concentrated Fire",
    "zh": "集中炮火",
    "skill": "B360801D",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2180
   },
   {
    "key": "GEEN_020_24",
@@ -236,9 +305,12 @@
    "name": "Damage Cap",
    "zh": "伤害上限",
    "skill": "DC584F60",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 65,
+   "sort": 2070
   },
   {
    "key": "GEEN_024_24",
@@ -246,9 +318,12 @@
    "name": "Combo Booster",
    "zh": "连击加成",
    "skill": "F17850B9",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2100
   },
   {
    "key": "GEEN_027_24",
@@ -256,9 +331,12 @@
    "name": "Tyranny",
    "zh": "暴君",
    "skill": "71F11A9B",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2050
   },
   {
    "key": "GEEN_028_24",
@@ -266,9 +344,12 @@
    "name": "Lucky Charge",
    "zh": "蓄力会心",
    "skill": "C35B111B",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 2160
   },
   {
    "key": "GEEN_029_24",
@@ -276,9 +357,12 @@
    "name": "Injury to Insult",
    "zh": "弱化状态特效",
    "skill": "4F1A3683",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2200
   },
   {
    "key": "GEEN_030_24",
@@ -286,9 +370,12 @@
    "name": "Overdrive Assassin",
    "zh": "OVERDRIVE特效",
    "skill": "A9D17F55",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2210
   },
   {
    "key": "GEEN_031_24",
@@ -296,9 +383,12 @@
    "name": "Break Assassin",
    "zh": "破防特效",
    "skill": "AC9674C1",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2220
   },
   {
    "key": "GEEN_036_24",
@@ -306,9 +396,12 @@
    "name": "Garrison",
    "zh": "坚守",
    "skill": "E6CDBA9C",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 5030
   },
   {
    "key": "GEEN_045_24",
@@ -316,9 +409,12 @@
    "name": "Guts",
    "zh": "豪胆",
    "skill": "E69A4694",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 7030
   },
   {
    "key": "GEEN_046_24",
@@ -326,9 +422,12 @@
    "name": "Poison Resistance",
    "zh": "中毒抗性",
    "skill": "973B49AF",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5170
   },
   {
    "key": "GEEN_047_24",
@@ -336,9 +435,12 @@
    "name": "Burn Resistance",
    "zh": "灼热抗性",
    "skill": "7C84A6B3",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5190
   },
   {
    "key": "GEEN_051_24",
@@ -346,9 +448,12 @@
    "name": "Sandtomb Resistance",
    "zh": "泥沙抗性",
    "skill": "D54F8CA7",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5160
   },
   {
    "key": "GEEN_052_24",
@@ -356,9 +461,12 @@
    "name": "Glaciate Resistance",
    "zh": "冰冻抗性",
    "skill": "FB572681",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5140
   },
   {
    "key": "GEEN_054_24",
@@ -366,9 +474,12 @@
    "name": "Dizzy Resistance",
    "zh": "昏迷抗性",
    "skill": "3759A5B9",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5130
   },
   {
    "key": "GEEN_055_24",
@@ -376,9 +487,12 @@
    "name": "Paralysis Resistance",
    "zh": "麻痹抗性",
    "skill": "2242921F",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5200
   },
   {
    "key": "GEEN_057_24",
@@ -386,9 +500,12 @@
    "name": "Skill Sealed Resistance",
    "zh": "能力封印抗性",
    "skill": "50B453DD",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5220
   },
   {
    "key": "GEEN_058_24",
@@ -396,9 +513,12 @@
    "name": "SBA Sealed Resistance",
    "zh": "奥义封印抗性",
    "skill": "CFB48782",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5230
   },
   {
    "key": "GEEN_060_24",
@@ -406,9 +526,12 @@
    "name": "Improved Guard",
    "zh": "格挡性能",
    "skill": "0AA20846",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5060
   },
   {
    "key": "GEEN_061_24",
@@ -416,9 +539,12 @@
    "name": "Guard Payback",
    "zh": "格挡仇火",
    "skill": "3C2B57B0",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2250
   },
   {
    "key": "GEEN_064_24",
@@ -426,9 +552,12 @@
    "name": "Dodge Payback",
    "zh": "躲避仇火",
    "skill": "7C2E4D64",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2260
   },
   {
    "key": "GEEN_065_24",
@@ -436,9 +565,12 @@
    "name": "Improved Healing",
    "zh": "回复性能",
    "skill": "9389CC06",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 4010
   },
   {
    "key": "GEEN_066_24",
@@ -446,9 +578,12 @@
    "name": "Regen",
    "zh": "自愈",
    "skill": "6085DA25",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 4020
   },
   {
    "key": "GEEN_067_24",
@@ -456,9 +591,12 @@
    "name": "Drain",
    "zh": "HP吸收",
    "skill": "7CCFF74F",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 4030
   },
   {
    "key": "GEEN_068_24",
@@ -466,9 +604,12 @@
    "name": "Autorevive",
    "zh": "自动复活",
    "skill": "95F3FA86",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 7040
   },
   {
    "key": "GEEN_069_24",
@@ -476,9 +617,12 @@
    "name": "Quick Cooldown",
    "zh": "迅捷能力",
    "skill": "318D12E9",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 4040
   },
   {
    "key": "GEEN_070_24",
@@ -486,9 +630,12 @@
    "name": "Cascade",
    "zh": "怒涛",
    "skill": "05F2ECDC",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 4050
   },
   {
    "key": "GEEN_072_24",
@@ -496,9 +643,12 @@
    "name": "Uplift",
    "zh": "激昂",
    "skill": "B5FF9FD3",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 4060
   },
   {
    "key": "GEEN_073_24",
@@ -506,9 +656,12 @@
    "name": "Potion Hoarder",
    "zh": "药水携带数",
    "skill": "24883AF3",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 7010
   },
   {
    "key": "GEEN_077_24",
@@ -516,9 +669,12 @@
    "name": "Low Profile",
    "zh": "匿踪",
    "skill": "DC607D75",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 7070
   },
   {
    "key": "GEEN_078_24",
@@ -526,9 +682,12 @@
    "name": "Provoke",
    "zh": "挑衅",
    "skill": "6018372B",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 7060
   },
   {
    "key": "GEEN_079_24",
@@ -536,9 +695,12 @@
    "name": "Fast Learner",
    "zh": "获得经验值",
    "skill": "F687C5EF",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 7080
   },
   {
    "key": "GEEN_080_24",
@@ -546,9 +708,12 @@
    "name": "Rupie Tycoon",
    "zh": "获得金币",
    "skill": "C86F3082",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 7090
   },
   {
    "key": "GEEN_083_24",
@@ -556,9 +721,12 @@
    "name": "Skilled Assault",
    "zh": "能力伤害",
    "skill": "EAE321EB",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2080
   },
   {
    "key": "GEEN_085_24",
@@ -566,9 +734,12 @@
    "name": "Aegis",
    "zh": "守护",
    "skill": "E0ABFDFE",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 5010
   },
   {
    "key": "GEEN_086_24",
@@ -576,9 +747,12 @@
    "name": "Slow Resistance",
    "zh": "缓速抗性",
    "skill": "A2FA9685",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5180
   },
   {
    "key": "GEEN_087_24",
@@ -586,9 +760,12 @@
    "name": "Firm Stance",
    "zh": "不动",
    "skill": "B6E31F76",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5120
   },
   {
    "key": "GEEN_088_24",
@@ -596,9 +773,12 @@
    "name": "Blight Resistance",
    "zh": "灾祸抗性",
    "skill": "9702860F",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5210
   },
   {
    "key": "GEEN_094_24",
@@ -606,9 +786,12 @@
    "name": "Steady Focus",
    "zh": "蓄力强化",
    "skill": "0053599E",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 7050
   },
   {
    "key": "GEEN_096_24",
@@ -616,9 +799,12 @@
    "name": "Steel Nerves",
    "zh": "坚持",
    "skill": "1470F860",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 5050
   },
   {
    "key": "GEEN_104_24",
@@ -626,9 +812,12 @@
    "name": "Nimble Defense",
    "zh": "凝神",
    "skill": "09AA7DB5",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5090
   },
   {
    "key": "GEEN_106_24",
@@ -636,9 +825,12 @@
    "name": "Nimble Onslaught",
    "zh": "明镜止水",
    "skill": "D2C8E10A",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 4080
   },
   {
    "key": "GEEN_107_24",
@@ -646,9 +838,12 @@
    "name": "Precise Resilience",
    "zh": "抗争",
    "skill": "29B292A8",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5080
   },
   {
    "key": "GEEN_109_24",
@@ -656,9 +851,12 @@
    "name": "Precise Wrath",
    "zh": "怒发冲冠",
    "skill": "7EDD69D0",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 4070
   },
   {
    "key": "GEEN_110_24",
@@ -666,9 +864,12 @@
    "name": "Life on the Line",
    "zh": "奋不顾身",
    "skill": "8F502F0D",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2060
   },
   {
    "key": "GEEN_111_24",
@@ -676,9 +877,12 @@
    "name": "Quick Charge",
    "zh": "快速蓄力",
    "skill": "84078CB0",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2170
   },
   {
    "key": "GEEN_136_24",
@@ -686,9 +890,12 @@
    "name": "Held Under Resistance",
    "zh": "水牢抗性",
    "skill": "1DC9D7E7",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5150
   },
   {
    "key": "GEEN_137_24",
@@ -696,9 +903,12 @@
    "name": "Darkflame Resistance",
    "zh": "异能耐受",
    "skill": "DD4A701E",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5240
   },
   {
    "key": "GEEN_138_24",
@@ -706,9 +916,12 @@
    "name": "Attack Down Resistance",
    "zh": "攻击DOWN抗性",
    "skill": "4BF2E191",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5250
   },
   {
    "key": "GEEN_139_24",
@@ -716,9 +929,12 @@
    "name": "Defense Down Resistance",
    "zh": "防御DOWN抗性",
    "skill": "66DE60B1",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5260
   },
   {
    "key": "GEEN_144_24",
@@ -726,9 +942,12 @@
    "name": "Stronghold",
    "zh": "刚健",
    "skill": "74AA75D6",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5040
   },
   {
    "key": "GEEN_140_00",
@@ -736,9 +955,12 @@
    "name": "Crabby Resonance",
    "zh": "钳蟹的共鸣",
    "skill": "082033CB",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": true
+   "special": true,
+   "cap": 45,
+   "sort": 7300
   },
   {
    "key": "GEEN_145_24",
@@ -746,9 +968,12 @@
    "name": "Power Hungry",
    "zh": "修罗",
    "skill": "DC225C96",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2240
   },
   {
    "key": "GEEN_147_24",
@@ -756,9 +981,12 @@
    "name": "Path to Mastery",
    "zh": "获得MSP",
    "skill": "5E422AE5",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 7100
   },
   {
    "key": "GEEN_151_24",
@@ -766,9 +994,12 @@
    "name": "Supplementary Damage",
    "zh": "追击",
    "skill": "57AB5B10",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 45,
+   "sort": 2110
   },
   {
    "key": "GEEN_152_24",
@@ -776,9 +1007,12 @@
    "name": "Less Is More",
    "zh": "身无长技",
    "skill": "82CE278D",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2280
   },
   {
    "key": "GEEN_153_24",
@@ -786,9 +1020,12 @@
    "name": "Head Start",
    "zh": "先发制人",
    "skill": "1568E0E4",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2230
   },
   {
    "key": "GEEN_154_24",
@@ -796,9 +1033,12 @@
    "name": "Berserker",
    "zh": "穷寇心",
    "skill": "70395731",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2290
   },
   {
    "key": "GEEN_158_24",
@@ -806,9 +1046,12 @@
    "name": "Glass Cannon",
    "zh": "刀上舞",
    "skill": "A8A3163B",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 2300
   },
   {
    "key": "GEEN_164_00",
@@ -816,9 +1059,12 @@
    "name": "Crabmiration",
    "zh": "终极钳蟹因子",
    "skill": "D3B8C21F",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": true
+   "special": true,
+   "cap": 45,
+   "sort": 7320
   },
   {
    "key": "GEEN_166_24",
@@ -826,9 +1072,12 @@
    "name": "Greater Aegis",
    "zh": "金刚",
    "skill": "48A95B8D",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 5020
   },
   {
    "key": "1A359B67",
@@ -836,9 +1085,12 @@
    "name": "Thunderwolf's Acuity",
    "zh": "雷狼的慧眼",
    "skill": "BE3404B9",
+   "sec": "",
    "category": "5",
    "player": "PL2700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8590
   },
   {
    "key": "F964A4CA",
@@ -846,9 +1098,12 @@
    "name": "Thunderwolf's Recharge",
    "zh": "雷狼的弹匣",
    "skill": "7D75D904",
+   "sec": "",
    "category": "5",
    "player": "PL2700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8580
   },
   {
    "key": "GEEN_172_74",
@@ -856,9 +1111,12 @@
    "name": "Ain",
    "zh": "无态",
    "skill": "1A2EF59E",
+   "sec": "6085DA25",
    "category": "5",
    "player": "PL2100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8720
   },
   {
    "key": "GEEN_170_74",
@@ -866,9 +1124,12 @@
    "name": "Seven-Star Boundary",
    "zh": "涯之七星",
    "skill": "EF05EC4D",
+   "sec": "6085DA25",
    "category": "5",
    "player": "PL2200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8640
   },
   {
    "key": "GEEN_171_74",
@@ -876,9 +1137,12 @@
    "name": "Two-Crown Boundary",
    "zh": "涯之二王",
    "skill": "281214AB",
+   "sec": "6085DA25",
    "category": "5",
    "player": "PL2300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8680
   },
   {
    "key": "GEEN_172_91",
@@ -886,9 +1150,12 @@
    "name": "Supreme Primarch's Awe",
    "zh": "天司长的灵威",
    "skill": "D40D1E9B",
+   "sec": "",
    "category": "5",
    "player": "PL2100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8690
   },
   {
    "key": "GEEN_176_93",
@@ -896,9 +1163,12 @@
    "name": "Thunderwolf's Warpath",
    "zh": "雷狼的战气",
    "skill": "3EB345D7",
+   "sec": "",
    "category": "5",
    "player": "PL2700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8600
   },
   {
    "key": "0523A202",
@@ -906,9 +1176,12 @@
    "name": "The Black's Mark",
    "zh": "黑龙的咒印",
    "skill": "06719232",
+   "sec": "",
    "category": "5",
    "player": "PL2900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8760
   },
   {
    "key": "0723F7EC",
@@ -916,9 +1189,12 @@
    "name": "The Black's Impulse",
    "zh": "黑龙的折跃",
    "skill": "ED8D8AD8",
+   "sec": "",
    "category": "5",
    "player": "PL2900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8770
   },
   {
    "key": "GEEN_178_93",
@@ -926,9 +1202,12 @@
    "name": "The Black's Warpath",
    "zh": "黑龙的战气",
    "skill": "5559232F",
+   "sec": "",
    "category": "5",
    "player": "PL2900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8780
   },
   {
    "key": "113035D8",
@@ -936,9 +1215,12 @@
    "name": "Super Ultimate Perfect Dodge",
    "zh": "超终极精准躲避",
    "skill": "51C115D2",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2270
   },
   {
    "key": "96D6FE5E",
@@ -946,9 +1228,12 @@
    "name": "Bladequeen's Circuit",
    "zh": "刃姬的轮舞曲",
    "skill": "9ACE140B",
+   "sec": "",
    "category": "5",
    "player": "PL2500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8860
   },
   {
    "key": "EC9FFE77",
@@ -956,9 +1241,12 @@
    "name": "Bladequeen's Serenade",
    "zh": "刃姬的小夜曲",
    "skill": "7B5B081D",
+   "sec": "",
    "category": "5",
    "player": "PL2500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8850
   },
   {
    "key": "GEEN_174_93",
@@ -966,9 +1254,12 @@
    "name": "Bladequeen's Warpath",
    "zh": "刃姬的战气",
    "skill": "79266456",
+   "sec": "",
    "category": "5",
    "player": "PL2500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8870
   },
   {
    "key": "282DBFF0",
@@ -976,9 +1267,12 @@
    "name": "Gladiator's Frenzy",
    "zh": "狼王的激昂",
    "skill": "1DE14C65",
+   "sec": "",
    "category": "5",
    "player": "PL2400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8820
   },
   {
    "key": "F21404B1",
@@ -986,9 +1280,12 @@
    "name": "Gladiator's Top",
    "zh": "狼王的大转轮",
    "skill": "26956F25",
+   "sec": "",
    "category": "5",
    "player": "PL2400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8830
   },
   {
    "key": "GEEN_173_93",
@@ -996,9 +1293,12 @@
    "name": "Gladiator's Warpath",
    "zh": "狼王的战气",
    "skill": "DBA19768",
+   "sec": "",
    "category": "5",
    "player": "PL2400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8840
   },
   {
    "key": "3C0F5461",
@@ -1006,9 +1306,12 @@
    "name": "Auto Potion",
    "zh": "自动药水",
    "skill": "F71F8997",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 7020
   },
   {
    "key": "426AD20E",
@@ -1016,9 +1319,12 @@
    "name": "Crabs Are Forever",
    "zh": "永恒钳蟹因子",
    "skill": "082033CB",
+   "sec": "D3B8C21F",
    "category": "5",
    "player": "",
-   "special": true
+   "special": true,
+   "cap": 45,
+   "sort": 7300
   },
   {
    "key": "66CB28BA",
@@ -1026,9 +1332,12 @@
    "name": "Immortal Shell",
    "zh": "可怕的漆黑钳蟹因子",
    "skill": "BF78FBFC",
+   "sec": "1B0D9897",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 20,
+   "sort": 7330
   },
   {
    "key": "49EBEBEB",
@@ -1036,9 +1345,12 @@
    "name": "Untouchable",
    "zh": "躲避距离",
    "skill": "AF794A87",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 5100
   },
   {
    "key": "64301E91",
@@ -1046,9 +1358,12 @@
    "name": "Enchantress's Blessing",
    "zh": "转世的恩宠",
    "skill": "47384248",
+   "sec": "",
    "category": "5",
    "player": "PL2800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8730
   },
   {
    "key": "BA28C81C",
@@ -1056,9 +1371,12 @@
    "name": "Enchantress's Rhythm",
    "zh": "转世的跃动",
    "skill": "30773197",
+   "sec": "",
    "category": "5",
    "player": "PL2800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8740
   },
   {
    "key": "GEEN_177_93",
@@ -1066,9 +1384,12 @@
    "name": "Enchantress's Warpath",
    "zh": "转世的战气",
    "skill": "807B6684",
+   "sec": "",
    "category": "5",
    "player": "PL2800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8750
   },
   {
    "key": "76786869",
@@ -1076,9 +1397,12 @@
    "name": "In a Pinch",
    "zh": "漆黑之谊",
    "skill": "46EE3116",
+   "sec": "1B0D9897",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 7340
   },
   {
    "key": "6DB307D5",
@@ -1086,9 +1410,12 @@
    "name": "Roll of the Die",
    "zh": "骰子剑",
    "skill": "333E5862",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2310
   },
   {
    "key": "8E20B20C",
@@ -1096,9 +1423,12 @@
    "name": "Flight over Fight",
    "zh": "摇曳步",
    "skill": "EC1C6779",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 5110
   },
   {
    "key": "9A60FBF0",
@@ -1106,9 +1436,12 @@
    "name": "Potent Greens",
    "zh": "万能药",
    "skill": "CD18A77D",
+   "sec": "",
    "category": "4",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 4090
   },
   {
    "key": "9EC6C56D",
@@ -1116,9 +1449,12 @@
    "name": "Ultramarine's Flash",
    "zh": "群青的剑光",
    "skill": "D176D262",
+   "sec": "",
    "category": "5",
    "player": "PL2600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8550
   },
   {
    "key": "D4117FF3",
@@ -1126,9 +1462,12 @@
    "name": "Ultramarine's Adversity",
    "zh": "群青的逆境",
    "skill": "461A8E07",
+   "sec": "",
    "category": "5",
    "player": "PL2600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8560
   },
   {
    "key": "GEEN_175_93",
@@ -1136,9 +1475,12 @@
    "name": "Ultramarine's Warpath",
    "zh": "群青的战气",
    "skill": "B953CC1E",
+   "sec": "",
    "category": "5",
    "player": "PL2600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8570
   },
   {
    "key": "B289A9AD",
@@ -1146,9 +1488,12 @@
    "name": "Sumo Force",
    "zh": "相扑斗力",
    "skill": "89C66ACB",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": true
+   "special": true,
+   "cap": 5,
+   "sort": 7350
   },
   {
    "key": "GEEN_044_04",
@@ -1156,9 +1501,12 @@
    "name": "Stout Heart",
    "zh": "霸体",
    "skill": "A1A8E39D",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 7400
   },
   {
    "key": "GEEN_103_04",
@@ -1166,9 +1514,12 @@
    "name": "Natural Defenses",
    "zh": "全弱化效果抗性",
    "skill": "0EAD65E0",
+   "sec": "",
    "category": "3",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 5270
   },
   {
    "key": "GEEN_114_91",
@@ -1176,9 +1527,12 @@
    "name": "Fearless Drive",
    "zh": "英勇神速",
    "skill": "CD030268",
+   "sec": "",
    "category": "5",
    "player": "PL0000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8010
   },
   {
    "key": "GEEN_114_92",
@@ -1186,9 +1540,12 @@
    "name": "Fearless Spirit",
    "zh": "英勇灵气",
    "skill": "A38510E2",
+   "sec": "",
    "category": "5",
    "player": "PL0000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8020
   },
   {
    "key": "GEEN_114_93",
@@ -1196,9 +1553,12 @@
    "name": "Fearless Heart",
    "zh": "英勇之心",
    "skill": "DADE14DC",
+   "sec": "",
    "category": "5",
    "player": "PL0000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8030
   },
   {
    "key": "GEEN_115_91",
@@ -1206,9 +1566,12 @@
    "name": "Guardian's Conviction",
    "zh": "守护者的决心",
    "skill": "3BFED918",
+   "sec": "",
    "category": "5",
    "player": "PL0200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8040
   },
   {
    "key": "GEEN_115_92",
@@ -1216,9 +1579,12 @@
    "name": "Guardian's Honor",
    "zh": "守护者的骄傲",
    "skill": "F8496336",
+   "sec": "",
    "category": "5",
    "player": "PL0200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8050
   },
   {
    "key": "GEEN_115_93",
@@ -1226,9 +1592,12 @@
    "name": "Guardian's Warpath",
    "zh": "守护者的战气",
    "skill": "9AFDFA9E",
+   "sec": "",
    "category": "5",
    "player": "PL0200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8060
   },
   {
    "key": "GEEN_116_91",
@@ -1236,9 +1605,12 @@
    "name": "Helmsman's Navigation",
    "zh": "舵手的指引",
    "skill": "151E4674",
+   "sec": "",
    "category": "5",
    "player": "PL0300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8070
   },
   {
    "key": "GEEN_116_92",
@@ -1246,9 +1618,12 @@
    "name": "Helmsman's Tenacity",
    "zh": "舵手的坚持",
    "skill": "A374FDF0",
+   "sec": "",
    "category": "5",
    "player": "PL0300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8080
   },
   {
    "key": "GEEN_116_93",
@@ -1256,9 +1631,12 @@
    "name": "Helmsman's Warpath",
    "zh": "舵手的战气",
    "skill": "D76F4D24",
+   "sec": "",
    "category": "5",
    "player": "PL0300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8090
   },
   {
    "key": "GEEN_117_91",
@@ -1266,9 +1644,12 @@
    "name": "Mage's Aspiration",
    "zh": "魔法师的心愿",
    "skill": "B48EEF48",
+   "sec": "",
    "category": "5",
    "player": "PL0400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8100
   },
   {
    "key": "GEEN_117_92",
@@ -1276,9 +1657,12 @@
    "name": "Mage's Savvy",
    "zh": "魔法师的伶利",
    "skill": "11AAE5F5",
+   "sec": "",
    "category": "5",
    "player": "PL0400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8110
   },
   {
    "key": "GEEN_117_93",
@@ -1286,9 +1670,12 @@
    "name": "Mage's Warpath",
    "zh": "魔法师的战气",
    "skill": "C00163B3",
+   "sec": "",
    "category": "5",
    "player": "PL0400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8120
   },
   {
    "key": "GEEN_118_91",
@@ -1296,9 +1683,12 @@
    "name": "Veteran's Insight",
    "zh": "老兵的智慧",
    "skill": "AA83F548",
+   "sec": "",
    "category": "5",
    "player": "PL0500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8130
   },
   {
    "key": "GEEN_118_92",
@@ -1306,9 +1696,12 @@
    "name": "Veteran's Vision",
    "zh": "老兵的天眼",
    "skill": "921B6B0C",
+   "sec": "",
    "category": "5",
    "player": "PL0500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8140
   },
   {
    "key": "GEEN_118_93",
@@ -1316,9 +1709,12 @@
    "name": "Veteran's Warpath",
    "zh": "老兵的战气",
    "skill": "0E42BE1B",
+   "sec": "",
    "category": "5",
    "player": "PL0500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8150
   },
   {
    "key": "GEEN_119_91",
@@ -1326,9 +1722,12 @@
    "name": "Rose's Blooming",
    "zh": "玫瑰早绽",
    "skill": "23D0F67F",
+   "sec": "",
    "category": "5",
    "player": "PL0600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8160
   },
   {
    "key": "GEEN_119_92",
@@ -1336,9 +1735,12 @@
    "name": "Rose's Profusion",
    "zh": "玫瑰缤纷",
    "skill": "C2A4C7A9",
+   "sec": "",
    "category": "5",
    "player": "PL0600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8170
   },
   {
    "key": "GEEN_119_93",
@@ -1346,9 +1748,12 @@
    "name": "Rose's Warpath",
    "zh": "玫瑰的战气",
    "skill": "8519AD4A",
+   "sec": "",
    "category": "5",
    "player": "PL0600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8180
   },
   {
    "key": "GEEN_120_91",
@@ -1356,9 +1761,12 @@
    "name": "Phantasm's Concord",
    "zh": "幽幻之谊",
    "skill": "D908223D",
+   "sec": "",
    "category": "5",
    "player": "PL0700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8250
   },
   {
    "key": "GEEN_120_92",
@@ -1366,9 +1774,12 @@
    "name": "Phantasm's Harmony",
    "zh": "幽幻之应",
    "skill": "7351D602",
+   "sec": "",
    "category": "5",
    "player": "PL0700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8260
   },
   {
    "key": "GEEN_120_93",
@@ -1376,9 +1787,12 @@
    "name": "Phantasm's Warpath",
    "zh": "幽幻的战气",
    "skill": "A339D642",
+   "sec": "",
    "category": "5",
    "player": "PL0700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8270
   },
   {
    "key": "GEEN_121_91",
@@ -1386,9 +1800,12 @@
    "name": "White Dragon's Oath",
    "zh": "白龙的誓约",
    "skill": "8CDF9382",
+   "sec": "",
    "category": "5",
    "player": "PL0800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8310
   },
   {
    "key": "GEEN_121_92",
@@ -1396,9 +1813,12 @@
    "name": "White Dragon's Glory",
    "zh": "白龙的荣耀",
    "skill": "D1012D8C",
+   "sec": "",
    "category": "5",
    "player": "PL0800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8320
   },
   {
    "key": "GEEN_121_93",
@@ -1406,9 +1826,12 @@
    "name": "White Dragon's Warpath",
    "zh": "白龙的战气",
    "skill": "6316CBEB",
+   "sec": "",
    "category": "5",
    "player": "PL0800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8330
   },
   {
    "key": "GEEN_122_91",
@@ -1416,9 +1839,12 @@
    "name": "Hero's Creed",
    "zh": "勇士的信念",
    "skill": "2E65A774",
+   "sec": "",
    "category": "5",
    "player": "PL0900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8340
   },
   {
    "key": "GEEN_122_92",
@@ -1426,9 +1852,12 @@
    "name": "Hero's Will",
    "zh": "勇士的毅力",
    "skill": "16EFF868",
+   "sec": "",
    "category": "5",
    "player": "PL0900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8350
   },
   {
    "key": "GEEN_122_93",
@@ -1436,9 +1865,12 @@
    "name": "Hero's Warpath",
    "zh": "勇士的战气",
    "skill": "D8F66C1C",
+   "sec": "",
    "category": "5",
    "player": "PL0900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8360
   },
   {
    "key": "GEEN_123_91",
@@ -1446,9 +1878,12 @@
    "name": "Lord's Procession",
    "zh": "王者行进",
    "skill": "E60A735C",
+   "sec": "",
    "category": "5",
    "player": "PL1000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8370
   },
   {
    "key": "GEEN_123_92",
@@ -1456,9 +1891,12 @@
    "name": "Lord's Ambition",
    "zh": "王者一心",
    "skill": "6FF05223",
+   "sec": "",
    "category": "5",
    "player": "PL1000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8380
   },
   {
    "key": "GEEN_123_93",
@@ -1466,9 +1904,12 @@
    "name": "Lord's Warpath",
    "zh": "王者的战气",
    "skill": "BA504607",
+   "sec": "",
    "category": "5",
    "player": "PL1000",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8390
   },
   {
    "key": "GEEN_124_91",
@@ -1476,9 +1917,12 @@
    "name": "Dragonslayer's Dominance",
    "zh": "屠龙者的威猛",
    "skill": "86CBCDC4",
+   "sec": "",
    "category": "5",
    "player": "PL1100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8400
   },
   {
    "key": "GEEN_124_92",
@@ -1486,9 +1930,12 @@
    "name": "Dragonslayer's Ingenuity",
    "zh": "屠龙者的才智",
    "skill": "05FA4599",
+   "sec": "",
    "category": "5",
    "player": "PL1100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8410
   },
   {
    "key": "GEEN_124_93",
@@ -1496,9 +1943,12 @@
    "name": "Dragonslayer's Warpath",
    "zh": "屠龙者的战气",
    "skill": "C7D379F1",
+   "sec": "",
    "category": "5",
    "player": "PL1100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8420
   },
   {
    "key": "GEEN_125_91",
@@ -1506,9 +1956,12 @@
    "name": "Holy Knight's Luster",
    "zh": "圣骑士的剑辉",
    "skill": "9A9DC170",
+   "sec": "",
    "category": "5",
    "player": "PL1200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8190
   },
   {
    "key": "GEEN_125_92",
@@ -1516,9 +1969,12 @@
    "name": "Holy Knight's Grandeur",
    "zh": "圣骑士的威光",
    "skill": "522E2388",
+   "sec": "",
    "category": "5",
    "player": "PL1200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8200
   },
   {
    "key": "GEEN_125_93",
@@ -1526,9 +1982,12 @@
    "name": "Holy Knight's Warpath",
    "zh": "圣骑士的战气",
    "skill": "B85202BC",
+   "sec": "",
    "category": "5",
    "player": "PL1200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8210
   },
   {
    "key": "GEEN_126_91",
@@ -1536,9 +1995,12 @@
    "name": "Swordmaster's Prowess",
    "zh": "变幻自如的迅刃",
    "skill": "0CD6C625",
+   "sec": "",
    "category": "5",
    "player": "PL1300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8460
   },
   {
    "key": "GEEN_126_92",
@@ -1546,9 +2008,12 @@
    "name": "Swordmaster's Art",
    "zh": "变幻自如的妖剑士",
    "skill": "A3B49220",
+   "sec": "",
    "category": "5",
    "player": "PL1300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8470
   },
   {
    "key": "GEEN_126_93",
@@ -1556,9 +2021,12 @@
    "name": "Swordmaster's Warpath",
    "zh": "变幻自如的战气",
    "skill": "DAEFBB27",
+   "sec": "",
    "category": "5",
    "player": "PL1300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8480
   },
   {
    "key": "GEEN_127_91",
@@ -1566,9 +2034,12 @@
    "name": "Butterfly's Grace",
    "zh": "斩姬梦幻",
    "skill": "29B07BEB",
+   "sec": "",
    "category": "5",
    "player": "PL1400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8280
   },
   {
    "key": "GEEN_127_92",
@@ -1576,9 +2047,12 @@
    "name": "Butterfly's Valor",
    "zh": "斩姬武艺",
    "skill": "A63B89CD",
+   "sec": "",
    "category": "5",
    "player": "PL1400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8290
   },
   {
    "key": "GEEN_127_93",
@@ -1586,9 +2060,12 @@
    "name": "Butterfly's Warpath",
    "zh": "斩姬的战气",
    "skill": "FDD1AD24",
+   "sec": "",
    "category": "5",
    "player": "PL1400",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8300
   },
   {
    "key": "GEEN_128_91",
@@ -1596,9 +2073,12 @@
    "name": "Eternal Rage's Mettle",
    "zh": "古今无双的气概",
    "skill": "5463232F",
+   "sec": "",
    "category": "5",
    "player": "PL1500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8220
   },
   {
    "key": "GEEN_128_92",
@@ -1606,9 +2086,12 @@
    "name": "Eternal Rage's Ethos",
    "zh": "古今无双的强者",
    "skill": "451D814C",
+   "sec": "",
    "category": "5",
    "player": "PL1500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8230
   },
   {
    "key": "GEEN_128_93",
@@ -1616,9 +2099,12 @@
    "name": "Eternal Rage's Warpath",
    "zh": "古今无双的战气",
    "skill": "0F026CF0",
+   "sec": "",
    "category": "5",
    "player": "PL1500",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8240
   },
   {
    "key": "GEEN_129_91",
@@ -1626,9 +2112,12 @@
    "name": "Founder's Strategy",
    "zh": "极致谋略",
    "skill": "EC3CF174",
+   "sec": "",
    "category": "5",
    "player": "PL1800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8430
   },
   {
    "key": "GEEN_129_92",
@@ -1636,9 +2125,12 @@
    "name": "Founder's Truth",
    "zh": "极致真理",
    "skill": "AF513A9D",
+   "sec": "",
    "category": "5",
    "player": "PL1800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8440
   },
   {
    "key": "GEEN_129_93",
@@ -1646,9 +2138,12 @@
    "name": "Founder's Warpath",
    "zh": "极致的战气",
    "skill": "E6B92E34",
+   "sec": "",
    "category": "5",
    "player": "PL1800",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8450
   },
   {
    "key": "GEEN_130_91",
@@ -1656,9 +2151,12 @@
    "name": "Versalis Foundation",
    "zh": "异能增长",
    "skill": "93A2093C",
+   "sec": "",
    "category": "5",
    "player": "PL1900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8790
   },
   {
    "key": "GEEN_130_92",
@@ -1666,9 +2164,12 @@
    "name": "Versalis Ignition",
    "zh": "异能战意",
    "skill": "7AD0C010",
+   "sec": "",
    "category": "5",
    "player": "PL1900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8800
   },
   {
    "key": "GEEN_130_93",
@@ -1676,9 +2177,12 @@
    "name": "Versalis Heart",
    "zh": "异能之心",
    "skill": "B064A634",
+   "sec": "",
    "category": "5",
    "player": "PL1900",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8810
   },
   {
    "key": "GEEN_131_91",
@@ -1686,9 +2190,12 @@
    "name": "Crimson's Clout",
    "zh": "真红烈焰",
    "skill": "6EBFA176",
+   "sec": "",
    "category": "5",
    "player": "PL1600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8490
   },
   {
    "key": "GEEN_131_92",
@@ -1696,9 +2203,12 @@
    "name": "Crimson's Flight",
    "zh": "真红翔舞",
    "skill": "F1D5DBD0",
+   "sec": "",
    "category": "5",
    "player": "PL1600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8500
   },
   {
    "key": "GEEN_131_93",
@@ -1706,9 +2216,12 @@
    "name": "Crimson's Warpath",
    "zh": "真红的战气",
    "skill": "4F135217",
+   "sec": "",
    "category": "5",
    "player": "PL1600",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8510
   },
   {
    "key": "GEEN_132_91",
@@ -1716,9 +2229,12 @@
    "name": "Ebony's Presence",
    "zh": "冥暗刚刃",
    "skill": "7440E869",
+   "sec": "",
    "category": "5",
    "player": "PL1700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8520
   },
   {
    "key": "GEEN_132_92",
@@ -1726,9 +2242,12 @@
    "name": "Ebony's Poise",
    "zh": "冥暗自若",
    "skill": "CD124165",
+   "sec": "",
    "category": "5",
    "player": "PL1700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8530
   },
   {
    "key": "GEEN_132_93",
@@ -1736,9 +2255,12 @@
    "name": "Ebony's Warpath",
    "zh": "冥暗的战气",
    "skill": "D7F9BB88",
+   "sec": "",
    "category": "5",
    "player": "PL1700",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8540
   },
   {
    "key": "GEEN_141_04",
@@ -1746,9 +2268,12 @@
    "name": "Crabvestment Returns",
    "zh": "钳蟹的报恩",
    "skill": "1B0D9897",
+   "sec": "",
    "category": "5",
    "player": "",
-   "special": true
+   "special": true,
+   "cap": 15,
+   "sort": 7310
   },
   {
    "key": "GEEN_160_04",
@@ -1756,9 +2281,12 @@
    "name": "Alpha",
    "zh": "α秘纹",
    "skill": "DBE1D775",
+   "sec": "DC584F60",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 7500
   },
   {
    "key": "GEEN_161_04",
@@ -1766,9 +2294,12 @@
    "name": "Beta",
    "zh": "β秘纹",
    "skill": "8D2ADB6E",
+   "sec": "DC584F60",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 7510
   },
   {
    "key": "GEEN_162_04",
@@ -1776,9 +2307,12 @@
    "name": "Gamma",
    "zh": "γ秘纹",
    "skill": "5C862E13",
+   "sec": "DC584F60",
    "category": "5",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 30,
+   "sort": 7520
   },
   {
    "key": "GEEN_170_91",
@@ -1786,9 +2320,12 @@
    "name": "Spirit Edge's Rally",
    "zh": "剑圣的炼气",
    "skill": "77C809F5",
+   "sec": "",
    "category": "5",
    "player": "PL2200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8610
   },
   {
    "key": "GEEN_170_92",
@@ -1796,9 +2333,12 @@
    "name": "Spirit Edge's Fury",
    "zh": "剑圣的闪刃",
    "skill": "9230E3F5",
+   "sec": "",
    "category": "5",
    "player": "PL2200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8620
   },
   {
    "key": "GEEN_170_93",
@@ -1806,9 +2346,12 @@
    "name": "Spirit Edge's Warpath",
    "zh": "剑圣的战气",
    "skill": "7B4FC47A",
+   "sec": "",
    "category": "5",
    "player": "PL2200",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8630
   },
   {
    "key": "GEEN_171_91",
@@ -1816,9 +2359,12 @@
    "name": "Dark Huntress's Volley",
    "zh": "魔眼的万箭",
    "skill": "E85FF8E0",
+   "sec": "",
    "category": "5",
    "player": "PL2300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8650
   },
   {
    "key": "GEEN_171_92",
@@ -1826,9 +2372,12 @@
    "name": "Dark Huntress's Surge",
    "zh": "魔眼的凛翔",
    "skill": "8572B8AF",
+   "sec": "",
    "category": "5",
    "player": "PL2300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8660
   },
   {
    "key": "GEEN_171_93",
@@ -1836,9 +2385,12 @@
    "name": "Dark Huntress's Warpath",
    "zh": "魔眼的战气",
    "skill": "81B293D9",
+   "sec": "",
    "category": "5",
    "player": "PL2300",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8670
   },
   {
    "key": "GEEN_172_92",
@@ -1846,9 +2398,12 @@
    "name": "Supreme Primarch's Nimbus",
    "zh": "天司长的风雅",
    "skill": "15806DFC",
+   "sec": "",
    "category": "5",
    "player": "PL2100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8700
   },
   {
    "key": "GEEN_172_93",
@@ -1856,9 +2411,12 @@
    "name": "Supreme Primarch's Warpath",
    "zh": "天司长的战气",
    "skill": "4E5F6706",
+   "sec": "",
    "category": "5",
    "player": "PL2100",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 8710
   },
   {
    "key": "GEEN_233_34",
@@ -1866,9 +2424,12 @@
    "name": "Berserker Echo",
    "zh": "狂战士",
    "skill": "EE85CD1F",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2120
   },
   {
    "key": "GEEN_234_34",
@@ -1876,9 +2437,168 @@
    "name": "Spartan Echo",
    "zh": "斯巴达",
    "skill": "3D8153A1",
+   "sec": "",
    "category": "2",
    "player": "",
-   "special": false
+   "special": false,
+   "cap": 15,
+   "sort": 2130
+  },
+  {
+   "key": "SKILL_113_00",
+   "gem": "",
+   "name": "",
+   "zh": "因子强化",
+   "skill": "57E8A93F",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 2,
+   "sort": -1
+  },
+  {
+   "key": "SKILL_143_00",
+   "gem": "",
+   "name": "",
+   "zh": "浩劫",
+   "skill": "40223C28",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 25,
+   "sort": -1
+  },
+  {
+   "key": "1E1CECCE",
+   "gem": "",
+   "name": "",
+   "zh": "浩劫新星",
+   "skill": "1E1CECCE",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 35,
+   "sort": -1
+  },
+  {
+   "key": "SKILL_311_00",
+   "gem": "",
+   "name": "",
+   "zh": "伤害上限·轰天",
+   "skill": "3B71AF12",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "SKILL_312_00",
+   "gem": "",
+   "name": "",
+   "zh": "伤害上限·疾天",
+   "skill": "FFF8CF64",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "235D86EF",
+   "gem": "",
+   "name": "",
+   "zh": "超新星",
+   "skill": "235D86EF",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "SKILL_314_00",
+   "gem": "",
+   "name": "",
+   "zh": "伤害上限·苍天",
+   "skill": "AEFEB1BC",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "0151CF9E",
+   "gem": "",
+   "name": "",
+   "zh": "伤害上限·红天",
+   "skill": "0151CF9E",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "BBD77C33",
+   "gem": "",
+   "name": "",
+   "zh": "超凡强击",
+   "skill": "BBD77C33",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "020DB733",
+   "gem": "",
+   "name": "",
+   "zh": "超凡技艺",
+   "skill": "020DB733",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "3F682593",
+   "gem": "",
+   "name": "",
+   "zh": "超凡奥秘",
+   "skill": "3F682593",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 15,
+   "sort": -1
+  },
+  {
+   "key": "79027FC8",
+   "gem": "",
+   "name": "",
+   "zh": "超凡破限",
+   "skill": "79027FC8",
+   "sec": "",
+   "category": "",
+   "player": "",
+   "special": false,
+   "cap": 55,
+   "sort": -1
   }
  ]
 }

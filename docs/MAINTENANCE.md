@@ -140,11 +140,9 @@ extract/loadout.json（因子物品表，279 条）─┘                       
 ```
 
 | 文件 | 字段 | 说明 |
-|---|---|---|
-| `skills.json` | `{ hash, zh, en, cap, sort }` | 词条 ID（hash）+ 双语名 + 等级上限 + 游戏 SortOrder（**-1 = 非持有品**，实装技能/武器集成类，不可配、保留显示）；源 = extract/skills.json |
-| `sigils.json` | `{ key, gem, name, zh, skill, category, player, special }` | 每名字组只保留**池版行**（无池版组保留原行，188 行）：`name`（英文名）为分组键；`category` 替代原 rarity；`sec`/`pool` 已随固定/池版合并移除（装配见下）；源 = extract/loadout.json |
-
-**重建/更新流程**（只动源数据，不手改 mod 产物）：
+| 运行时表 | 说明 |
+|---|---|
+| `sigils.json` | **合并单表**（200 行，原 skills.json 已并入）：`{ key, gem, name, zh, skill, sec, category, player, special, cap, sort }` —— 物品行 188（`name`/\zh 物品名（原样）；`skill` 主词条 hash、`sec` 固定第二词条 hash（无副="", 如永恒钳蟹因子=D3B8C21F）；`cap`/`sort` 主词条属性）+ 非持有品词条行 12（`gem=""`，`sort:-1`：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、超新星、超凡奥秘/强击/技艺/破限）。词条字典（副下拉）按 `skill` 去重派生（取首行，即“以词条命名的物品行”：zh/name=词条名）。主下拉 = `gem≠"" 且 player=="" 且 !special`（无物品行不作为主） |
 1. 改 `extract` 侧源表（`skills.json` / `loadout.json`，生成方式见 `extract/GENERATING.md` §1/§7）；
 2. 跑 `extract/export_runtime_data.py` → 写 mod 目录 `sigils.json` + `skills.json`；
 3. 校验：`extract/verify_parser.py`（模拟 C# 解析：主词条存在/等级不超 cap/哨兵规则）；

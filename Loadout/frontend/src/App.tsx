@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/input-group"
 import { TraitPicker } from "./TraitPicker"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LoadTraits, LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
+import { LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
 
 const MAX_SLOTS = 12 // fixed rows shown in the editor
 
@@ -83,10 +83,13 @@ interface Sigil {
   gem: string
   name: string // display name (base, level suffix stripped); grouping key
   zh: string
+  en?: string // trait EN label (merged table)
   skill: string // primary trait hash
   category: string
   player: string
   special: boolean
+  cap?: number // trait level cap (merged table)
+  sort?: number // game SortOrder; -1 = non-holdable (merged table)
 }
 
 interface Trait {
@@ -225,27 +228,26 @@ export default function App() {
 
   useEffect(() => {
     ;(async () => {
-      // Independent loads: one broken file must not block the rest.
-      try {
-        const traitJson = await LoadTraits()
-        setTraits(
-          (JSON.parse(traitJson).traits as { hash?: string; zh: string; en?: string; cap?: number; sort?: number }[])
-            .filter((tr) => tr.hash)
-            .map((tr) => ({
-              hash: tr.hash as string,
-              zh: tr.zh,
-              en: tr.en ?? tr.zh,
-              cap: tr.cap ?? 15,
-              sort: tr.sort ?? 0,
-            }))
-        )
-      } catch (e) {
-        setStatus(t.dictFail(e))
-      }
+      // Merged single table: item rows (gem != "") + non-holdable trait rows.
       let sigilsLoaded: Sigil[] = []
       try {
         const sigilJson = await LoadSigils()
-        sigilsLoaded = (JSON.parse(sigilJson).sigils as Partial<Sigil>[])
+        const rows = (JSON.parse(sigilJson).sigils as Partial<Sigil>[]) ?? []
+        // Trait list = one row per trait hash (first row wins: the item named
+        // after the trait); EN label uses the item EN name when present.
+        const traitById = new Map<string, Trait>()
+        for (const s of rows) {
+          if (!s.skill || traitById.has(s.skill)) continue
+          traitById.set(s.skill, {
+            hash: s.skill,
+            zh: s.zh ?? "",
+            en: s.name || s.zh || "",
+            cap: s.cap ?? 15,
+            sort: s.sort ?? 0,
+          })
+        }
+        setTraits([...traitById.values()])
+        sigilsLoaded = rows
           .filter((s) => s.gem)
           .map((s) => ({
             key: s.key ?? "",

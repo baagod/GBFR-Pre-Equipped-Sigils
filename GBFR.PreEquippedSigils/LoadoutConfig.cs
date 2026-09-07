@@ -54,7 +54,6 @@ internal static class LoadoutConfig
     private static bool _hadConfigFile;
     private static string _loadoutPath = "";
     private static string _sigilsPath = "";
-    private static string _traitsPath = "";
 
     internal static void Initialize(string modDirectory, Action<string> log)
     {
@@ -64,7 +63,6 @@ internal static class LoadoutConfig
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GBFRPreEquippedSigils", "loadout.json");
         _sigilsPath = Path.Combine(modDirectory, "sigils.json");
-        _traitsPath = Path.Combine(modDirectory, "skills.json");
         LoadExclusiveTable(modDirectory, log);
         if (LoadTables(log))
             TryApply(log);
@@ -90,66 +88,45 @@ internal static class LoadoutConfig
     {
         try
         {
+            // Merged single table: item rows (gem != "") + non-holdable trait rows
+            // (gem == ""); every row also registers its trait (skill hash -> cap).
             using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_sigilsPath));
-            int count = 0;
+            int sigilCount = 0;
+            int traitCount = 0;
             foreach (JsonElement entry in doc.RootElement.GetProperty("sigils").EnumerateArray())
             {
                 try
                 {
-                    string gem = Hx(entry.GetProperty("gem"));
-                    if (gem.Length == 0)
-                        continue;
-                    var info = new SigilInfo
-                    {
-                        Hash = PU(gem),
-                        Skill = PU(Hx(entry.GetProperty("skill"))),
-                    };
-                    Sigils[gem] = info;
-                    count++;
-                }
-                catch
-                {
-                    // one bad entry must not disable the whole table
-                }
-            }
-            log($"Loaded {count} sigil entries.");
-        }
-        catch (Exception exception)
-        {
-            log($"Failed to load sigil table: {exception.Message}");
-            return false;
-        }
-
-        try
-        {
-            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_traitsPath));
-            int count = 0;
-            foreach (JsonElement entry in doc.RootElement.GetProperty("traits").EnumerateArray())
-            {
-                try
-                {
-                    string hash = Hx(entry.GetProperty("hash"));
+                    string hash = Hx(entry.GetProperty("skill"));
                     if (hash.Length == 0)
                         continue;
-                    // cap 与 extract/skills.json 的字段名保持一致（词条等级上限）。
                     int maxLevel = entry.TryGetProperty("cap", out JsonElement ml) &&
                                    ml.TryGetInt32(out int m)
                         ? m
                         : DefaultLevel;
                     Traits[hash] = new TraitInfo { MaxLevel = maxLevel };
-                    count++;
+                    traitCount++;
+                    string gem = Hx(entry.GetProperty("gem"));
+                    if (gem.Length == 0)
+                        continue;
+                    Sigils[gem] = new SigilInfo
+                    {
+                        Hash = PU(gem),
+                        Skill = PU(hash),
+                    };
+                    sigilCount++;
                 }
                 catch
                 {
                     // one bad entry must not disable the whole table
                 }
             }
-            log($"Loaded {count} trait dictionary entries.");
+            log($"Loaded {sigilCount} sigil and {traitCount} trait entries.");
             return Traits.Count > 0 && Sigils.Count > 0;
         }
         catch (Exception exception)
         {
-            log($"Failed to load trait dictionary: {exception.Message}");
+            log($"Failed to load merged sigil/trait table: {exception.Message}");
             return false;
         }
     }
