@@ -67,7 +67,13 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
       if (!line.empty() && line.back() == '\r')
          line.pop_back();
 
-      const std::string_view trimmed = std::string_view(line).substr(line.find_first_not_of(" \t"));
+      // Blank lines must never reach substr(npos): that would throw
+      // std::out_of_range and terminate the process instead of failing
+      // closed. Skip them.
+      const size_t first = line.find_first_not_of(" \t");
+      if (first == std::string::npos)
+         continue;
+      const std::string_view trimmed = std::string_view(line).substr(first);
       if (trimmed == "}," || trimmed == "}" || trimmed == "]")
       {
          // End of a sigil object: a gem with a character field is an
