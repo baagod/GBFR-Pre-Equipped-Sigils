@@ -2686,6 +2686,71 @@
       "cap": 15,
       "sort": 8720,
       "character": "718E1A14"
+    },
+    {
+      "key": "05FE0351",
+      "gem": "05FE0351",
+      "name": "Spartan Echo",
+      "zh": "斯巴达",
+      "skill": "3D8153A1",
+      "sec": "F372F096",
+      "category": "2",
+      "player": "",
+      "special": false,
+      "cap": 15,
+      "sort": 2131
+    },
+    {
+      "key": "3D0BF8CB",
+      "gem": "3D0BF8CB",
+      "name": "War Elemental",
+      "zh": "属性克制转换",
+      "skill": "4C588C27",
+      "sec": "09AA7DB5",
+      "category": "2",
+      "player": "",
+      "special": false,
+      "cap": 15,
+      "sort": 2321
+    },
+    {
+      "key": "6EFCD286",
+      "gem": "6EFCD286",
+      "name": "War Elemental",
+      "zh": "属性克制转换",
+      "skill": "4C588C27",
+      "sec": "3FEC5F80",
+      "category": "2",
+      "player": "",
+      "special": false,
+      "cap": 15,
+      "sort": 2322
+    },
+    {
+      "key": "6FF3308A",
+      "gem": "6FF3308A",
+      "name": "War Elemental",
+      "zh": "属性克制转换",
+      "skill": "4C588C27",
+      "sec": "F26BAEA5",
+      "category": "2",
+      "player": "",
+      "special": false,
+      "cap": 15,
+      "sort": 2323
+    },
+    {
+      "key": "GEEN_151_94",
+      "gem": "97CF485D",
+      "name": "Potent Greens",
+      "zh": "万能药",
+      "skill": "CD18A77D",
+      "sec": "57AB5B10",
+      "category": "4",
+      "player": "",
+      "special": false,
+      "cap": 30,
+      "sort": 4091
     }
   ]
 }
