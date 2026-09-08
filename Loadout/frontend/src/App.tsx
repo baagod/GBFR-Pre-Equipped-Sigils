@@ -90,6 +90,8 @@ interface Sigil {
   special: boolean
   cap?: number // trait level cap (merged table)
   sort?: number // game SortOrder; -1 = non-holdable (merged table)
+  lot?: string[] // pool versions: legal secondary trait hashes (empty = no pool)
+  sec?: string // fixed-second versions: the fixed secondary trait hash
 }
 
 interface Trait {
@@ -285,6 +287,8 @@ export default function App() {
             category: s.category ?? "",
             player: s.player ?? "",
             special: s.special === true,
+            lot: Array.isArray(s.lot) ? s.lot : undefined,
+            sec: typeof s.sec === "string" ? s.sec : undefined,
           }))
         setSigils(sigilsLoaded)
       } catch (e) {
@@ -391,21 +395,46 @@ export default function App() {
     return { exclusiveTraits: exclusive, allTraitHashes: traits.map((tr) => tr.hash) }
   }, [sigils, traits])
 
-  // Hint only; generation is never blocked. The legal set is the same for
-  // every regular main (only exclusive traits are excluded); special mains
-  // get an empty set so every secondary shows the illegal style.
+  // Hint only; generation is never blocked. Legal secondaries for a main:
+  //   - special mains (one == special): empty set -> everything dimmed
+  //   - pool families (lot != []): lot ∪ fixed-second (sec) of the family
+  //   - everything else: all non-exclusive traits (current behaviour)
   const legalByMain = useMemo(() => {
     const legal = new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
     const none: Set<string> = new Set()
-    return (name: string) => (specialMainNames.has(name) ? none : legal)
-  }, [allTraitHashes, exclusiveTraits, specialMainNames])
+    const byName = new Map<string, Set<string>>()
+    for (const [name, variants] of groupedByName) {
+      const pool = variants.some((v) => v.lot && v.lot.length > 0)
+      if (!pool) continue
+      const set = new Set<string>()
+      for (const v of variants) {
+        for (const h of v.lot ?? []) set.add(h)
+        if (v.sec) set.add(v.sec)
+      }
+      byName.set(name, set)
+    }
+    return (name: string) => {
+      if (specialMainNames.has(name)) return none
+      return byName.get(name) ?? legal
+    }
+  }, [allTraitHashes, exclusiveTraits, specialMainNames, groupedByName])
 
   const traitHashes = useMemo(() => traits.map((tr) => tr.hash), [traits])
 
-  // Data is pool-only per name group; the first variant IS the family gem.
-  const gemFor = (name: string): string => {
+  // Family gem selection: no secondary -> pool version (lot != [] variant,
+  // else first); secondary in the family's lot -> pool version; secondary
+  // equal to a variant's fixed second (sec) -> that fixed version; anything
+  // else (illegal) still generates with the pool version (styles only).
+  // lot match wins over sec match (a trait may appear in both: e.g. 凝神 is
+  // in War Elemental's pool AND the fixed second of its 3D0BF8CB variant).
+  const gemFor = (name: string, secHash = ""): string => {
     const variants = groupedByName.get(name)
-    return variants && variants.length > 0 ? variants[0].gem : ""
+    if (!variants || variants.length === 0) return ""
+    const pool = variants.find((v) => v.lot && v.lot.length > 0) ?? variants[0]
+    if (secHash === "") return pool.gem
+    if ((pool.lot ?? []).includes(secHash)) return pool.gem
+    const fixed = variants.find((v) => v.sec && v.sec === secHash)
+    return fixed?.gem ?? pool.gem
   }
 
   const maxOfMain = (name: string) => {
@@ -472,7 +501,7 @@ export default function App() {
     }
     const filled = slots.filter((s) => s.mainHash !== "")
     const cfg = filled.map((s) => {
-      const gem = gemFor(s.mainHash)
+      const gem = gemFor(s.mainHash, s.secHash)
       const main = {
         gem,
         level: s.mainLevel,
