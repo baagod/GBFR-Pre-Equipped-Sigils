@@ -11,7 +11,11 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2320
+      "lot": [
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "E14E1598",
@@ -24,7 +28,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2225
+      "lot": []
     },
     {
       "key": "GEEN_063_24",
@@ -37,7 +41,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 5070
+      "lot": []
     },
     {
       "key": "20492635",
@@ -50,7 +54,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2025
+      "lot": []
     },
     {
       "key": "5BF84FD1",
@@ -63,7 +67,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2226
+      "lot": []
     },
     {
       "key": "9300FADB",
@@ -76,7 +80,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2065
+      "lot": []
     },
     {
       "key": "D29CD8E0",
@@ -89,7 +93,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2055
+      "lot": []
     },
     {
       "key": "74061B0C",
@@ -102,7 +106,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2215
+      "lot": []
     },
     {
       "key": "8B8085C0",
@@ -115,7 +119,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2015
+      "lot": []
     },
     {
       "key": "7B4AAB30",
@@ -128,7 +132,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 4025
+      "lot": []
     },
     {
       "key": "GEEN_000_24",
@@ -141,7 +145,7 @@
       "player": "",
       "special": false,
       "cap": 50,
-      "sort": 1010
+      "lot": []
     },
     {
       "key": "GEEN_001_24",
@@ -154,7 +158,7 @@
       "player": "",
       "special": false,
       "cap": 50,
-      "sort": 1020
+      "lot": []
     },
     {
       "key": "GEEN_003_24",
@@ -167,7 +171,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 1030
+      "lot": []
     },
     {
       "key": "GEEN_004_24",
@@ -180,7 +184,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 1040
+      "lot": []
     },
     {
       "key": "GEEN_005_24",
@@ -193,7 +197,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2010
+      "lot": []
     },
     {
       "key": "GEEN_006_24",
@@ -206,7 +210,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2020
+      "lot": []
     },
     {
       "key": "GEEN_008_24",
@@ -219,7 +223,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2150
+      "lot": []
     },
     {
       "key": "GEEN_009_24",
@@ -232,7 +236,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2090
+      "lot": []
     },
     {
       "key": "GEEN_012_24",
@@ -245,7 +249,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2190
+      "lot": []
     },
     {
       "key": "GEEN_013_24",
@@ -258,7 +262,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2030
+      "lot": []
     },
     {
       "key": "GEEN_014_24",
@@ -271,7 +275,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 2040
+      "lot": []
     },
     {
       "key": "GEEN_017_24",
@@ -284,7 +288,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2140
+      "lot": []
     },
     {
       "key": "GEEN_018_24",
@@ -297,7 +301,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2180
+      "lot": []
     },
     {
       "key": "GEEN_020_24",
@@ -310,7 +314,7 @@
       "player": "",
       "special": false,
       "cap": 65,
-      "sort": 2070
+      "lot": []
     },
     {
       "key": "GEEN_024_24",
@@ -323,7 +327,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2100
+      "lot": []
     },
     {
       "key": "GEEN_027_24",
@@ -336,7 +340,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2050
+      "lot": []
     },
     {
       "key": "GEEN_028_24",
@@ -349,7 +353,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 2160
+      "lot": []
     },
     {
       "key": "GEEN_029_24",
@@ -362,7 +366,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2200
+      "lot": []
     },
     {
       "key": "GEEN_030_24",
@@ -375,7 +379,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2210
+      "lot": []
     },
     {
       "key": "GEEN_031_24",
@@ -388,7 +392,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2220
+      "lot": []
     },
     {
       "key": "GEEN_036_24",
@@ -401,7 +405,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 5030
+      "lot": []
     },
     {
       "key": "GEEN_045_24",
@@ -414,7 +418,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 7030
+      "lot": []
     },
     {
       "key": "GEEN_046_24",
@@ -427,7 +431,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5170
+      "lot": []
     },
     {
       "key": "GEEN_047_24",
@@ -440,7 +444,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5190
+      "lot": []
     },
     {
       "key": "GEEN_051_24",
@@ -453,7 +457,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5160
+      "lot": []
     },
     {
       "key": "GEEN_052_24",
@@ -466,7 +470,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5140
+      "lot": []
     },
     {
       "key": "GEEN_054_24",
@@ -479,7 +483,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5130
+      "lot": []
     },
     {
       "key": "GEEN_055_24",
@@ -492,7 +496,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5200
+      "lot": []
     },
     {
       "key": "GEEN_057_24",
@@ -505,7 +509,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5220
+      "lot": []
     },
     {
       "key": "GEEN_058_24",
@@ -518,7 +522,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5230
+      "lot": []
     },
     {
       "key": "GEEN_060_24",
@@ -531,7 +535,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5060
+      "lot": []
     },
     {
       "key": "GEEN_061_24",
@@ -544,7 +548,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2250
+      "lot": []
     },
     {
       "key": "GEEN_064_24",
@@ -557,7 +561,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2260
+      "lot": []
     },
     {
       "key": "GEEN_065_24",
@@ -570,7 +574,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 4010
+      "lot": []
     },
     {
       "key": "GEEN_066_24",
@@ -583,7 +587,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 4020
+      "lot": []
     },
     {
       "key": "GEEN_067_24",
@@ -596,7 +600,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 4030
+      "lot": []
     },
     {
       "key": "GEEN_068_24",
@@ -609,7 +613,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 7040
+      "lot": []
     },
     {
       "key": "GEEN_069_24",
@@ -622,7 +626,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 4040
+      "lot": []
     },
     {
       "key": "GEEN_070_24",
@@ -635,7 +639,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 4050
+      "lot": []
     },
     {
       "key": "GEEN_072_24",
@@ -648,7 +652,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 4060
+      "lot": []
     },
     {
       "key": "GEEN_073_24",
@@ -661,7 +665,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 7010
+      "lot": []
     },
     {
       "key": "GEEN_077_24",
@@ -674,7 +678,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 7070
+      "lot": []
     },
     {
       "key": "GEEN_078_24",
@@ -687,7 +691,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 7060
+      "lot": []
     },
     {
       "key": "GEEN_079_24",
@@ -700,7 +704,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 7080
+      "lot": []
     },
     {
       "key": "GEEN_080_24",
@@ -713,7 +717,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 7090
+      "lot": []
     },
     {
       "key": "GEEN_083_24",
@@ -726,7 +730,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2080
+      "lot": []
     },
     {
       "key": "GEEN_085_24",
@@ -739,7 +743,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 5010
+      "lot": []
     },
     {
       "key": "GEEN_086_24",
@@ -752,7 +756,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5180
+      "lot": []
     },
     {
       "key": "GEEN_087_24",
@@ -765,7 +769,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5120
+      "lot": []
     },
     {
       "key": "GEEN_088_24",
@@ -778,7 +782,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5210
+      "lot": []
     },
     {
       "key": "GEEN_094_24",
@@ -791,7 +795,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 7050
+      "lot": []
     },
     {
       "key": "GEEN_096_24",
@@ -804,7 +808,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 5050
+      "lot": []
     },
     {
       "key": "GEEN_104_24",
@@ -817,7 +821,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5090
+      "lot": []
     },
     {
       "key": "GEEN_106_24",
@@ -830,7 +834,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 4080
+      "lot": []
     },
     {
       "key": "GEEN_107_24",
@@ -843,7 +847,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5080
+      "lot": []
     },
     {
       "key": "GEEN_109_24",
@@ -856,7 +860,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 4070
+      "lot": []
     },
     {
       "key": "GEEN_110_24",
@@ -869,7 +873,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2060
+      "lot": []
     },
     {
       "key": "GEEN_111_24",
@@ -882,7 +886,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2170
+      "lot": []
     },
     {
       "key": "GEEN_136_24",
@@ -895,7 +899,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5150
+      "lot": []
     },
     {
       "key": "GEEN_137_24",
@@ -908,7 +912,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5240
+      "lot": []
     },
     {
       "key": "GEEN_138_24",
@@ -921,7 +925,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5250
+      "lot": []
     },
     {
       "key": "GEEN_139_24",
@@ -934,7 +938,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5260
+      "lot": []
     },
     {
       "key": "GEEN_144_24",
@@ -947,7 +951,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5040
+      "lot": []
     },
     {
       "key": "GEEN_140_00",
@@ -960,7 +964,7 @@
       "player": "",
       "special": true,
       "cap": 45,
-      "sort": 7300
+      "lot": []
     },
     {
       "key": "GEEN_145_24",
@@ -973,7 +977,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2240
+      "lot": []
     },
     {
       "key": "GEEN_147_24",
@@ -986,7 +990,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 7100
+      "lot": []
     },
     {
       "key": "GEEN_151_24",
@@ -999,7 +1003,7 @@
       "player": "",
       "special": false,
       "cap": 45,
-      "sort": 2110
+      "lot": []
     },
     {
       "key": "GEEN_152_24",
@@ -1012,7 +1016,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2280
+      "lot": []
     },
     {
       "key": "GEEN_153_24",
@@ -1025,7 +1029,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2230
+      "lot": []
     },
     {
       "key": "GEEN_154_24",
@@ -1038,7 +1042,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2290
+      "lot": []
     },
     {
       "key": "GEEN_158_24",
@@ -1051,7 +1055,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 2300
+      "lot": []
     },
     {
       "key": "GEEN_164_00",
@@ -1064,7 +1068,7 @@
       "player": "",
       "special": true,
       "cap": 45,
-      "sort": 7320
+      "lot": []
     },
     {
       "key": "GEEN_166_24",
@@ -1077,7 +1081,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 5020
+      "lot": []
     },
     {
       "key": "1A359B67",
@@ -1090,8 +1094,8 @@
       "player": "PL2700",
       "special": false,
       "cap": 15,
-      "sort": 8590,
-      "character": "9B15CFB1"
+      "character": "9B15CFB1",
+      "lot": []
     },
     {
       "key": "F964A4CA",
@@ -1104,8 +1108,8 @@
       "player": "PL2700",
       "special": false,
       "cap": 15,
-      "sort": 8580,
-      "character": "9B15CFB1"
+      "character": "9B15CFB1",
+      "lot": []
     },
     {
       "key": "GEEN_172_91",
@@ -1118,8 +1122,8 @@
       "player": "PL2100",
       "special": false,
       "cap": 15,
-      "sort": 8690,
-      "character": "718E1A14"
+      "character": "718E1A14",
+      "lot": []
     },
     {
       "key": "GEEN_176_93",
@@ -1132,8 +1136,8 @@
       "player": "PL2700",
       "special": false,
       "cap": 15,
-      "sort": 8600,
-      "character": "9B15CFB1"
+      "character": "9B15CFB1",
+      "lot": []
     },
     {
       "key": "0523A202",
@@ -1146,8 +1150,8 @@
       "player": "PL2900",
       "special": false,
       "cap": 15,
-      "sort": 8760,
-      "character": "74DD4C79"
+      "character": "74DD4C79",
+      "lot": []
     },
     {
       "key": "0723F7EC",
@@ -1160,8 +1164,8 @@
       "player": "PL2900",
       "special": false,
       "cap": 15,
-      "sort": 8770,
-      "character": "74DD4C79"
+      "character": "74DD4C79",
+      "lot": []
     },
     {
       "key": "GEEN_178_93",
@@ -1174,8 +1178,8 @@
       "player": "PL2900",
       "special": false,
       "cap": 15,
-      "sort": 8780,
-      "character": "74DD4C79"
+      "character": "74DD4C79",
+      "lot": []
     },
     {
       "key": "GEEN_235_24",
@@ -1188,7 +1192,11 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2270
+      "lot": [
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "96D6FE5E",
@@ -1201,8 +1209,8 @@
       "player": "PL2500",
       "special": false,
       "cap": 15,
-      "sort": 8860,
-      "character": "25D46F4B"
+      "character": "25D46F4B",
+      "lot": []
     },
     {
       "key": "EC9FFE77",
@@ -1215,8 +1223,8 @@
       "player": "PL2500",
       "special": false,
       "cap": 15,
-      "sort": 8850,
-      "character": "25D46F4B"
+      "character": "25D46F4B",
+      "lot": []
     },
     {
       "key": "GEEN_174_93",
@@ -1229,8 +1237,8 @@
       "player": "PL2500",
       "special": false,
       "cap": 15,
-      "sort": 8870,
-      "character": "25D46F4B"
+      "character": "25D46F4B",
+      "lot": []
     },
     {
       "key": "282DBFF0",
@@ -1243,8 +1251,8 @@
       "player": "PL2400",
       "special": false,
       "cap": 15,
-      "sort": 8820,
-      "character": "1BB37EF0"
+      "character": "1BB37EF0",
+      "lot": []
     },
     {
       "key": "F21404B1",
@@ -1257,8 +1265,8 @@
       "player": "PL2400",
       "special": false,
       "cap": 15,
-      "sort": 8830,
-      "character": "1BB37EF0"
+      "character": "1BB37EF0",
+      "lot": []
     },
     {
       "key": "GEEN_173_93",
@@ -1271,8 +1279,8 @@
       "player": "PL2400",
       "special": false,
       "cap": 15,
-      "sort": 8840,
-      "character": "1BB37EF0"
+      "character": "1BB37EF0",
+      "lot": []
     },
     {
       "key": "3C0F5461",
@@ -1285,7 +1293,14 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 7020
+      "lot": [
+        "CEB700EE",
+        "84078CB0",
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E",
+        "48A95B8D"
+      ]
     },
     {
       "key": "426AD20E",
@@ -1298,7 +1313,7 @@
       "player": "",
       "special": true,
       "cap": 45,
-      "sort": 7300
+      "lot": []
     },
     {
       "key": "66CB28BA",
@@ -1311,7 +1326,7 @@
       "player": "",
       "special": false,
       "cap": 20,
-      "sort": 7330
+      "lot": []
     },
     {
       "key": "GEEN_150_24",
@@ -1324,7 +1339,10 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 5100
+      "lot": [
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "64301E91",
@@ -1337,8 +1355,8 @@
       "player": "PL2800",
       "special": false,
       "cap": 15,
-      "sort": 8730,
-      "character": "646C3168"
+      "character": "646C3168",
+      "lot": []
     },
     {
       "key": "BA28C81C",
@@ -1351,8 +1369,8 @@
       "player": "PL2800",
       "special": false,
       "cap": 15,
-      "sort": 8740,
-      "character": "646C3168"
+      "character": "646C3168",
+      "lot": []
     },
     {
       "key": "GEEN_177_93",
@@ -1365,8 +1383,8 @@
       "player": "PL2800",
       "special": false,
       "cap": 15,
-      "sort": 8750,
-      "character": "646C3168"
+      "character": "646C3168",
+      "lot": []
     },
     {
       "key": "76786869",
@@ -1379,7 +1397,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 7340
+      "lot": []
     },
     {
       "key": "GEEN_157_24",
@@ -1392,7 +1410,11 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2310
+      "lot": [
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "GEEN_159_24",
@@ -1405,7 +1427,10 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 5110
+      "lot": [
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "9A60FBF0",
@@ -1418,7 +1443,14 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 4090
+      "lot": [
+        "CEB700EE",
+        "84078CB0",
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E",
+        "48A95B8D"
+      ]
     },
     {
       "key": "9EC6C56D",
@@ -1431,8 +1463,8 @@
       "player": "PL2600",
       "special": false,
       "cap": 15,
-      "sort": 8550,
-      "character": "9A8AF295"
+      "character": "9A8AF295",
+      "lot": []
     },
     {
       "key": "D4117FF3",
@@ -1445,8 +1477,8 @@
       "player": "PL2600",
       "special": false,
       "cap": 15,
-      "sort": 8560,
-      "character": "9A8AF295"
+      "character": "9A8AF295",
+      "lot": []
     },
     {
       "key": "GEEN_175_93",
@@ -1459,8 +1491,8 @@
       "player": "PL2600",
       "special": false,
       "cap": 15,
-      "sort": 8570,
-      "character": "9A8AF295"
+      "character": "9A8AF295",
+      "lot": []
     },
     {
       "key": "B289A9AD",
@@ -1473,7 +1505,7 @@
       "player": "",
       "special": true,
       "cap": 5,
-      "sort": 7350
+      "lot": []
     },
     {
       "key": "GEEN_044_04",
@@ -1486,7 +1518,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 7400
+      "lot": []
     },
     {
       "key": "GEEN_103_04",
@@ -1499,7 +1531,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 5270
+      "lot": []
     },
     {
       "key": "GEEN_114_91",
@@ -1512,8 +1544,8 @@
       "player": "PL0000",
       "special": false,
       "cap": 15,
-      "sort": 8010,
-      "character": "2A26B1B2"
+      "character": "2A26B1B2",
+      "lot": []
     },
     {
       "key": "GEEN_114_92",
@@ -1526,8 +1558,8 @@
       "player": "PL0000",
       "special": false,
       "cap": 15,
-      "sort": 8020,
-      "character": "2A26B1B2"
+      "character": "2A26B1B2",
+      "lot": []
     },
     {
       "key": "GEEN_114_93",
@@ -1540,8 +1572,8 @@
       "player": "PL0000",
       "special": false,
       "cap": 15,
-      "sort": 8030,
-      "character": "2A26B1B2"
+      "character": "2A26B1B2",
+      "lot": []
     },
     {
       "key": "GEEN_115_91",
@@ -1554,8 +1586,8 @@
       "player": "PL0200",
       "special": false,
       "cap": 15,
-      "sort": 8040,
-      "character": "18E2F9F9"
+      "character": "18E2F9F9",
+      "lot": []
     },
     {
       "key": "GEEN_115_92",
@@ -1568,8 +1600,8 @@
       "player": "PL0200",
       "special": false,
       "cap": 15,
-      "sort": 8050,
-      "character": "18E2F9F9"
+      "character": "18E2F9F9",
+      "lot": []
     },
     {
       "key": "GEEN_115_93",
@@ -1582,8 +1614,8 @@
       "player": "PL0200",
       "special": false,
       "cap": 15,
-      "sort": 8060,
-      "character": "18E2F9F9"
+      "character": "18E2F9F9",
+      "lot": []
     },
     {
       "key": "GEEN_116_91",
@@ -1596,8 +1628,8 @@
       "player": "PL0300",
       "special": false,
       "cap": 15,
-      "sort": 8070,
-      "character": "079DF0CC"
+      "character": "079DF0CC",
+      "lot": []
     },
     {
       "key": "GEEN_116_92",
@@ -1610,8 +1642,8 @@
       "player": "PL0300",
       "special": false,
       "cap": 15,
-      "sort": 8080,
-      "character": "079DF0CC"
+      "character": "079DF0CC",
+      "lot": []
     },
     {
       "key": "GEEN_116_93",
@@ -1624,8 +1656,8 @@
       "player": "PL0300",
       "special": false,
       "cap": 15,
-      "sort": 8090,
-      "character": "079DF0CC"
+      "character": "079DF0CC",
+      "lot": []
     },
     {
       "key": "GEEN_117_91",
@@ -1638,8 +1670,8 @@
       "player": "PL0400",
       "special": false,
       "cap": 15,
-      "sort": 8100,
-      "character": "4D0A60C3"
+      "character": "4D0A60C3",
+      "lot": []
     },
     {
       "key": "GEEN_117_92",
@@ -1652,8 +1684,8 @@
       "player": "PL0400",
       "special": false,
       "cap": 15,
-      "sort": 8110,
-      "character": "4D0A60C3"
+      "character": "4D0A60C3",
+      "lot": []
     },
     {
       "key": "GEEN_117_93",
@@ -1666,8 +1698,8 @@
       "player": "PL0400",
       "special": false,
       "cap": 15,
-      "sort": 8120,
-      "character": "4D0A60C3"
+      "character": "4D0A60C3",
+      "lot": []
     },
     {
       "key": "GEEN_118_91",
@@ -1680,8 +1712,8 @@
       "player": "PL0500",
       "special": false,
       "cap": 15,
-      "sort": 8130,
-      "character": "DD7A151E"
+      "character": "DD7A151E",
+      "lot": []
     },
     {
       "key": "GEEN_118_92",
@@ -1694,8 +1726,8 @@
       "player": "PL0500",
       "special": false,
       "cap": 15,
-      "sort": 8140,
-      "character": "DD7A151E"
+      "character": "DD7A151E",
+      "lot": []
     },
     {
       "key": "GEEN_118_93",
@@ -1708,8 +1740,8 @@
       "player": "PL0500",
       "special": false,
       "cap": 15,
-      "sort": 8150,
-      "character": "DD7A151E"
+      "character": "DD7A151E",
+      "lot": []
     },
     {
       "key": "GEEN_119_91",
@@ -1722,8 +1754,8 @@
       "player": "PL0600",
       "special": false,
       "cap": 15,
-      "sort": 8160,
-      "character": "C8616284"
+      "character": "C8616284",
+      "lot": []
     },
     {
       "key": "GEEN_119_92",
@@ -1736,8 +1768,8 @@
       "player": "PL0600",
       "special": false,
       "cap": 15,
-      "sort": 8170,
-      "character": "C8616284"
+      "character": "C8616284",
+      "lot": []
     },
     {
       "key": "GEEN_119_93",
@@ -1750,8 +1782,8 @@
       "player": "PL0600",
       "special": false,
       "cap": 15,
-      "sort": 8180,
-      "character": "C8616284"
+      "character": "C8616284",
+      "lot": []
     },
     {
       "key": "GEEN_120_91",
@@ -1764,8 +1796,8 @@
       "player": "PL0700",
       "special": false,
       "cap": 15,
-      "sort": 8250,
-      "character": "C3FFD418"
+      "character": "C3FFD418",
+      "lot": []
     },
     {
       "key": "GEEN_120_92",
@@ -1778,8 +1810,8 @@
       "player": "PL0700",
       "special": false,
       "cap": 15,
-      "sort": 8260,
-      "character": "C3FFD418"
+      "character": "C3FFD418",
+      "lot": []
     },
     {
       "key": "GEEN_120_93",
@@ -1792,8 +1824,8 @@
       "player": "PL0700",
       "special": false,
       "cap": 15,
-      "sort": 8270,
-      "character": "C3FFD418"
+      "character": "C3FFD418",
+      "lot": []
     },
     {
       "key": "GEEN_121_91",
@@ -1806,8 +1838,8 @@
       "player": "PL0800",
       "special": false,
       "cap": 15,
-      "sort": 8310,
-      "character": "22E437E5"
+      "character": "22E437E5",
+      "lot": []
     },
     {
       "key": "GEEN_121_92",
@@ -1820,8 +1852,8 @@
       "player": "PL0800",
       "special": false,
       "cap": 15,
-      "sort": 8320,
-      "character": "22E437E5"
+      "character": "22E437E5",
+      "lot": []
     },
     {
       "key": "GEEN_121_93",
@@ -1834,8 +1866,8 @@
       "player": "PL0800",
       "special": false,
       "cap": 15,
-      "sort": 8330,
-      "character": "22E437E5"
+      "character": "22E437E5",
+      "lot": []
     },
     {
       "key": "GEEN_122_91",
@@ -1848,8 +1880,8 @@
       "player": "PL0900",
       "special": false,
       "cap": 15,
-      "sort": 8340,
-      "character": "2EBE91D5"
+      "character": "2EBE91D5",
+      "lot": []
     },
     {
       "key": "GEEN_122_92",
@@ -1862,8 +1894,8 @@
       "player": "PL0900",
       "special": false,
       "cap": 15,
-      "sort": 8350,
-      "character": "2EBE91D5"
+      "character": "2EBE91D5",
+      "lot": []
     },
     {
       "key": "GEEN_122_93",
@@ -1876,8 +1908,8 @@
       "player": "PL0900",
       "special": false,
       "cap": 15,
-      "sort": 8360,
-      "character": "2EBE91D5"
+      "character": "2EBE91D5",
+      "lot": []
     },
     {
       "key": "GEEN_123_91",
@@ -1890,8 +1922,8 @@
       "player": "PL1000",
       "special": false,
       "cap": 15,
-      "sort": 8370,
-      "character": "BDEF7181"
+      "character": "BDEF7181",
+      "lot": []
     },
     {
       "key": "GEEN_123_92",
@@ -1904,8 +1936,8 @@
       "player": "PL1000",
       "special": false,
       "cap": 15,
-      "sort": 8380,
-      "character": "BDEF7181"
+      "character": "BDEF7181",
+      "lot": []
     },
     {
       "key": "GEEN_123_93",
@@ -1918,8 +1950,8 @@
       "player": "PL1000",
       "special": false,
       "cap": 15,
-      "sort": 8390,
-      "character": "BDEF7181"
+      "character": "BDEF7181",
+      "lot": []
     },
     {
       "key": "GEEN_124_91",
@@ -1932,8 +1964,8 @@
       "player": "PL1100",
       "special": false,
       "cap": 15,
-      "sort": 8400,
-      "character": "627BCB0D"
+      "character": "627BCB0D",
+      "lot": []
     },
     {
       "key": "GEEN_124_92",
@@ -1946,8 +1978,8 @@
       "player": "PL1100",
       "special": false,
       "cap": 15,
-      "sort": 8410,
-      "character": "627BCB0D"
+      "character": "627BCB0D",
+      "lot": []
     },
     {
       "key": "GEEN_124_93",
@@ -1960,8 +1992,8 @@
       "player": "PL1100",
       "special": false,
       "cap": 15,
-      "sort": 8420,
-      "character": "627BCB0D"
+      "character": "627BCB0D",
+      "lot": []
     },
     {
       "key": "GEEN_125_91",
@@ -1974,8 +2006,8 @@
       "player": "PL1200",
       "special": false,
       "cap": 15,
-      "sort": 8190,
-      "character": "FD3BE362"
+      "character": "FD3BE362",
+      "lot": []
     },
     {
       "key": "GEEN_125_92",
@@ -1988,8 +2020,8 @@
       "player": "PL1200",
       "special": false,
       "cap": 15,
-      "sort": 8200,
-      "character": "FD3BE362"
+      "character": "FD3BE362",
+      "lot": []
     },
     {
       "key": "GEEN_125_93",
@@ -2002,8 +2034,8 @@
       "player": "PL1200",
       "special": false,
       "cap": 15,
-      "sort": 8210,
-      "character": "FD3BE362"
+      "character": "FD3BE362",
+      "lot": []
     },
     {
       "key": "GEEN_126_91",
@@ -2016,8 +2048,8 @@
       "player": "PL1300",
       "special": false,
       "cap": 15,
-      "sort": 8460,
-      "character": "FC6CDF7B"
+      "character": "FC6CDF7B",
+      "lot": []
     },
     {
       "key": "GEEN_126_92",
@@ -2030,8 +2062,8 @@
       "player": "PL1300",
       "special": false,
       "cap": 15,
-      "sort": 8470,
-      "character": "FC6CDF7B"
+      "character": "FC6CDF7B",
+      "lot": []
     },
     {
       "key": "GEEN_126_93",
@@ -2044,8 +2076,8 @@
       "player": "PL1300",
       "special": false,
       "cap": 15,
-      "sort": 8480,
-      "character": "FC6CDF7B"
+      "character": "FC6CDF7B",
+      "lot": []
     },
     {
       "key": "GEEN_127_91",
@@ -2058,8 +2090,8 @@
       "player": "PL1400",
       "special": false,
       "cap": 15,
-      "sort": 8280,
-      "character": "E7053919"
+      "character": "E7053919",
+      "lot": []
     },
     {
       "key": "GEEN_127_92",
@@ -2072,8 +2104,8 @@
       "player": "PL1400",
       "special": false,
       "cap": 15,
-      "sort": 8290,
-      "character": "E7053919"
+      "character": "E7053919",
+      "lot": []
     },
     {
       "key": "GEEN_127_93",
@@ -2086,8 +2118,8 @@
       "player": "PL1400",
       "special": false,
       "cap": 15,
-      "sort": 8300,
-      "character": "E7053919"
+      "character": "E7053919",
+      "lot": []
     },
     {
       "key": "GEEN_128_91",
@@ -2100,8 +2132,8 @@
       "player": "PL1500",
       "special": false,
       "cap": 15,
-      "sort": 8220,
-      "character": "978E4B18"
+      "character": "978E4B18",
+      "lot": []
     },
     {
       "key": "GEEN_128_92",
@@ -2114,8 +2146,8 @@
       "player": "PL1500",
       "special": false,
       "cap": 15,
-      "sort": 8230,
-      "character": "978E4B18"
+      "character": "978E4B18",
+      "lot": []
     },
     {
       "key": "GEEN_128_93",
@@ -2128,8 +2160,8 @@
       "player": "PL1500",
       "special": false,
       "cap": 15,
-      "sort": 8240,
-      "character": "978E4B18"
+      "character": "978E4B18",
+      "lot": []
     },
     {
       "key": "GEEN_129_91",
@@ -2142,8 +2174,8 @@
       "player": "PL1800",
       "special": false,
       "cap": 15,
-      "sort": 8430,
-      "character": "AA66178A"
+      "character": "AA66178A",
+      "lot": []
     },
     {
       "key": "GEEN_129_92",
@@ -2156,8 +2188,8 @@
       "player": "PL1800",
       "special": false,
       "cap": 15,
-      "sort": 8440,
-      "character": "AA66178A"
+      "character": "AA66178A",
+      "lot": []
     },
     {
       "key": "GEEN_129_93",
@@ -2170,8 +2202,8 @@
       "player": "PL1800",
       "special": false,
       "cap": 15,
-      "sort": 8450,
-      "character": "AA66178A"
+      "character": "AA66178A",
+      "lot": []
     },
     {
       "key": "GEEN_130_91",
@@ -2184,8 +2216,8 @@
       "player": "PL1900",
       "special": false,
       "cap": 15,
-      "sort": 8790,
-      "character": "A3A3CB2F"
+      "character": "A3A3CB2F",
+      "lot": []
     },
     {
       "key": "GEEN_130_92",
@@ -2198,8 +2230,8 @@
       "player": "PL1900",
       "special": false,
       "cap": 15,
-      "sort": 8800,
-      "character": "A3A3CB2F"
+      "character": "A3A3CB2F",
+      "lot": []
     },
     {
       "key": "GEEN_130_93",
@@ -2212,8 +2244,8 @@
       "player": "PL1900",
       "special": false,
       "cap": 15,
-      "sort": 8810,
-      "character": "A3A3CB2F"
+      "character": "A3A3CB2F",
+      "lot": []
     },
     {
       "key": "GEEN_131_91",
@@ -2226,8 +2258,8 @@
       "player": "PL1600",
       "special": false,
       "cap": 15,
-      "sort": 8490,
-      "character": "0D21B430"
+      "character": "0D21B430",
+      "lot": []
     },
     {
       "key": "GEEN_131_92",
@@ -2240,8 +2272,8 @@
       "player": "PL1600",
       "special": false,
       "cap": 15,
-      "sort": 8500,
-      "character": "0D21B430"
+      "character": "0D21B430",
+      "lot": []
     },
     {
       "key": "GEEN_131_93",
@@ -2254,8 +2286,8 @@
       "player": "PL1600",
       "special": false,
       "cap": 15,
-      "sort": 8510,
-      "character": "0D21B430"
+      "character": "0D21B430",
+      "lot": []
     },
     {
       "key": "GEEN_132_91",
@@ -2268,8 +2300,8 @@
       "player": "PL1700",
       "special": false,
       "cap": 15,
-      "sort": 8520,
-      "character": "F0EB77EF"
+      "character": "F0EB77EF",
+      "lot": []
     },
     {
       "key": "GEEN_132_92",
@@ -2282,8 +2314,8 @@
       "player": "PL1700",
       "special": false,
       "cap": 15,
-      "sort": 8530,
-      "character": "F0EB77EF"
+      "character": "F0EB77EF",
+      "lot": []
     },
     {
       "key": "GEEN_132_93",
@@ -2296,8 +2328,8 @@
       "player": "PL1700",
       "special": false,
       "cap": 15,
-      "sort": 8540,
-      "character": "F0EB77EF"
+      "character": "F0EB77EF",
+      "lot": []
     },
     {
       "key": "GEEN_141_04",
@@ -2310,7 +2342,7 @@
       "player": "",
       "special": true,
       "cap": 15,
-      "sort": 7310
+      "lot": []
     },
     {
       "key": "GEEN_160_04",
@@ -2323,7 +2355,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 7500
+      "lot": []
     },
     {
       "key": "GEEN_161_04",
@@ -2336,7 +2368,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 7510
+      "lot": []
     },
     {
       "key": "GEEN_162_04",
@@ -2349,7 +2381,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 7520
+      "lot": []
     },
     {
       "key": "GEEN_170_91",
@@ -2362,8 +2394,8 @@
       "player": "PL2200",
       "special": false,
       "cap": 15,
-      "sort": 8610,
-      "character": "296471BE"
+      "character": "296471BE",
+      "lot": []
     },
     {
       "key": "GEEN_170_92",
@@ -2376,8 +2408,8 @@
       "player": "PL2200",
       "special": false,
       "cap": 15,
-      "sort": 8620,
-      "character": "296471BE"
+      "character": "296471BE",
+      "lot": []
     },
     {
       "key": "GEEN_170_93",
@@ -2390,8 +2422,8 @@
       "player": "PL2200",
       "special": false,
       "cap": 15,
-      "sort": 8630,
-      "character": "296471BE"
+      "character": "296471BE",
+      "lot": []
     },
     {
       "key": "GEEN_171_91",
@@ -2404,8 +2436,8 @@
       "player": "PL2300",
       "special": false,
       "cap": 15,
-      "sort": 8650,
-      "character": "BAD16E3B"
+      "character": "BAD16E3B",
+      "lot": []
     },
     {
       "key": "GEEN_171_92",
@@ -2418,8 +2450,8 @@
       "player": "PL2300",
       "special": false,
       "cap": 15,
-      "sort": 8660,
-      "character": "BAD16E3B"
+      "character": "BAD16E3B",
+      "lot": []
     },
     {
       "key": "GEEN_171_93",
@@ -2432,8 +2464,8 @@
       "player": "PL2300",
       "special": false,
       "cap": 15,
-      "sort": 8670,
-      "character": "BAD16E3B"
+      "character": "BAD16E3B",
+      "lot": []
     },
     {
       "key": "GEEN_172_92",
@@ -2446,8 +2478,8 @@
       "player": "PL2100",
       "special": false,
       "cap": 15,
-      "sort": 8700,
-      "character": "718E1A14"
+      "character": "718E1A14",
+      "lot": []
     },
     {
       "key": "GEEN_172_93",
@@ -2460,8 +2492,8 @@
       "player": "PL2100",
       "special": false,
       "cap": 15,
-      "sort": 8710,
-      "character": "718E1A14"
+      "character": "718E1A14",
+      "lot": []
     },
     {
       "key": "GEEN_233_24",
@@ -2474,7 +2506,11 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2120
+      "lot": [
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "GEEN_234_24",
@@ -2487,7 +2523,11 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2130
+      "lot": [
+        "66DE60B1",
+        "7EDD69D0",
+        "0053599E"
+      ]
     },
     {
       "key": "SKILL_113_00",
@@ -2500,7 +2540,7 @@
       "player": "",
       "special": false,
       "cap": 2,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "SKILL_143_00",
@@ -2513,7 +2553,7 @@
       "player": "",
       "special": false,
       "cap": 25,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "1E1CECCE",
@@ -2526,7 +2566,7 @@
       "player": "",
       "special": false,
       "cap": 35,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "SKILL_311_00",
@@ -2539,7 +2579,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "SKILL_312_00",
@@ -2552,7 +2592,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "235D86EF",
@@ -2565,7 +2605,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "SKILL_314_00",
@@ -2578,7 +2618,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "0151CF9E",
@@ -2591,7 +2631,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "BBD77C33",
@@ -2604,7 +2644,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "020DB733",
@@ -2617,7 +2657,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "3F682593",
@@ -2630,7 +2670,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "79027FC8",
@@ -2643,7 +2683,7 @@
       "player": "",
       "special": false,
       "cap": 55,
-      "sort": -1
+      "lot": []
     },
     {
       "key": "GEEN_170_74",
@@ -2656,8 +2696,8 @@
       "player": "PL2200",
       "special": false,
       "cap": 15,
-      "sort": 8640,
-      "character": "296471BE"
+      "character": "296471BE",
+      "lot": []
     },
     {
       "key": "GEEN_171_74",
@@ -2670,8 +2710,8 @@
       "player": "PL2300",
       "special": false,
       "cap": 15,
-      "sort": 8680,
-      "character": "BAD16E3B"
+      "character": "BAD16E3B",
+      "lot": []
     },
     {
       "key": "GEEN_172_74",
@@ -2684,8 +2724,8 @@
       "player": "PL2100",
       "special": false,
       "cap": 15,
-      "sort": 8720,
-      "character": "718E1A14"
+      "character": "718E1A14",
+      "lot": []
     },
     {
       "key": "05FE0351",
@@ -2698,7 +2738,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2131
+      "lot": []
     },
     {
       "key": "3D0BF8CB",
@@ -2711,7 +2751,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2321
+      "lot": []
     },
     {
       "key": "6EFCD286",
@@ -2724,7 +2764,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2322
+      "lot": []
     },
     {
       "key": "6FF3308A",
@@ -2737,7 +2777,7 @@
       "player": "",
       "special": false,
       "cap": 15,
-      "sort": 2323
+      "lot": []
     },
     {
       "key": "GEEN_151_94",
@@ -2750,7 +2790,7 @@
       "player": "",
       "special": false,
       "cap": 30,
-      "sort": 4091
+      "lot": []
     }
   ]
 }
