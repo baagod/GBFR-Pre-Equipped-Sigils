@@ -397,8 +397,9 @@ export default function App() {
 
   // Hint only; generation is never blocked. Legal secondaries for a main:
   //   - special mains (one == special): empty set -> everything dimmed
-  //   - pool families (lot != []): lot ∪ fixed-second (sec) of the family
-  //   - everything else: all non-exclusive traits (current behaviour)
+  //   - pool families (lot != []): legal = lot ∪ fixed-second (sec) of the
+  //     family; anything outside is shown grey/red but still saved
+  //   - everything else: all non-exclusive traits (free combination)
   const legalByMain = useMemo(() => {
     const legal = new Set(allTraitHashes.filter((h) => !exclusiveTraits.has(h)))
     const none: Set<string> = new Set()
