@@ -20,7 +20,7 @@
                            "player":  "PL1600",
                            "t2Gem":  "44D48479",
                            "name":  "Zeta",
-                           "zh":  "泽塔",
+                           "zh":  "塞达",
                            "warGem":  "BFDF838C",
                            "hash":  "0D21B430"
                        },
@@ -44,7 +44,7 @@
                            "player":  "PL2400",
                            "t2Gem":  "282DBFF0",
                            "name":  "Gallanza",
-                           "zh":  "加兰扎",
+                           "zh":  "伽兰查",
                            "warGem":  "41AC1082",
                            "hash":  "1BB37EF0"
                        },
@@ -68,7 +68,7 @@
                            "player":  "PL2500",
                            "t2Gem":  "EC9FFE77",
                            "name":  "Maglielle",
-                           "zh":  "玛格里耶",
+                           "zh":  "玛琪拉菲菈",
                            "warGem":  "EB766D87",
                            "hash":  "25D46F4B"
                        },
@@ -80,7 +80,7 @@
                            "player":  "PL2200",
                            "t2Gem":  "AE9D89DF",
                            "name":  "Seofon",
-                           "zh":  "西奥芬",
+                           "zh":  "希耶提",
                            "warGem":  "9F72BAE0",
                            "hash":  "296471BE"
                        },
@@ -116,7 +116,7 @@
                            "player":  "PL0900",
                            "t2Gem":  "FB9B6DD5",
                            "name":  "Vane",
-                           "zh":  "瓦恩",
+                           "zh":  "巴恩",
                            "warGem":  "A490BADF",
                            "hash":  "2EBE91D5"
                        },
@@ -152,7 +152,7 @@
                            "player":  "PL2800",
                            "t2Gem":  "64301E91",
                            "name":  "Fraux",
-                           "zh":  "芙罗",
+                           "zh":  "芙劳",
                            "warGem":  "2D70C37D",
                            "hash":  "646C3168"
                        },
@@ -164,7 +164,7 @@
                            "player":  "PL2100",
                            "t2Gem":  "7E3A52A3",
                            "name":  "Sandalphon",
-                           "zh":  "桑德冯",
+                           "zh":  "圣德芬",
                            "warGem":  "5D592FDD",
                            "hash":  "718E1A14"
                        },
@@ -176,7 +176,7 @@
                            "player":  "PL2900",
                            "t2Gem":  "0723F7EC",
                            "name":  "Fediel",
-                           "zh":  "菲迪埃",
+                           "zh":  "菲迪埃尔",
                            "warGem":  "9ABD2DA5",
                            "hash":  "74DD4C79"
                        },
@@ -188,7 +188,7 @@
                            "player":  "PL1500",
                            "t2Gem":  "6CCA1FF7",
                            "name":  "Ghandagoza",
-                           "zh":  "甘达戈萨",
+                           "zh":  "冈达葛萨",
                            "warGem":  "3069C2FE",
                            "hash":  "978E4B18"
                        },
@@ -200,7 +200,7 @@
                            "player":  "PL2600",
                            "t2Gem":  "D4117FF3",
                            "name":  "Beatrix",
-                           "zh":  "比亚特莉丝",
+                           "zh":  "贝阿朵丽丝",
                            "warGem":  "51E98A7C",
                            "hash":  "9A8AF295"
                        },
@@ -212,7 +212,7 @@
                            "player":  "PL2700",
                            "t2Gem":  "1A359B67",
                            "name":  "Eustace",
-                           "zh":  "尤斯塔斯",
+                           "zh":  "尤斯提斯",
                            "warGem":  "D8C61507",
                            "hash":  "9B15CFB1"
                        },
@@ -236,7 +236,7 @@
                            "player":  "PL1800",
                            "t2Gem":  "147DA58B",
                            "name":  "Cagliostro",
-                           "zh":  "卡莉奥斯特罗",
+                           "zh":  "卡莉奥丝特罗",
                            "warGem":  "66F1B128",
                            "hash":  "AA66178A"
                        },
@@ -248,7 +248,7 @@
                            "player":  "PL2300",
                            "t2Gem":  "DBE503C7",
                            "name":  "Tweyen",
-                           "zh":  "特维因",
+                           "zh":  "索恩",
                            "warGem":  "AD8CAEFB",
                            "hash":  "BAD16E3B"
                        },
@@ -272,7 +272,7 @@
                            "player":  "PL0700",
                            "t2Gem":  "BF714A8A",
                            "name":  "Ferry",
-                           "zh":  "费里",
+                           "zh":  "菲莉",
                            "warGem":  "E496D882",
                            "hash":  "C3FFD418"
                        },
@@ -284,7 +284,7 @@
                            "player":  "PL0600",
                            "t2Gem":  "21E10EB7",
                            "name":  "Rosetta",
-                           "zh":  "罗塞塔",
+                           "zh":  "萝赛塔",
                            "warGem":  "515E693C",
                            "hash":  "C8616284"
                        },
@@ -320,7 +320,7 @@
                            "player":  "PL1700",
                            "t2Gem":  "A59C9613",
                            "name":  "Vaseraga",
-                           "zh":  "巴萨拉加",
+                           "zh":  "巴萨拉卡",
                            "warGem":  "B3AB43F3",
                            "hash":  "F0EB77EF"
                        },
@@ -332,7 +332,7 @@
                            "player":  "PL1300",
                            "t2Gem":  "49651C89",
                            "name":  "Yodarha",
-                           "zh":  "约达尔哈",
+                           "zh":  "尤达拉哈",
                            "warGem":  "76D4716B",
                            "hash":  "FC6CDF7B"
                        },
