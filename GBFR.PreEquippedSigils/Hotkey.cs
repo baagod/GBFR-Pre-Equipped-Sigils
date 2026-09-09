@@ -174,8 +174,16 @@ internal static class Hotkey
         {
             PostMessage(hwnd, (uint)WmQuit, IntPtr.Zero, IntPtr.Zero);
             _hotkeyThread?.Join(1000);
-            UnregisterHotKey(hwnd, HotkeyId);
-            DestroyWindow(hwnd);
+            // The loop unregisters its own hotkey when it exits; only touch the
+            // window when the loop really stopped. If the join timed out the
+            // thread is still alive (e.g. inside TryLaunchTool) and a
+            // cross-thread DestroyWindow on its live message window is unsafe —
+            // the loop finishes its cleanup itself then.
+            if (_hotkeyThread is { IsAlive: false })
+            {
+                UnregisterHotKey(hwnd, HotkeyId);
+                DestroyWindow(hwnd);
+            }
         }
         _messageWindow = IntPtr.Zero;
         _hotkeyThread = null;
@@ -206,6 +214,8 @@ internal static class Hotkey
                 break; // 0 = WM_QUIT, -1 = error
             if (msg.Message == WmHotkey)
             {
+                if (_threadExit)
+                    break; // Shutdown began: drop in-flight hotkey messages
                 if (IsGameForeground())
                 {
                     try

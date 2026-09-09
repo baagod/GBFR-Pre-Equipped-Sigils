@@ -73,6 +73,7 @@ internal static class LoadoutConfig
         _loadoutPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GBFRPreEquippedSigils", "loadout.json");
+        // Keep in sync with Native/src/runtime.cpp (g_sigils_path).
         _sigilsPath = Path.Combine(modDirectory, "sigils.json");
         LoadExclusiveTable(modDirectory, log);
         if (LoadTables(log))

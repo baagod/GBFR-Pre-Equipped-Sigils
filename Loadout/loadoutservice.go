@@ -12,7 +12,10 @@ import (
 // MaxSlots mirrors the managed editor limit (must stay in sync).
 const MaxSlots = 12
 
-// LoadoutService reads/writes the mod directory data files next to the exe.
+// LoadoutService reads the mod-directory data files (sigils.json,
+// character-exclusives.json, tool-hotkey.txt — all next to the exe) and
+// writes the player configuration (LOCALAPPDATA/GBFRPreEquippedSigils,
+// mirroring the mod's userCfgDir so mod updates never wipe it).
 // Protocol is shared with the mod: sigils.json (merged sigil/trait table:
 // item rows hash != skill1, non-item skill rows hash == skill1) and
 // loadout.json (player configuration; array format: [ { items: [{hash,level,zh,en},
@@ -21,7 +24,8 @@ type LoadoutService struct{}
 
 // MinimiseApp hides the window to the tray; the process stays alive so the
 // in-game hotkey can bring the window back instantly. Invoked by the shared
-// hotkey inside the tool and the X button (via the WM_CLOSE interceptor).
+// hotkey inside the tool (the X button is handled by the WndProc interceptor
+// in main.go and hides the window directly).
 func (s *LoadoutService) MinimiseApp() {
 	if win != nil {
 		win.Hide()
