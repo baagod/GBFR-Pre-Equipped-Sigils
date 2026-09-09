@@ -10,7 +10,7 @@ std::unordered_map<uint32_t, uint32_t> g_required_character_by_gem;
 namespace
 {
 // Extracts an 8-digit hex value from a flat JSON line, e.g.
-//   "gem": "9F08F697",            -> value = 0x9F08F697
+//   "hash": "9F08F697",            -> value = 0x9F08F697
 //   "character": "079DF0CC"       -> value = 0x079DF0CC
 // Returns false when the field is absent or not exactly 8 hex digits.
 bool ReadHexField(const std::string& line, std::string_view field, uint32_t& value) noexcept
@@ -30,17 +30,21 @@ bool ReadHexField(const std::string& line, std::string_view field, uint32_t& val
       line.data() + cursor, line.data() + std::min(line.size(), cursor + 8), parsed, 16);
    if (result.ec != std::errc{} || result.ptr != line.data() + cursor + 8)
       return false;
+   // The value must be terminated by the closing quote; a longer hex segment
+   // is a layout deviation and must fail closed, not be silently truncated.
+   if (cursor + 8 >= line.size() || line[cursor + 8] != '"')
+      return false;
    value = parsed;
    return true;
 }
 }
 
 // Contract-based loader from the tool's merged table (sigils.json, produced by
-// the extract pipeline + docs/tool-gen-sigils-required.js).
+// the extract pipeline; field names follow gem.xlsx headers).
 //
-// == FORMAT CONTRACT (change here in lockstep with docs/tool-gen-sigils-required.js) ==
+// == FORMAT CONTRACT (change here in lockstep with gen\数据表说明.md §2) ==
 //  - flat JSON objects, one field per line, UTF-8, LF or CRLF
-//  - field names: "gem" and "character", values are 8 hex digits (no 0x)
+//  - field names: "hash" and "character", values are 8 hex digits (no 0x)
 //  - exclusive rows (player != "") also carry "character"; regular rows do not
 //  - the "character" field is the last one of the object (no trailing comma)
 // The loader never parses generic JSON: it scans the stable field layout and
@@ -76,9 +80,9 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
       const std::string_view trimmed = std::string_view(line).substr(first);
       if (trimmed == "}," || trimmed == "}" || trimmed == "]")
       {
-         // End of a sigil object: a gem with a character field is an
-         // exclusive row (commit the pair). A gem without character is a
-         // regular row (legal, ignored). A character without gem is malformed.
+         // End of a sigil object: a hash with a character field is an
+         // exclusive row (commit the pair). A hash without character is a
+         // regular row (legal, ignored). A character without hash is malformed.
          if (gem_seen && character_seen)
          {
             g_required_character_by_gem[current_gem] = current_character;
@@ -96,7 +100,7 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
       }
 
       uint32_t value = 0;
-      if (ReadHexField(line, "gem", value))
+      if (ReadHexField(line, "hash", value))
       {
          current_gem = value;
          gem_seen = true;

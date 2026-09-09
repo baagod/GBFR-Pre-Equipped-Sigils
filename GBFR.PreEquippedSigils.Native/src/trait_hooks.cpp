@@ -370,7 +370,13 @@ void ScheduleSelectedStatusRebind()
    if (std::none_of(selection.begin(), selection.end(), [](uint32_t slot_id) {
           return slot_id != 0;
        }))
+   {
+      // All slots disabled (no exclusives, no general slots): drop any stale
+      // authorization so a natural rebuild never re-injects the old loadout
+      // (fail-open). Idempotent when no status is authorized.
+      EraseAuthorizedStatus(status);
       return;
+   }
    if (HasMatchingAuthorizedSelection(status, identity, selection))
    {
       g_lifecycle_signature_attempts.store(0, std::memory_order_release);
@@ -406,15 +412,11 @@ namespace
 void DisableGameplayHooksAndRestore() noexcept
 {
    g_hooks_ready.store(false, std::memory_order_release);
-   if (g_trait_fetch_hook)
-      (void)g_trait_fetch_hook.disable();
-   if (g_get_gem_hook)
-      (void)g_get_gem_hook.disable();
-
-   while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
-          g_active_mid_calls.load(std::memory_order_acquire) != 0)
-      SwitchToThread();
-
+   // Restore the loop-limit bytes FIRST, while both detours are still live:
+   // until they are disabled below, a slot >= 13 request is still gated by the
+   // detours, and once the limits are back to their original values the game
+   // no longer asks for expanded slots. Disabling first would leave a window
+   // where the raw getter (13 real slots) gets asked for slot 13+N.
    if (g_image_base != 0 && g_layout_ready.load(std::memory_order_acquire))
    {
       const uint8_t expanded_slot_count =
@@ -441,6 +443,15 @@ void DisableGameplayHooksAndRestore() noexcept
             Log("Hook rollback: failed to restore the trait-category loop limit.");
       }
    }
+
+   if (g_trait_fetch_hook)
+      (void)g_trait_fetch_hook.disable();
+   if (g_get_gem_hook)
+      (void)g_get_gem_hook.disable();
+
+   while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
+          g_active_mid_calls.load(std::memory_order_acquire) != 0)
+      SwitchToThread();
 
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
@@ -473,12 +484,19 @@ bool ApplyTraitLoopLimits(int32_t virtual_slot_count) noexcept
 {
    const uint8_t expanded_slot_count =
       static_cast<uint8_t>(kNativeInternalSlotCount + virtual_slot_count);
-   return WriteByte(
-             g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
-             expanded_slot_count) &&
-      WriteByte(
-         g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
-         expanded_slot_count);
+   const uintptr_t apply_limit_rva = g_game_layout.trait_apply_loop_limit_immediate_rva;
+   const uintptr_t category_limit_rva = g_game_layout.trait_category_loop_limit_immediate_rva;
+   if (!WriteByte(g_image_base + apply_limit_rva, expanded_slot_count))
+      return false;
+   if (!WriteByte(g_image_base + category_limit_rva, expanded_slot_count))
+   {
+      // Roll the first byte back: diverging limits would let one loop run past
+      // its gate (out-of-bounds reads on the 13-slot gem array).
+      (void)WriteByte(
+         g_image_base + apply_limit_rva, g_game_layout.trait_apply_original_limit);
+      return false;
+   }
+   return true;
 }
 
 bool InstallHooks()

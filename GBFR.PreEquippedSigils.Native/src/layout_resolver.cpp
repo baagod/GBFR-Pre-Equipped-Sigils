@@ -161,14 +161,20 @@ bool TryBuildImageView(ImageView& image) noexcept
       return false;
 
    const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(g_image_base);
-   if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew <= 0 ||
-       dos->e_lfanew > 0x100000)
+   if (dos->e_magic != IMAGE_DOS_SIGNATURE ||
+       dos->e_lfanew < static_cast<LONG>(sizeof(IMAGE_DOS_HEADER)) ||
+       dos->e_lfanew >
+          static_cast<LONG>(0x100000 - sizeof(IMAGE_NT_HEADERS64)))
       return false;
    const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(
       g_image_base + static_cast<uintptr_t>(dos->e_lfanew));
+   // Sanity-limit SizeOfImage: both reads above stay inside the mapped image
+   // header region, so a malformed e_lfanew can never point into unmapped
+   // memory (a crash would violate the fail-closed contract).
    if (nt->Signature != IMAGE_NT_SIGNATURE ||
        nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC ||
-       nt->OptionalHeader.SizeOfImage == 0)
+       nt->OptionalHeader.SizeOfImage < 0x1000 ||
+       nt->OptionalHeader.SizeOfImage > 0x20000000)
       return false;
 
    image.base = g_image_base;
@@ -255,20 +261,6 @@ bool IsReasonableObjectOffset(uintptr_t offset, size_t alignment) noexcept
    constexpr uintptr_t kMaximumDecodedObjectOffset = 0x200000;
    return offset != 0 && offset <= kMaximumDecodedObjectOffset &&
       alignment != 0 && (offset % alignment) == 0;
-}
-
-bool MatchesPatternAt(
-   const ImageView& image,
-   uintptr_t rva,
-   PatternView pattern) noexcept
-{
-   if (!RangeInsideImage(image, rva, pattern.size))
-      return false;
-   const auto* source = reinterpret_cast<const uint8_t*>(image.base + rva);
-   for (size_t index = 0; index < pattern.size; ++index)
-      if (pattern.mask[index] == 'x' && source[index] != pattern.bytes[index])
-         return false;
-   return true;
 }
 
 size_t FindPatternMatches(

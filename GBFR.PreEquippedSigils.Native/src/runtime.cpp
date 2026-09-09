@@ -8,7 +8,6 @@ void Initialize()
 {
    const uint64_t initialization_started = BeginStartupPhase("native-initialize");
    const auto finish_initialization = [initialization_started](bool succeeded) {
-      g_initialized.store(true, std::memory_order_release);
       CompleteStartupPhase("native-initialize", initialization_started, succeeded);
    };
 

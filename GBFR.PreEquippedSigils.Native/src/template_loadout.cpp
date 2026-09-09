@@ -304,6 +304,10 @@ void InstallDefaultTemplateSelections()
 {
    size_t installed = 0;
    {
+      // Lock order: template -> selection (same as the runtime writers); the
+      // template table is replaced under g_template_mutex, so iterating it
+      // under only the selection mutex would be a data race.
+      std::unique_lock template_lock(g_template_mutex);
       std::unique_lock lock(g_selection_mutex);
       for (const CharacterTemplate& character : g_runtime_templates)
       {

@@ -125,19 +125,6 @@ void UpdateEditSessionState() noexcept
    }
 }
 
-bool SafeReadGem(uintptr_t address, GemData& value) noexcept
-{
-   __try
-   {
-      std::memcpy(&value, reinterpret_cast<const void*>(address), sizeof(value));
-      return true;
-   }
-   __except (EXCEPTION_EXECUTE_HANDLER)
-   {
-      std::memset(&value, 0, sizeof(value));
-      return false;
-   }
-}
 
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept
 {

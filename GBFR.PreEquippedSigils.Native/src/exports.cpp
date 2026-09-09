@@ -64,6 +64,11 @@ int32_t GBFR20_CALL GBFR20_SetCustomLoadout(
 {
    if (g_shutting_down.load(std::memory_order_acquire))
       return 0;
+   if (count > INT32_MAX)
+   {
+      Log("SetCustomLoadout: count exceeds INT32_MAX; rejected.");
+      return 0;
+   }
    EnsureInitialized();
    if (!g_hooks_ready.load(std::memory_order_acquire))
       return 0;
@@ -80,6 +85,11 @@ int32_t GBFR20_CALL GBFR20_SetExclusiveOverrides(
 {
    if (g_shutting_down.load(std::memory_order_acquire))
       return 0;
+   if (count > INT32_MAX)
+   {
+      Log("SetExclusiveOverrides: count exceeds INT32_MAX; rejected.");
+      return 0;
+   }
    EnsureInitialized();
    if (!g_hooks_ready.load(std::memory_order_acquire))
       return 0;

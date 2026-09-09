@@ -62,9 +62,10 @@ inline constexpr int kNativeInternalSlotCount = 13;
 inline constexpr int kBuiltinExclusiveSlotCount = 3;
 inline constexpr int kVirtualSlotCapacity = 24;
 // Character restrictions are extracted from sigils.json (the "character"
-// field on exclusive rows, maintained by docs/tool-gen-sigils-required.js):
-// 29 characters x 3 template exclusives minus the 3 captain-shared dupes.
-inline constexpr uint32_t kExpectedCompatibilityMappingCount = 84;
+// field on exclusive rows, produced by the extract pipeline):
+// 28 characters x 3 template exclusives (captain shares one entry) + 3
+// advanced exclusives (_74: 涯之七星＋/涯之二王＋/无态＋).
+inline constexpr uint32_t kExpectedCompatibilityMappingCount = 87;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
@@ -88,10 +89,18 @@ struct TemplateGemSlot
    uint32_t gem_id = 0; // real gem hash for the gem-master lookup; 0 = empty slot
    uint32_t trait1 = 0;
    int32_t trait1_level = 0;
-   uint32_t trait2 = 0; // 0 = single-trait sigil
+   // Single-trait slots must use kUnwornCharacterHash (0x887AE0B0): 0 makes the
+   // game render an extra empty Lv1 entry in the full-sigil list.
+   uint32_t trait2 = 0;
    int32_t trait2_level = 0;
    int32_t sigil_level = 0; // displayed sigil level (V+ = 15)
 };
+
+// Layout contract with GBFR20_TemplateSlot (native_api.h): same field order
+// and packing; the ABI path only ever reads through a reinterpret_cast.
+static_assert(sizeof(TemplateGemSlot) == sizeof(GBFR20_TemplateSlot));
+static_assert(offsetof(TemplateGemSlot, gem_id) == offsetof(GBFR20_TemplateSlot, gem_id));
+static_assert(offsetof(TemplateGemSlot, trait1) == offsetof(GBFR20_TemplateSlot, trait1));
 
 struct CharacterTemplate
 {
@@ -150,10 +159,6 @@ inline constexpr std::array<uint8_t, 24> kStatusOwnerTickPreflight = {
    0x55, 0x41, 0x57, 0x41, 0x56, 0x41, 0x55, 0x41,
    0x54, 0x56, 0x57, 0x53, 0x48, 0x81, 0xEC, 0x98,
    0x05, 0x00, 0x00, 0x48, 0x8D, 0xAC, 0x24, 0x80};
-inline constexpr std::array<uint8_t, 24> kStatusOwnerCharacterLoopPreflight = {
-   0x48, 0x8B, 0x73, 0x20, 0x48, 0x8B, 0x7B, 0x28,
-   0x48, 0x39, 0xFE, 0x0F, 0x84, 0x76, 0x01, 0x00,
-   0x00, 0x4C, 0x8D, 0xB3, 0x30, 0x32, 0x00, 0x00};
 
 using GemData = GBFR20_GemData;
 static_assert(sizeof(GemData) == 0x24);
@@ -236,7 +241,6 @@ extern uintptr_t g_image_base;
 extern std::filesystem::path g_module_directory;
 extern std::filesystem::path g_sigils_path;
 extern std::once_flag g_initialize_once;
-extern std::atomic_bool g_initialized;
 extern std::atomic_bool g_hooks_ready;
 extern std::atomic_bool g_layout_ready;
 extern ResolvedGameLayout g_game_layout;
@@ -300,7 +304,6 @@ bool SafeReadUiSelectedCharacterHash(uint32_t& character_hash) noexcept;
 bool SafeReadInt32(uintptr_t address, int32_t& value) noexcept;
 void SafeReadUiModes(int32_t& ui_mode, int32_t& source_mode) noexcept;
 void UpdateEditSessionState() noexcept;
-bool SafeReadGem(uintptr_t address, GemData& value) noexcept;
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept;
 bool SafeResolveStatusByMapKey(uintptr_t manager, uint32_t map_key, uintptr_t& status) noexcept;
 bool SafeResolveCharacterStatus(uint32_t character_hash, uintptr_t& manager, uintptr_t& status) noexcept;

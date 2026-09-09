@@ -103,6 +103,9 @@ void ProcessPendingHotApply()
    g_last_apply_character_hash.store(character_hash, std::memory_order_release);
    g_last_apply_expected_count.store(0, std::memory_order_release);
    g_last_apply_injected_count.store(0, std::memory_order_release);
+   // character_hash == 0 is unreachable from the callers; the hooks-not-ready
+   // case reuses ApplyResultSavedNoStatus (the ApplyResult enum is part of the
+   // frozen ABI v17, so the missing distinct value must stay un-renamed).
    if (!g_hooks_ready.load(std::memory_order_acquire) || character_hash == 0)
    {
       g_apply_result.store(ApplyResultSavedNoStatus, std::memory_order_release);
