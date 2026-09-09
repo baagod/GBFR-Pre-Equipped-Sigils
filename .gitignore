@@ -3,6 +3,7 @@
 **/publish/
 dist/
 .codegraph/
+.idea/
 .tmp-*/
 .vs/
 *.user

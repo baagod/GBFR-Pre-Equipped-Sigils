@@ -2867,7 +2867,7 @@
     {
       "key": "SKILL_113_00",
       "hash": "57E8A93F",
-      "name": "",
+      "name": "Sigil Booster",
       "zh": "因子强化",
       "skill1": "57E8A93F",
       "sec": "",
@@ -2880,7 +2880,7 @@
     {
       "key": "SKILL_143_00",
       "hash": "40223C28",
-      "name": "",
+      "name": "Catastrophe",
       "zh": "浩劫",
       "skill1": "40223C28",
       "sec": "",
@@ -2893,7 +2893,7 @@
     {
       "key": "1E1CECCE",
       "hash": "1E1CECCE",
-      "name": "",
+      "name": "Catastrophe Nova",
       "zh": "浩劫新星",
       "skill1": "1E1CECCE",
       "sec": "",
@@ -2906,7 +2906,7 @@
     {
       "key": "SKILL_311_00",
       "hash": "3B71AF12",
-      "name": "",
+      "name": "DMG Cap Ecru",
       "zh": "伤害上限·轰天",
       "skill1": "3B71AF12",
       "sec": "",
@@ -2919,7 +2919,7 @@
     {
       "key": "SKILL_312_00",
       "hash": "FFF8CF64",
-      "name": "",
+      "name": "DMG Cap Sage",
       "zh": "伤害上限·疾天",
       "skill1": "FFF8CF64",
       "sec": "",
@@ -2932,7 +2932,7 @@
     {
       "key": "235D86EF",
       "hash": "235D86EF",
-      "name": "",
+      "name": "Supernova",
       "zh": "超新星",
       "skill1": "235D86EF",
       "sec": "",
@@ -2945,7 +2945,7 @@
     {
       "key": "SKILL_314_00",
       "hash": "AEFEB1BC",
-      "name": "",
+      "name": "DMG Cap Cobalt",
       "zh": "伤害上限·苍天",
       "skill1": "AEFEB1BC",
       "sec": "",
@@ -2958,7 +2958,7 @@
     {
       "key": "0151CF9E",
       "hash": "0151CF9E",
-      "name": "",
+      "name": "DMG Cap Cardinal",
       "zh": "伤害上限·红天",
       "skill1": "0151CF9E",
       "sec": "",
@@ -2971,7 +2971,7 @@
     {
       "key": "BBD77C33",
       "hash": "BBD77C33",
-      "name": "",
+      "name": "Unbound Strike",
       "zh": "超凡强击",
       "skill1": "BBD77C33",
       "sec": "",
@@ -2984,7 +2984,7 @@
     {
       "key": "020DB733",
       "hash": "020DB733",
-      "name": "",
+      "name": "Unbound Technique",
       "zh": "超凡技艺",
       "skill1": "020DB733",
       "sec": "",
@@ -2997,7 +2997,7 @@
     {
       "key": "3F682593",
       "hash": "3F682593",
-      "name": "",
+      "name": "Unbound Exertion",
       "zh": "超凡奥秘",
       "skill1": "3F682593",
       "sec": "",
@@ -3010,7 +3010,7 @@
     {
       "key": "79027FC8",
       "hash": "79027FC8",
-      "name": "",
+      "name": "Unbound Master",
       "zh": "超凡破限",
       "skill1": "79027FC8",
       "sec": "",

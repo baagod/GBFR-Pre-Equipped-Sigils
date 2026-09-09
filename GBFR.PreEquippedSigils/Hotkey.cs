@@ -173,17 +173,12 @@ internal static class Hotkey
         if (hwnd != IntPtr.Zero)
         {
             PostMessage(hwnd, (uint)WmQuit, IntPtr.Zero, IntPtr.Zero);
+            // The loop owns all window cleanup (hotkey unregister + destroy)
+            // when it exits; joining here only waits for it. A timeout is fine
+            // — the loop still finishes on its own thread, and a cross-thread
+            // DestroyWindow on a live message window is unsafe, so it is never
+            // attempted here.
             _hotkeyThread?.Join(1000);
-            // The loop unregisters its own hotkey when it exits; only touch the
-            // window when the loop really stopped. If the join timed out the
-            // thread is still alive (e.g. inside TryLaunchTool) and a
-            // cross-thread DestroyWindow on its live message window is unsafe —
-            // the loop finishes its cleanup itself then.
-            if (_hotkeyThread is { IsAlive: false })
-            {
-                UnregisterHotKey(hwnd, HotkeyId);
-                DestroyWindow(hwnd);
-            }
         }
         _messageWindow = IntPtr.Zero;
         _hotkeyThread = null;
@@ -236,6 +231,10 @@ internal static class Hotkey
             DispatchMessage(ref msg);
         }
         UnregisterHotKey(hwnd, HotkeyId);
+        // The loop created the window, so it also destroys it here: a shutdown
+        // join timeout must never leak the message window (the shutdown path
+        // deliberately never touches it cross-thread).
+        DestroyWindow(hwnd);
     }
 
     /// <summary>
@@ -341,7 +340,8 @@ internal static class Hotkey
 
     /// <summary>
     /// Requests the tool to show/restore/focus itself (WM_APP+0x10; the tool
-    /// handles the hidden/minimized states and repaint nudges) and then takes
+    /// handles the fake-hidden/minimized states: reveal, restore, focus) and
+    /// then takes
     /// foreground permission. SetForegroundWindow must run here on the hotkey
     /// process: the RegisterHotKey press is what Windows treats as user input
     /// and grants activation rights to this process.

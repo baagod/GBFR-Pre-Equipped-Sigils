@@ -239,10 +239,9 @@ uint8_t ReadExclusiveStateLocked(uint32_t character_hash) noexcept
 }
 
 // Requires g_template_mutex held by the caller.
-void ApplyExclusiveStateLocked(
-   uint32_t character_hash, CharacterTemplate& character) noexcept
+void ApplyExclusiveStateLocked(CharacterTemplate& character) noexcept
 {
-   const auto index = g_character_template_index.find(character_hash);
+   const auto index = g_character_template_index.find(character.character_hash);
    if (index == g_character_template_index.end())
       return;
    const CharacterTemplate built = BuildCharacterTemplate(
@@ -257,9 +256,6 @@ void ApplyExclusiveStateLocked(
 
 std::shared_mutex g_template_mutex;
 std::array<CharacterTemplate, kRuntimeTemplateCapacity> g_runtime_templates{};
-
-constexpr size_t kBuiltinTemplateCount =
-   sizeof(kCharacterExclusives) / sizeof(kCharacterExclusives[0]);
 
 void InitializeRuntimeTemplates()
 {
@@ -354,8 +350,8 @@ bool TryCopyTemplateGem(
       return false;
 
    // Character-restricted template gems (e.g. awakening / war-spirit sigils)
-   // must still honor the compatibility table. Unrestricted gems pass for any
-   // character (required hash == 0).
+   // must still honor the character restrictions. Unrestricted gems pass for
+   // any character (required hash == 0).
    if (!IsCharacterCompatible(
           GetRequiredCharacterHash(template_slot.gem_id), character_hash))
       return false;
@@ -415,9 +411,18 @@ bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
       {
          if (character.character_hash == 0)
             continue;
-         ApplyExclusiveStateLocked(character.character_hash, character);
+         ApplyExclusiveStateLocked(character);
          if (use_builtin)
+         {
+            // Built-in mode owns only the exclusive slots: wipe the general
+            // slots so the table never keeps stale gems from a removed player
+            // config (they are unreachable at runtime, but the table should
+            // still reflect the reachable state).
+            for (int32_t slot_index = kBuiltinExclusiveSlotCount;
+                 slot_index < kVirtualSlotCapacity; ++slot_index)
+               character.slots[static_cast<size_t>(slot_index)] = TemplateGemSlot{};
             continue;
+         }
          for (int32_t slot_index = kBuiltinExclusiveSlotCount;
               slot_index < kVirtualSlotCapacity; ++slot_index)
          {
@@ -460,7 +465,7 @@ bool ApplyExclusiveOverrides(
       for (CharacterTemplate& character : g_runtime_templates)
       {
          if (character.character_hash != 0)
-            ApplyExclusiveStateLocked(character.character_hash, character);
+            ApplyExclusiveStateLocked(character);
       }
    }
    InstallDefaultTemplateSelections();

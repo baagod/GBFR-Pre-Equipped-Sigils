@@ -18,6 +18,37 @@ $distRoot = Join-Path $root 'dist'
 $packageDir = Join-Path $distRoot 'GBFR.PreEquippedSigils'
 $zipPath = Join-Path $distRoot "GBFR-Pre-Equipped-Sigils-$Version.zip"
 
+# --- release consistency gates ------------------------------------------------
+# Native contract: the character-restriction loader fails closed unless
+# sigils.json carries exactly kExpectedCharacterRestrictionCount "character"
+# rows. Check it here so a data regeneration cannot silently break startup.
+$sigilsPath = Join-Path $root 'GBFR.PreEquippedSigils\sigils.json'
+$nativeInternalPath = Join-Path $root 'GBFR.PreEquippedSigils.Native\native_internal.h'
+if (-not (Test-Path -LiteralPath $sigilsPath)) {
+    throw "sigils.json is missing: $sigilsPath"
+}
+$expectedMatch = [regex]::Match(
+    (Get-Content -LiteralPath $nativeInternalPath -Raw),
+    'kExpectedCharacterRestrictionCount\s*=\s*(\d+)')
+if (-not $expectedMatch.Success) {
+    throw 'kExpectedCharacterRestrictionCount was not found in native_internal.h.'
+}
+$expectedMappings = [int]$expectedMatch.Groups[1].Value
+$characterRows = ([regex]::Matches(
+    (Get-Content -LiteralPath $sigilsPath -Raw), '"character"\s*:')).Count
+if ($characterRows -ne $expectedMappings) {
+    throw "sigils.json has $characterRows 'character' rows; the native loader expects $expectedMappings."
+}
+Write-Output "sigils.json character rows: $characterRows (native loader expects $expectedMappings)."
+
+# The release manifest version must match the packaged version.
+$manifestVersion = (Get-Content -LiteralPath (Join-Path $root 'GBFR.PreEquippedSigils\ModConfig.json') -Raw |
+    ConvertFrom-Json).ModVersion
+if ($manifestVersion -ne $Version) {
+    throw "Version mismatch: -Version $Version but ModConfig.json declares $manifestVersion."
+}
+Write-Output "ModConfig.json version: $manifestVersion."
+
 $msbuild = $null
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (Test-Path -LiteralPath $vswhere) {
@@ -92,6 +123,15 @@ try {
     Pop-Location
 }
 
+# Keep the tool's dev-run data copies (git-ignored, next to the Go sources)
+# identical to the packaged ones, so a Loadout.exe run from Loadout/ can never
+# silently diverge from a release.
+foreach ($dataFile in @('sigils.json', 'character-exclusives.json')) {
+    Copy-Item -LiteralPath (Join-Path $root "GBFR.PreEquippedSigils\$dataFile") `
+        -Destination (Join-Path $toolDir $dataFile) -Force
+}
+Write-Output 'Synced sigils.json/character-exclusives.json into Loadout/.'
+
 $resolvedRoot = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
 $resolvedDist = [IO.Path]::GetFullPath($distRoot).TrimEnd('\') + '\'
 if (-not $resolvedDist.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgnoreCase)) {
@@ -101,6 +141,16 @@ if (-not $resolvedDist.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgno
 $resolvedPackage = [IO.Path]::GetFullPath($packageDir).TrimEnd('\') + '\'
 if (-not $resolvedPackage.StartsWith($resolvedDist, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Refusing to clean a package path outside dist: $packageDir"
+}
+
+# Force-stop a running editor tool: it locks dist\GBFR.PreEquippedSigils\Loadout.exe
+# and would make the recursive dist cleanup below fail. The tool is reopened at
+# the end of this script.
+if ((Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue) -ne $null) {
+    Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 500
+    Write-Output 'Stopped the running Loadout.exe so dist can be replaced.'
 }
 
 New-Item -ItemType Directory -Path $distRoot -Force | Out-Null
@@ -134,20 +184,11 @@ foreach ($requiredFile in @(
     }
 }
 
-foreach ($excludedFile in @(
-    'GBFR.PreEquippedSigils.pdb',
-    'GBFR.PreEquippedSigilsConfig.ini',
-    'GBFR.PreEquippedSigilsConfig.pending',
-    'GBFR-ExtraSigilSlotsNumConfig.ini',
-    'GBFR-ExtraSigilSlotsNumConfig.pending',
-    'GBFR-ExtraSigilSlots.presets.json',
-    'GBFR-ExtraSigilSlots20.presets.json',
-    'README-development.md'
-)) {
-    $excludedPath = Join-Path $packageDir $excludedFile
-    if (Test-Path -LiteralPath $excludedPath) {
-        Remove-Item -LiteralPath $excludedPath -Force
-    }
+# The managed PDB must never ship. Mutable config files are not deleted here:
+# the guard below treats a packaged one as an error (fail closed).
+$pdbPath = Join-Path $packageDir 'GBFR.PreEquippedSigils.pdb'
+if (Test-Path -LiteralPath $pdbPath) {
+    Remove-Item -LiteralPath $pdbPath -Force
 }
 
 $runtimesPath = Join-Path $packageDir 'runtimes'

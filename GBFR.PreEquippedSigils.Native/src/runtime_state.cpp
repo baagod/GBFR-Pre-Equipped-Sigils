@@ -85,11 +85,11 @@ void CompleteStartupPhase(
 
 void SetRuntimeMessage(std::string message)
 {
-   {
-      std::scoped_lock lock(g_message_mutex);
-      g_runtime_message = std::move(message);
-   }
-   Log(g_runtime_message);
+   // Log the message before storing it so the log line can never race another
+   // thread's store (the stored copy below stays under the mutex).
+   Log(message);
+   std::scoped_lock lock(g_message_mutex);
+   g_runtime_message = std::move(message);
 }
 
 std::string ToUpperHex(uint32_t value)

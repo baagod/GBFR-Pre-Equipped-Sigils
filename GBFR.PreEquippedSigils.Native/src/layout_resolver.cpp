@@ -508,8 +508,7 @@ bool ValidateResolvedGameLayout(
          return false;
    }
 
-   if (!IsReasonableObjectOffset(layout.main_gem_array_offset, alignof(uintptr_t)) ||
-       !IsReasonableObjectOffset(
+   if (!IsReasonableObjectOffset(
           layout.ui_selected_character_hash_offset, alignof(uint32_t)) ||
        !IsReasonableObjectOffset(layout.ui_mode_offset, alignof(uint32_t)) ||
        !IsReasonableObjectOffset(
@@ -653,7 +652,6 @@ bool ResolveGameLayout()
        gem_container_offset > std::numeric_limits<uint32_t>::max() - sizeof(uintptr_t))
       return FailResolution("SystemData/global-array decoding");
    layout.system_data_global_rva = system_data_global;
-   layout.main_gem_array_offset = gem_container_offset + sizeof(uintptr_t);
 
    uintptr_t manager_pattern = 0;
    if (!FindUniquePattern(

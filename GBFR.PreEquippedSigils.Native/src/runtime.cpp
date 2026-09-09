@@ -50,11 +50,11 @@ void Initialize()
    }
    CompleteStartupPhase("executable-validation", executable_started, true);
 
-   const uint64_t compatibility_started = BeginStartupPhase("compatibility-table");
-   const bool compatibility_loaded = LoadCompatibilityTable(g_sigils_path);
+   const uint64_t restrictions_started = BeginStartupPhase("character-restrictions");
+   const bool restrictions_loaded = LoadCharacterRestrictions(g_sigils_path);
    CompleteStartupPhase(
-      "compatibility-table", compatibility_started, compatibility_loaded);
-   if (!compatibility_loaded)
+      "character-restrictions", restrictions_started, restrictions_loaded);
+   if (!restrictions_loaded)
    {
       SetRuntimeMessage(
          "Character restrictions (sigils.json) are missing or incomplete; gameplay hooks were not installed.");

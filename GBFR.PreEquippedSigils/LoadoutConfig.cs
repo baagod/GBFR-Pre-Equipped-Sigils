@@ -55,10 +55,11 @@ internal static class LoadoutConfig
     }
 
     private static readonly Dictionary<string, SigilInfo> Sigils = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, TraitInfo> Traits = new(StringComparer.Ordinal);
+    private static readonly Dictionary<uint, TraitInfo> Traits = new();
     private static readonly Dictionary<string, List<ExclusiveRow>> ExclusiveByPlayer = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, ExclusiveRow> ExclusiveByName = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<uint, ExclusiveRow> ExclusiveByHash = new();
+    private static NativeCore.ExclusiveOverrideNative[]? _appliedOverrides;
     private static DateTime _lastAppliedUtc = DateTime.MinValue;
     private static DateTime _lastAttemptUtc = DateTime.MinValue;
     private static int _failsSinceChange;
@@ -86,13 +87,9 @@ internal static class LoadoutConfig
     {
         if (Traits.Count == 0)
             return;
-        // A deletion must reach TryApply too: it restores the built-in template
-        // (the file may be removed manually; the tool's reset now writes an
-        // empty config instead of deleting). The old File.Exists gate made the
-        // deletion branch in TryApply unreachable.
-        if (File.Exists(_loadoutPath) &&
-            File.GetLastWriteTimeUtc(_loadoutPath) == _lastAppliedUtc)
-            return;
+        // TryApply owns the mtime/deletion gating: a deleted file must reach it
+        // too (it restores the built-in template), and an unchanged file exits
+        // after one File.GetLastWriteTimeUtc call.
         TryApply(log);
     }
 
@@ -110,8 +107,11 @@ internal static class LoadoutConfig
             {
                 try
                 {
-                    string hash = Hx(entry.GetProperty("skill1"));
-                    if (hash.Length == 0)
+                    // Key by the parsed hash (not the raw string): the ABI
+                    // carries uint trait hashes, so the lookup can never
+                    // depend on the file's hex formatting.
+                    uint traitHash = PU(Hx(entry.GetProperty("skill1")));
+                    if (traitHash == 0)
                         continue;
                     int maxLevel = entry.TryGetProperty("cap", out JsonElement ml) &&
                                    ml.TryGetInt32(out int m)
@@ -119,17 +119,17 @@ internal static class LoadoutConfig
                         : DefaultLevel;
                     // First row wins for a repeated skill hash (mirrors the
                     // tool's first-row trait dictionary).
-                    if (Traits.TryAdd(hash, new TraitInfo { MaxLevel = maxLevel }))
+                    if (Traits.TryAdd(traitHash, new TraitInfo { MaxLevel = maxLevel }))
                         traitCount++;
                     string itemHash = Hx(entry.GetProperty("hash"));
-                    if (itemHash == hash) // non-item skill rows: trait only
+                    if (PU(itemHash) == traitHash) // non-item skill rows: trait only
                         continue;
-                    Sigils[itemHash] = new SigilInfo
-                    {
-                        Hash = PU(itemHash),
-                        Skill = PU(hash),
-                    };
-                    sigilCount++;
+                    if (Sigils.TryAdd(itemHash, new SigilInfo
+                        {
+                            Hash = PU(itemHash),
+                            Skill = traitHash,
+                        }))
+                        sigilCount++;
                 }
                 catch
                 {
@@ -154,7 +154,12 @@ internal static class LoadoutConfig
             {
                 _hadConfigFile = false;
                 _lastAppliedUtc = DateTime.MinValue;
-                NativeCore.ApplyExclusiveOverrides(null); // everything enabled again
+                _lastAttemptUtc = DateTime.MinValue;
+                if (_appliedOverrides is not null)
+                {
+                    NativeCore.ApplyExclusiveOverrides(null); // everything enabled again
+                    _appliedOverrides = null;
+                }
                 if (NativeCore.ApplyCustomLoadout(null))
                     log("loadout.json removed; restored the built-in exclusive template.");
             }
@@ -169,9 +174,11 @@ internal static class LoadoutConfig
 
         try
         {
-            string json = File.ReadAllText(_loadoutPath);
-            if (json.Length > 1024 * 1024)
+            // Check the size before reading so an oversized file is never
+            // loaded into memory at all.
+            if (new FileInfo(_loadoutPath).Length > 1024 * 1024)
                 throw new InvalidDataException("loadout.json exceeds 1 MB");
+            string json = File.ReadAllText(_loadoutPath);
             using JsonDocument doc = JsonDocument.Parse(json);
             var overrides = ParseExclusiveOverrides(doc.RootElement);
             var slots = ParseAndValidate(doc.RootElement);
@@ -198,9 +205,15 @@ internal static class LoadoutConfig
             // Apply the exclusive overrides after the loadout: the native path
             // only fails while the runtime is shutting down, so rejecting a
             // loadout above leaves the previous exclusive state untouched
-            // instead of a mixed new/old state.
-            if (!NativeCore.ApplyExclusiveOverrides(overrides))
-                throw new InvalidDataException("native rejected the exclusive overrides");
+            // instead of a mixed new/old state. ApplyCustomLoadout already
+            // re-applies the stored exclusive state, so an unchanged set needs
+            // no second full rebuild (and no duplicate log line).
+            if (OverridesChanged(overrides))
+            {
+                if (!NativeCore.ApplyExclusiveOverrides(overrides))
+                    throw new InvalidDataException("native rejected the exclusive overrides");
+                _appliedOverrides = overrides;
+            }
             _lastAppliedUtc = mtime;
             _lastAttemptUtc = DateTime.MinValue;
         }
@@ -274,7 +287,7 @@ internal static class LoadoutConfig
     private static List<ExclusiveRow> ResolveCharacters(string key)
     {
         if (ExclusiveByPlayer.TryGetValue(key, out var playerRows))
-            return playerRows;
+            return new List<ExclusiveRow>(playerRows);
         if (ExclusiveByHash.TryGetValue(PU(key), out ExclusiveRow? row))
             return new List<ExclusiveRow> { row };
         if (ExclusiveByName.TryGetValue(key, out row))
@@ -374,6 +387,27 @@ internal static class LoadoutConfig
         return result.Count == 0 ? null : result.ToArray();
     }
 
+    /// <summary>
+    /// True when the parsed overrides differ from the last successfully applied
+    /// set (null = everything enabled).
+    /// </summary>
+    private static bool OverridesChanged(NativeCore.ExclusiveOverrideNative[]? overrides)
+    {
+        if (overrides is null || _appliedOverrides is null)
+            return !ReferenceEquals(overrides, _appliedOverrides);
+        if (overrides.Length != _appliedOverrides.Length)
+            return true;
+        for (int index = 0; index < overrides.Length; index++)
+        {
+            if (overrides[index].CharacterHash != _appliedOverrides[index].CharacterHash ||
+                overrides[index].DisableT1 != _appliedOverrides[index].DisableT1 ||
+                overrides[index].DisableT2 != _appliedOverrides[index].DisableT2 ||
+                overrides[index].DisableWar != _appliedOverrides[index].DisableWar)
+                return true;
+        }
+        return false;
+    }
+
     private static List<NativeCore.TemplateSlotNative> ParseAndValidate(JsonElement root)
     {
         var result = new List<NativeCore.TemplateSlotNative>();
@@ -409,7 +443,7 @@ internal static class LoadoutConfig
             string mainGem = Hx(main.GetProperty("gem"));
             if (!Sigils.TryGetValue(mainGem, out SigilInfo? sigil))
                 throw new InvalidDataException($"slot {index}: unknown sigil '{mainGem}'");
-            int mainCap = Traits.TryGetValue($"{sigil.Skill:X8}", out TraitInfo? mt)
+            int mainCap = Traits.TryGetValue(sigil.Skill, out TraitInfo? mt)
                 ? mt.MaxLevel
                 : DefaultLevel;
             int level1 = GetLevel(main, "level", index, mainCap);
@@ -418,7 +452,8 @@ internal static class LoadoutConfig
             {
                 JsonElement sec = items[1];
                 string secHash = Hx(sec.GetProperty("hash"));
-                if (!Traits.TryGetValue(secHash, out TraitInfo? trait))
+                uint secTraitHash = PU(secHash);
+                if (!Traits.TryGetValue(secTraitHash, out TraitInfo? trait))
                     throw new InvalidDataException($"slot {index}: unknown trait '{secHash}'");
                 int level2 = GetLevel(sec, "level", index, trait.MaxLevel);
                 result.Add(new NativeCore.TemplateSlotNative
@@ -426,7 +461,7 @@ internal static class LoadoutConfig
                     GemId = sigil.Hash,
                     Trait1 = sigil.Skill,
                     Trait1Level = level1,
-                    Trait2 = PU(secHash),
+                    Trait2 = secTraitHash,
                     Trait2Level = level2,
                     SigilLevel = level1,
                 });

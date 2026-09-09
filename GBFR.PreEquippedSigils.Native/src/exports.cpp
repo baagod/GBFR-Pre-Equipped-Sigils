@@ -93,9 +93,5 @@ int32_t GBFR20_CALL GBFR20_SetExclusiveOverrides(
    EnsureInitialized();
    if (!g_hooks_ready.load(std::memory_order_acquire))
       return 0;
-   return ApplyExclusiveOverrides(
-             reinterpret_cast<const GBFR20_ExclusiveOverride*>(overrides),
-             static_cast<int32_t>(count))
-      ? 1
-      : 0;
+   return ApplyExclusiveOverrides(overrides, static_cast<int32_t>(count)) ? 1 : 0;
 }

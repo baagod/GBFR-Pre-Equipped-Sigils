@@ -43,13 +43,16 @@ bool ReadHexField(const std::string& line, std::string_view field, uint32_t& val
 // the extract pipeline; field names follow gem.xlsx headers).
 //
 // == FORMAT CONTRACT (change here in lockstep with gen\数据表说明.md §2) ==
-//  - flat JSON objects, one field per line, UTF-8, LF or CRLF
-//  - field names: "hash" and "character", values are 8 hex digits (no 0x)
-//  - exclusive rows (player != "") also carry "character"; regular rows do not
-//  - the "character" field is the last one of the object (no trailing comma)
-// The loader never parses generic JSON: it scans the stable field layout and
-// fails closed on any deviation (expected count check below).
-bool LoadCompatibilityTable(const std::filesystem::path& path)
+//  - field names: "hash" and "character", values are 8 hex digits (no 0x),
+//    quoted, on the same line as the field name
+//  - exclusive rows (player != "") carry "character"; regular rows do not
+//  - a "character" must sit in the same object as its "hash" (else fail closed)
+//  - one field per line; an object ends with a line that is exactly "}," or "}"
+// The loader never parses generic JSON: it accumulates the two fields per
+// object and commits the pair at the closing brace. Field order and extra
+// fields (e.g. "lot") are ignored; any malformed value, an orphan
+// "character", or a wrong final count fails closed (below).
+bool LoadCharacterRestrictions(const std::filesystem::path& path)
 {
    g_required_character_by_gem.clear();
    std::ifstream stream(path, std::ios::binary);
@@ -78,7 +81,7 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
       if (first == std::string::npos)
          continue;
       const std::string_view trimmed = std::string_view(line).substr(first);
-      if (trimmed == "}," || trimmed == "}" || trimmed == "]")
+      if (trimmed == "}," || trimmed == "}")
       {
          // End of a sigil object: a hash with a character field is an
          // exclusive row (commit the pair). A hash without character is a
@@ -113,8 +116,8 @@ bool LoadCompatibilityTable(const std::filesystem::path& path)
    }
 
    Log("Loaded " + std::to_string(loaded) + " character-restricted sigil mappings from sigils.json.");
-   return loaded == kExpectedCompatibilityMappingCount &&
-      g_required_character_by_gem.size() == kExpectedCompatibilityMappingCount;
+   return loaded == kExpectedCharacterRestrictionCount &&
+      g_required_character_by_gem.size() == kExpectedCharacterRestrictionCount;
 }
 
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash)

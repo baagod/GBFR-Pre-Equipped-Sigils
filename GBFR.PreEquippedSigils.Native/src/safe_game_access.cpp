@@ -317,31 +317,48 @@ void EraseAuthorizedStatus(uintptr_t status)
 
 void ValidateAuthorizedStatuses()
 {
-   std::unique_lock lock(g_authorization_mutex);
-   for (auto iterator = g_authorized_statuses.begin(); iterator != g_authorized_statuses.end();)
+   // Snapshot under the shared lock, then read game memory outside it: the
+   // detour readers (shared lock) must never wait behind this tick's SEH reads.
+   std::vector<AuthorizedStatus> snapshot;
+   {
+      std::shared_lock lock(g_authorization_mutex);
+      snapshot.reserve(g_authorized_statuses.size());
+      for (const auto& [status, authorization] : g_authorized_statuses)
+         snapshot.push_back(authorization);
+   }
+
+   for (const AuthorizedStatus& authorization : snapshot)
    {
       uintptr_t manager = 0;
       uintptr_t current_status = 0;
       StatusIdentity identity{};
       bool resolved = false;
-      if (iterator->second.context_mode == 1)
+      if (authorization.context_mode == 1)
       {
-         current_status = iterator->second.status;
+         current_status = authorization.status;
          resolved = current_status != 0;
       }
       else
       {
          resolved = SafeResolveCharacterStatus(
-            iterator->second.character_hash, manager, current_status);
+            authorization.character_hash, manager, current_status);
       }
-      if (!resolved || current_status != iterator->second.status ||
-          !SafeReadStatusIdentity(current_status, identity) ||
-          identity.character_hash != iterator->second.character_hash ||
-          identity.context_mode != iterator->second.context_mode ||
-          identity.context_mode < 0 || identity.context_mode > 2)
-         iterator = g_authorized_statuses.erase(iterator);
-      else
-         ++iterator;
+      const bool valid = resolved && current_status == authorization.status &&
+         SafeReadStatusIdentity(current_status, identity) &&
+         identity.character_hash == authorization.character_hash &&
+         identity.context_mode == authorization.context_mode &&
+         identity.context_mode >= 0 && identity.context_mode <= 2;
+      if (valid)
+         continue;
+      // Erase only the exact entry that was validated: a concurrent commit
+      // (same status, newer generation) must survive this sweep.
+      std::unique_lock lock(g_authorization_mutex);
+      const auto iterator = g_authorized_statuses.find(authorization.status);
+      if (iterator != g_authorized_statuses.end() &&
+          iterator->second.character_hash == authorization.character_hash &&
+          iterator->second.context_mode == authorization.context_mode &&
+          iterator->second.generation == authorization.generation)
+         g_authorized_statuses.erase(iterator);
    }
 }
 

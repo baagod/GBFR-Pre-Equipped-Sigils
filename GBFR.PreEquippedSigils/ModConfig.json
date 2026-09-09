@@ -17,9 +17,7 @@
   "ReleaseMetadataFileName": "GBFR.PreEquippedSigils.ReleaseMetadata.json",
   "PluginData": {},
   "IsUniversalMod": false,
-  "ModDependencies": [
-    "reloaded.sharedlib.hooks"
-  ],
+  "ModDependencies": [],
   "OptionalDependencies": [],
   "SupportedAppId": [
     "granblue_fantasy_relink.exe"

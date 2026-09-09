@@ -40,7 +40,6 @@ struct ResolvedGameLayout
    uintptr_t status_manager_global_rva = 0;
    uintptr_t ui_manager_global_rva = 0;
    uintptr_t ui_state_source_global_rva = 0;
-   uintptr_t main_gem_array_offset = 0;
    uintptr_t ui_selected_character_hash_offset = 0;
    uintptr_t ui_mode_offset = 0;
    uintptr_t ui_state_source_mode_offset = 0;
@@ -65,7 +64,7 @@ inline constexpr int kVirtualSlotCapacity = 24;
 // field on exclusive rows, produced by the extract pipeline):
 // 28 characters x 3 template exclusives (captain shares one entry) + 3
 // advanced exclusives (_74: 涯之七星＋/涯之二王＋/无态＋).
-inline constexpr uint32_t kExpectedCompatibilityMappingCount = 87;
+inline constexpr uint32_t kExpectedCharacterRestrictionCount = 87;
 inline constexpr uint32_t kUnwornCharacterHash = 0x887AE0B0;
 inline constexpr uint32_t kGranCharacterHash = 0x2A26B1B2;
 inline constexpr uint32_t kDjeetaCharacterHash = 0xA4ACBA76;
@@ -320,7 +319,7 @@ bool SafeNotifyStatusDirty(uintptr_t manager, uint32_t character_hash, uint32_t 
 bool ReadByte(uintptr_t address, uint8_t& value) noexcept;
 bool WriteByte(uintptr_t address, uint8_t value);
 
-bool LoadCompatibilityTable(const std::filesystem::path& path);
+bool LoadCharacterRestrictions(const std::filesystem::path& path);
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash);
 
 std::array<uint32_t, kVirtualSlotCapacity> GetSelection(uint32_t character_hash);

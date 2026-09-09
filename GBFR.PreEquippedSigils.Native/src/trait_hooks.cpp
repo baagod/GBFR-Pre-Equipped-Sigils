@@ -10,12 +10,14 @@ SafetyHookMid g_trait_fetch_hook;
 
 std::atomic_uint32_t g_active_getter_calls{0};
 std::atomic_uint32_t g_active_mid_calls{0};
-std::atomic_bool g_live_confirmation_reported{false};
 thread_local uint64_t g_tls_apply_generation = 0;
 thread_local NaturalContributionFrame g_tls_natural_contribution{};
 
 namespace
 {
+// Session-wide one-shot flag; only this translation unit uses it.
+std::atomic_bool g_live_confirmation_reported{false};
+
 uint32_t CountSelectedSlots(
    const std::array<uint32_t, kVirtualSlotCapacity>& selection) noexcept
 {
@@ -201,11 +203,13 @@ uint8_t GetGemDataByIndexDetour(void* status, int slot_index, void* output)
       identity.context_mode >= 0 && identity.context_mode <= 2;
 
    const int expanded_slot_count = GetExpandedInternalSlotCount();
-   if (slot_index < kNativeInternalSlotCount || slot_index >= expanded_slot_count)
-   {
-      const uint8_t result = g_get_gem_hook.call<uint8_t>(status, slot_index, output);
-      return result;
-   }
+   if (slot_index < kNativeInternalSlotCount)
+      return g_get_gem_hook.call<uint8_t>(status, slot_index, output);
+   // Out-of-range high indices never occur while the patched loop limits are in
+   // place; refuse them instead of forwarding to the 13-slot original getter
+   // (which would read past its own array).
+   if (slot_index >= expanded_slot_count)
+      return 0;
    if (g_shutting_down.load(std::memory_order_acquire) || !valid_identity ||
        output == nullptr)
       return 0;
@@ -449,9 +453,21 @@ void DisableGameplayHooksAndRestore() noexcept
    if (g_get_gem_hook)
       (void)g_get_gem_hook.disable();
 
+   // Wait for in-flight detour bodies to drain before releasing the hook
+   // trampolines. If they do not drain in time the process is already shutting
+   // down, so leave the hooks installed (they are disabled and the loop limits
+   // are restored) rather than freeing memory a live call may still execute.
+   const uint64_t drain_deadline = GetTickCount64() + 5000;
    while (g_active_getter_calls.load(std::memory_order_acquire) != 0 ||
           g_active_mid_calls.load(std::memory_order_acquire) != 0)
+   {
+      if (GetTickCount64() > drain_deadline)
+      {
+         Log("Hook teardown timed out waiting for in-flight calls; hooks left installed.");
+         return;
+      }
       SwitchToThread();
+   }
 
    g_trait_fetch_hook.reset();
    g_get_gem_hook.reset();
