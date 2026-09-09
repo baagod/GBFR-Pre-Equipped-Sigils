@@ -5,20 +5,30 @@ namespace GBFR.PreEquippedSigils;
 /// <summary>
 /// Reads the optional loadout.json (written by the player/editor tool) and
 /// pushes it into the native runtime template table through the ABI.
-/// No config file keeps the built-in 9-slot template; invalid files are
+/// No config file keeps the built-in exclusive template; invalid files are
 /// reported and the last valid configuration stays active.
 ///
-/// Data model (2026 会话改版; mod parses only the fields it needs):
-///   sigils.json  : { sigils: [ { gem, skill } ] } (name/sec/pool/special are tool-side only)
-///   skills.json  : { traits: [ { hash, zh, en, cap } ] }
-///   loadout.json : [ { items: [ {hash, level, zh, en}, {hash, level, zh, en}? ], enabled } ]
-///                  items[0] = sigil (item), items[1] = secondary trait (optional).
+/// Data model (mod parses only the fields it needs; field names follow
+/// gem.xlsx headers for sigils.json):
+///   sigils.json            : { sigils: [ { key, hash, name, zh, skill1, sec,
+///                            category, player, special, cap, lot, character? } ] }
+///                            item rows: hash != skill1; non-item skill rows:
+///                            hash == skill1 (trait entries only, no item).
+///   character-exclusives.json : { exclusives: [ { hash, player, name, zh,
+///                            t1, t2, war, t1Gem, t2Gem, warGem } ] }
+///   loadout.json           : { lang, slots: [ { items: [
+///                            {gem, level, zh, en}, {hash, level, zh, en}? ],
+///                            enabled } ], exclusive: { player: { traitHash: bool } } }
+///                            items[0] = sigil (item hash), items[1] = secondary
+///                            trait (optional); a bare array is legacy-only.
 /// Soft validation: any combination is accepted (no secondaries check yet);
 /// hard validation only: unknown hashes / bad levels / too many slots.
 /// </summary>
 internal static class LoadoutConfig
 {
+    // keep in sync with Native/native_internal.h kUnwornCharacterHash (0x887AE0B0)
     private const uint UnwornCharacterHash = 0x887AE0B0;
+    // keep in sync with Loadout/loadoutservice.go MaxSlots
     private const int MaxSlots = 12; // conservative cap (more slots risk instability)
     private const int DefaultLevel = 15;
 
@@ -51,6 +61,7 @@ internal static class LoadoutConfig
     private static readonly Dictionary<uint, ExclusiveRow> ExclusiveByHash = new();
     private static DateTime _lastAppliedUtc = DateTime.MinValue;
     private static DateTime _lastAttemptUtc = DateTime.MinValue;
+    private static int _failsSinceChange;
     private static bool _hadConfigFile;
     private static string _loadoutPath = "";
     private static string _sigilsPath = "";
@@ -88,8 +99,9 @@ internal static class LoadoutConfig
     {
         try
         {
-            // Merged single table: item rows (gem != "") + non-holdable trait rows
-            // (gem == ""); every row also registers its trait (skill hash -> cap).
+            // Merged single table: item rows (hash != skill1) + non-item skill
+            // rows (hash == skill1); every row also registers its trait (skill1
+            // hash -> cap).
             using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(_sigilsPath));
             int sigilCount = 0;
             int traitCount = 0;
@@ -97,7 +109,7 @@ internal static class LoadoutConfig
             {
                 try
                 {
-                    string hash = Hx(entry.GetProperty("skill"));
+                    string hash = Hx(entry.GetProperty("skill1"));
                     if (hash.Length == 0)
                         continue;
                     int maxLevel = entry.TryGetProperty("cap", out JsonElement ml) &&
@@ -106,14 +118,14 @@ internal static class LoadoutConfig
                         : DefaultLevel;
                     // First row wins for a repeated skill hash (mirrors the
                     // tool's first-row trait dictionary).
-                    Traits.TryAdd(hash, new TraitInfo { MaxLevel = maxLevel });
-                    traitCount++;
-                    string gem = Hx(entry.GetProperty("gem"));
-                    if (gem.Length == 0)
+                    if (Traits.TryAdd(hash, new TraitInfo { MaxLevel = maxLevel }))
+                        traitCount++;
+                    string itemHash = Hx(entry.GetProperty("hash"));
+                    if (itemHash == hash) // non-item skill rows: trait only
                         continue;
-                    Sigils[gem] = new SigilInfo
+                    Sigils[itemHash] = new SigilInfo
                     {
-                        Hash = PU(gem),
+                        Hash = PU(itemHash),
                         Skill = PU(hash),
                     };
                     sigilCount++;
@@ -152,6 +164,7 @@ internal static class LoadoutConfig
         DateTime mtime = File.GetLastWriteTimeUtc(_loadoutPath);
         if (mtime == _lastAppliedUtc || mtime == _lastAttemptUtc)
             return;
+        _failsSinceChange = 0;
 
         try
         {
@@ -192,6 +205,11 @@ internal static class LoadoutConfig
         }
         catch (Exception exception)
         {
+            // Transient failures (half-written file, AV lock, native not ready
+            // yet) get a few 250ms-tick retries before the mtime is treated as
+            // permanently rejected; a later save resets the counter above.
+            if (++_failsSinceChange < 3)
+                return;
             log($"Invalid loadout.json; kept previous configuration: {exception.Message}");
             _lastAttemptUtc = mtime;
         }
@@ -303,12 +321,25 @@ internal static class LoadoutConfig
         });
     }
 
+    /// True when every field name is a legacy bit name (t1/t2/war); only then
+    /// can an unknown-key entry be applied to a raw character hash.
+    private static bool HasOnlyLegacyBitNames(JsonElement fields)
+    {
+        foreach (JsonProperty field in fields.EnumerateObject())
+        {
+            string name = field.Name;
+            if (name != "t1" && name != "t2" && name != "war")
+                return false;
+        }
+        return true;
+    }
+
     /// <summary>
     /// Parses the optional "exclusive" object
     /// ({ PL码/name/hash: { 词条hash(T1/T2/War): bool } }) into native overrides
     /// (disable bits). Missing entries stay enabled; the legacy shape
-    /// ({ characterHashHex: { t1, t2, war } }) is still accepted; absent
-    /// "exclusive" yields null (all enabled).
+    /// ({ characterHashHex: { t1, t2, war } }) is still accepted for unknown
+    /// character hashes; absent "exclusive" yields null (all enabled).
     /// </summary>
     private static NativeCore.ExclusiveOverrideNative[]? ParseExclusiveOverrides(JsonElement root)
     {
@@ -323,13 +354,15 @@ internal static class LoadoutConfig
             if (property.Value.ValueKind != JsonValueKind.Object)
                 continue;
             // A player key may match several rows (Gran/Djeeta share "PL0000"):
-            // emit one override per character. Unknown keys fall back to a raw
-            // character hash (legacy configs).
+            // emit one override per character. Unknown keys only fall back to a
+            // raw character hash for the legacy bit-name shape; new-shape
+            // entries (trait-hash keys) without a table row cannot be resolved
+            // to T1/T2/War bit names and are skipped (no-op, nothing enabled).
             List<ExclusiveRow> rows = ResolveCharacters(property.Name);
             if (rows.Count == 0)
             {
                 uint bareHash = PU(property.Name);
-                if (bareHash == 0)
+                if (bareHash == 0 || !HasOnlyLegacyBitNames(property.Value))
                     continue;
                 AddExclusiveOverride(property.Value, null, bareHash, result);
                 continue;

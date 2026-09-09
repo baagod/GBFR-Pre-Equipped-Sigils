@@ -71,12 +71,22 @@ public class Configurable<TParentType> : IUpdatableConfigurable
 
     private void OnConfigurationUpdated()
     {
-        lock (_readLock)
+        try
         {
-            var newConfig = Utilities.TryGetValue(() => ReadFrom(FilePath!, ConfigName!), 250, 2);
-            newConfig.ConfigurationUpdated = ConfigurationUpdated;
-            DisposeEvents();
-            newConfig.ConfigurationUpdated?.Invoke(newConfig);
+            lock (_readLock)
+            {
+                var newConfig = Utilities.TryGetValue(() => ReadFrom(FilePath!, ConfigName!), 250, 2);
+                newConfig.ConfigurationUpdated = ConfigurationUpdated;
+                DisposeEvents();
+                newConfig.ConfigurationUpdated?.Invoke(newConfig);
+            }
+        }
+        catch
+        {
+            // A bad/partially-written config must never escape this FSW thread
+            // callback (an unhandled exception would tear down the game
+            // process): keep the previous configuration and retry on the next
+            // change event.
         }
     }
 

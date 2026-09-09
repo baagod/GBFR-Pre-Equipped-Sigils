@@ -26,7 +26,6 @@ public sealed class Mod : IMod
     private bool _nativeCoreActive;
     private bool _disposed;
     private bool _startRequested;
-    private HotkeyConfig? _hotkeyConfiguration;
 
     public Action Disposing => Dispose;
 
@@ -142,12 +141,12 @@ public sealed class Mod : IMod
             HotkeyConfig configuration =
                 new Configurator(configDirectory).GetConfiguration<HotkeyConfig>(0);
             configuration.ConfigurationUpdated += OnHotkeyConfigurationUpdated;
-            _hotkeyConfiguration = configuration;
             Hotkey.Configure(modDirectory, configuration.VirtualKey, Log);
         }
         catch (Exception exception)
         {
-            Log($"Hotkey configuration unavailable: {exception.Message}");
+            Log($"Hotkey configuration unavailable: {exception.Message}; falling back to the default F1 hotkey.");
+            Hotkey.Configure(modDirectory, (int)OverlayHotkey.F1, Log);
         }
     }
 
