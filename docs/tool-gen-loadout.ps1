@@ -3,59 +3,59 @@ $ErrorActionPreference = 'Stop'
 # ============================================================================
 # 专属因子权威数据（改这里的 Hash/T1/T2/War/Awake 后重新生成）：
 #   T1/T2 = 觉醒＋两专属词条；War = 战气词条。T1Gem/T2Gem/WarGem（独立因子与
-#   战气的物品 gem）由脚本从 sigils.json 推导（special=False 且 skill 匹配）；
-#   Awake（觉醒＋组合物品 gem）仅用于由 compatibility.tsv 反查该角色 PL 码。
+#   战气的物品 gem）由脚本从 sigils.json 推导（special=False 且 skill1 匹配）；
+#   Awake（觉醒＋组合物品 gem）为历史源数据——觉醒行已从 sigils.json 剔除，
+#   PL 码改由战气因子行（WarGem -> player）反查。
 # ============================================================================
 $chars = @(
     @{ Hash = '079DF0CC'; Name = 'Rackam'; Zh = '拉卡姆'; Awake = '98A6D249'; T1 = '151E4674'; T2 = 'A374FDF0'; War = 'D76F4D24' }, # Rackam
-    @{ Hash = '0D21B430'; Name = 'Zeta'; Zh = '泽塔'; Awake = '4F01D6CA'; T1 = '6EBFA176'; T2 = 'F1D5DBD0'; War = '4F135217' }, # Zeta
+    @{ Hash = '0D21B430'; Name = 'Zeta'; Zh = '塞达'; Awake = '4F01D6CA'; T1 = '6EBFA176'; T2 = 'F1D5DBD0'; War = '4F135217' }, # Zeta
     @{ Hash = '18E2F9F9'; Name = 'Katalina'; Zh = '卡塔莉娜'; Awake = '9ADA3E00'; T1 = '3BFED918'; T2 = 'F8496336'; War = '9AFDFA9E' }, # Katalina
-    @{ Hash = '1BB37EF0'; Name = 'Gallanza'; Zh = '加兰扎'; Awake = '895ABBF6'; T1 = '26956F25'; T2 = '1DE14C65'; War = 'DBA19768' }, # Gallanza
+    @{ Hash = '1BB37EF0'; Name = 'Gallanza'; Zh = '伽兰查'; Awake = '895ABBF6'; T1 = '26956F25'; T2 = '1DE14C65'; War = 'DBA19768' }, # Gallanza
     @{ Hash = '22E437E5'; Name = 'Lancelot'; Zh = '兰斯洛特'; Awake = 'E19B1965'; T1 = '8CDF9382'; T2 = 'D1012D8C'; War = '6316CBEB' }, # Lancelot
-    @{ Hash = '25D46F4B'; Name = 'Maglielle'; Zh = '玛格里耶'; Awake = 'D8A464F1'; T1 = '9ACE140B'; T2 = '7B5B081D'; War = '79266456' }, # Maglielle
-    @{ Hash = '296471BE'; Name = 'Seofon'; Zh = '西奥芬'; Awake = '6AAE4B8F'; T1 = '77C809F5'; T2 = '9230E3F5'; War = '7B4FC47A' }, # Seofon
+    @{ Hash = '25D46F4B'; Name = 'Maglielle'; Zh = '玛琪拉菲菈'; Awake = 'D8A464F1'; T1 = '9ACE140B'; T2 = '7B5B081D'; War = '79266456' }, # Maglielle
+    @{ Hash = '296471BE'; Name = 'Seofon'; Zh = '希耶提'; Awake = '6AAE4B8F'; T1 = '77C809F5'; T2 = '9230E3F5'; War = '7B4FC47A' }, # Seofon
     @{ Hash = '2A26B1B2'; Name = 'Gran'; Zh = '古兰'; Awake = '52A6E299'; T1 = 'CD030268'; T2 = 'A38510E2'; War = 'DADE14DC' }, # Gran
     @{ Hash = 'A4ACBA76'; Name = 'Djeeta'; Zh = '姬塔'; Awake = '52A6E299'; T1 = 'CD030268'; T2 = 'A38510E2'; War = 'DADE14DC' }, # Djeeta (shares captain exclusives)
-    @{ Hash = '2EBE91D5'; Name = 'Vane'; Zh = '瓦恩'; Awake = '673C5D8F'; T1 = '2E65A774'; T2 = '16EFF868'; War = 'D8F66C1C' }, # Vane
+    @{ Hash = '2EBE91D5'; Name = 'Vane'; Zh = '巴恩'; Awake = '673C5D8F'; T1 = '2E65A774'; T2 = '16EFF868'; War = 'D8F66C1C' }, # Vane
     @{ Hash = '4D0A60C3'; Name = 'Io'; Zh = '伊欧'; Awake = 'E2B380E5'; T1 = 'B48EEF48'; T2 = '11AAE5F5'; War = 'C00163B3' }, # Io
     @{ Hash = '627BCB0D'; Name = 'Siegfried'; Zh = '齐格飞'; Awake = 'AB835493'; T1 = '86CBCDC4'; T2 = '05FA4599'; War = 'C7D379F1' }, # Siegfried
-    @{ Hash = '646C3168'; Name = 'Fraux'; Zh = '芙罗'; Awake = '5A360EA8'; T1 = '30773197'; T2 = '47384248'; War = '807B6684' }, # Fraux
-    @{ Hash = '718E1A14'; Name = 'Sandalphon'; Zh = '桑德冯'; Awake = 'B8C44D5E'; T1 = 'D40D1E9B'; T2 = '15806DFC'; War = '4E5F6706' }, # Sandalphon
-    @{ Hash = '74DD4C79'; Name = 'Fediel'; Zh = '菲迪埃'; Awake = 'A8A0CBFF'; T1 = '06719232'; T2 = 'ED8D8AD8'; War = '5559232F' }, # Fediel
-    @{ Hash = '978E4B18'; Name = 'Ghandagoza'; Zh = '甘达戈萨'; Awake = 'CE16D68B'; T1 = '5463232F'; T2 = '451D814C'; War = '0F026CF0' }, # Ghandagoza
-    @{ Hash = '9A8AF295'; Name = 'Beatrix'; Zh = '比亚特莉丝'; Awake = '95CC3CB8'; T1 = 'D176D262'; T2 = '461A8E07'; War = 'B953CC1E' }, # Beatrix
-    @{ Hash = '9B15CFB1'; Name = 'Eustace'; Zh = '尤斯塔斯'; Awake = '23953FD4'; T1 = '7D75D904'; T2 = 'BE3404B9'; War = '3EB345D7' }, # Eustace
+    @{ Hash = '646C3168'; Name = 'Fraux'; Zh = '芙劳'; Awake = '5A360EA8'; T1 = '30773197'; T2 = '47384248'; War = '807B6684' }, # Fraux
+    @{ Hash = '718E1A14'; Name = 'Sandalphon'; Zh = '圣德芬'; Awake = 'B8C44D5E'; T1 = 'D40D1E9B'; T2 = '15806DFC'; War = '4E5F6706' }, # Sandalphon
+    @{ Hash = '74DD4C79'; Name = 'Fediel'; Zh = '菲迪埃尔'; Awake = 'A8A0CBFF'; T1 = '06719232'; T2 = 'ED8D8AD8'; War = '5559232F' }, # Fediel
+    @{ Hash = '978E4B18'; Name = 'Ghandagoza'; Zh = '冈达葛萨'; Awake = 'CE16D68B'; T1 = '5463232F'; T2 = '451D814C'; War = '0F026CF0' }, # Ghandagoza
+    @{ Hash = '9A8AF295'; Name = 'Beatrix'; Zh = '贝阿朵丽丝'; Awake = '95CC3CB8'; T1 = 'D176D262'; T2 = '461A8E07'; War = 'B953CC1E' }, # Beatrix
+    @{ Hash = '9B15CFB1'; Name = 'Eustace'; Zh = '尤斯提斯'; Awake = '23953FD4'; T1 = '7D75D904'; T2 = 'BE3404B9'; War = '3EB345D7' }, # Eustace
     @{ Hash = 'A3A3CB2F'; Name = 'Id'; Zh = '伊德'; Awake = 'AF8E7E7E'; T1 = '93A2093C'; T2 = '7AD0C010'; War = 'B064A634' }, # Id
-    @{ Hash = 'AA66178A'; Name = 'Cagliostro'; Zh = '卡莉奥斯特罗'; Awake = '02B1F8C0'; T1 = 'EC3CF174'; T2 = 'AF513A9D'; War = 'E6B92E34' }, # Cagliostro
-    @{ Hash = 'BAD16E3B'; Name = 'Tweyen'; Zh = '特维因'; Awake = '8ECBB0A3'; T1 = 'E85FF8E0'; T2 = '8572B8AF'; War = '81B293D9' }, # Tweyen
+    @{ Hash = 'AA66178A'; Name = 'Cagliostro'; Zh = '卡莉奥丝特罗'; Awake = '02B1F8C0'; T1 = 'EC3CF174'; T2 = 'AF513A9D'; War = 'E6B92E34' }, # Cagliostro
+    @{ Hash = 'BAD16E3B'; Name = 'Tweyen'; Zh = '索恩'; Awake = '8ECBB0A3'; T1 = 'E85FF8E0'; T2 = '8572B8AF'; War = '81B293D9' }, # Tweyen
     @{ Hash = 'BDEF7181'; Name = 'Percival'; Zh = '珀西瓦尔'; Awake = '02472C43'; T1 = 'E60A735C'; T2 = '6FF05223'; War = 'BA504607' }, # Percival
-    @{ Hash = 'C3FFD418'; Name = 'Ferry'; Zh = '费里'; Awake = 'B441275D'; T1 = 'D908223D'; T2 = '7351D602'; War = 'A339D642' }, # Ferry
-    @{ Hash = 'C8616284'; Name = 'Rosetta'; Zh = '罗塞塔'; Awake = '9BD1CC24'; T1 = '23D0F67F'; T2 = 'C2A4C7A9'; War = '8519AD4A' }, # Rosetta
+    @{ Hash = 'C3FFD418'; Name = 'Ferry'; Zh = '菲莉'; Awake = 'B441275D'; T1 = 'D908223D'; T2 = '7351D602'; War = 'A339D642' }, # Ferry
+    @{ Hash = 'C8616284'; Name = 'Rosetta'; Zh = '萝赛塔'; Awake = '9BD1CC24'; T1 = '23D0F67F'; T2 = 'C2A4C7A9'; War = '8519AD4A' }, # Rosetta
     @{ Hash = 'DD7A151E'; Name = 'Eugen'; Zh = '欧根'; Awake = '1BBE919C'; T1 = 'AA83F548'; T2 = '921B6B0C'; War = '0E42BE1B' }, # Eugen
     @{ Hash = 'E7053919'; Name = 'Narmaya'; Zh = '娜露梅'; Awake = '1A57AEF1'; T1 = '29B07BEB'; T2 = 'A63B89CD'; War = 'FDD1AD24' }, # Narmaya
-    @{ Hash = 'F0EB77EF'; Name = 'Vaseraga'; Zh = '巴萨拉加'; Awake = 'E4F986D9'; T1 = '7440E869'; T2 = 'CD124165'; War = 'D7F9BB88' }, # Vaseraga
-    @{ Hash = 'FC6CDF7B'; Name = 'Yodarha'; Zh = '约达尔哈'; Awake = '119B24A8'; T1 = '0CD6C625'; T2 = 'A3B49220'; War = 'DAEFBB27' }, # Yodarha
+    @{ Hash = 'F0EB77EF'; Name = 'Vaseraga'; Zh = '巴萨拉卡'; Awake = 'E4F986D9'; T1 = '7440E869'; T2 = 'CD124165'; War = 'D7F9BB88' }, # Vaseraga
+    @{ Hash = 'FC6CDF7B'; Name = 'Yodarha'; Zh = '尤达拉哈'; Awake = '119B24A8'; T1 = '0CD6C625'; T2 = 'A3B49220'; War = 'DAEFBB27' }, # Yodarha
     @{ Hash = 'FD3BE362'; Name = 'Charlotta'; Zh = '夏洛特'; Awake = 'AEEF8343'; T1 = '9A9DC170'; T2 = '522E2388'; War = 'B85202BC' }  # Charlotta
 )
 
 # 仓库根、数据文件
 $root = Split-Path -Parent $PSScriptRoot
 
-# sigils.json (merged table) 的专属行：gem -> player (PL 码)，用于输出游戏一致的 player 字段
-$sigilsForPlayer = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+# sigils.json (merged table)：只读一次；下面两次遍历分别用于
+#   专属行 hash -> player (PL 码) 与 skill1 -> 独立因子 hash（special=False）
+$sigilsTable = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $playerOfGem = @{}
-foreach ($s in $sigilsForPlayer.sigils) {
-    if ($s.player -and $s.gem) {
-        $key = $s.gem.ToUpper()
+foreach ($s in $sigilsTable.sigils) {
+    if ($s.player -and $s.hash) {
+        $key = $s.hash.ToUpper()
         if (-not $playerOfGem.ContainsKey($key)) { $playerOfGem[$key] = $s.player }
     }
 }
 
-# sigils.json：skill -> 独立因子 gem（special=False）
-$sigils = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $indepGem = @{}
-foreach ($s in $sigils.sigils) {
-    if (-not $s.special -and -not $indepGem.ContainsKey($s.skill)) { $indepGem[$s.skill] = $s.gem }
+foreach ($s in $sigilsTable.sigils) {
+    if (-not $s.special -and -not $indepGem.ContainsKey($s.skill1)) { $indepGem[$s.skill1] = $s.hash }
 }
 
 $resolved = @()
@@ -66,7 +66,7 @@ foreach ($c in $chars) {
     if (-not $t1Gem -or -not $t2Gem -or -not $warGem) {
         throw "cannot resolve exclusive gems for $($c.Hash): t1=$t1Gem t2=$t2Gem war=$warGem"
     }
-    $player = if ($playerOfGem.ContainsKey($c.Awake)) { $playerOfGem[$c.Awake] } elseif ($playerOfGem.ContainsKey($c.War)) { $playerOfGem[$c.War] } else { '' }
+    $player = if ($playerOfGem.ContainsKey($warGem)) { $playerOfGem[$warGem] } else { '' }
     if (-not $player) { throw "cannot resolve player code for $($c.Hash)" }
     $resolved += [pscustomobject]@{
         Hash = $c.Hash; Name = $c.Name; Zh = $c.Zh; Player = $player
@@ -95,17 +95,17 @@ Write-Output "generated kCharacterExclusives: $($resolved.Count) entries -> $env
 $jsonDir = Join-Path $root 'GBFR.PreEquippedSigils'
 $excl = @{
     exclusives = @($resolved | ForEach-Object {
-        @{
-            hash = $_.Hash
+        [ordered]@{
+            war = $_.War
+            t2 = $_.T2
+            t1 = $_.T1
+            t1Gem = $_.T1Gem
             player = $_.Player
+            t2Gem = $_.T2Gem
             name = $_.Name
             zh = $_.Zh
-            t1 = $_.T1
-            t2 = $_.T2
-            war = $_.War
-            t1Gem = $_.T1Gem
-            t2Gem = $_.T2Gem
             warGem = $_.WarGem
+            hash = $_.Hash
         }
     })
 }
