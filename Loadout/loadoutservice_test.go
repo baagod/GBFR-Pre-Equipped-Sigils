@@ -34,7 +34,25 @@ func TestValidateSlots(t *testing.T) {
 	}{
 		{"valid single", []loadoutSlot{slot("9A60FBF0", "", 15, 0)}, true},
 		{"valid pair", []loadoutSlot{slot("9A60FBF0", "B5FF9FD3", 15, 15)}, true},
+		{"three items", []loadoutSlot{{
+			Items: []loadoutItem{
+				{Gem: "9A60FBF0", Level: 15},
+				{Hash: "B5FF9FD3", Level: 15},
+				{Hash: "E69A4694", Level: 15},
+			},
+		}}, false},
+		{"empty second hash", []loadoutSlot{{
+			Items: []loadoutItem{{Gem: "9A60FBF0", Level: 15}, {Hash: "", Level: 15}},
+		}}, false},
+		{"negative level", []loadoutSlot{slot("9A60FBF0", "B5FF9FD3", -1, 15)}, false},
 		{"too many slots", many, false},
+		{"exactly 12 slots", func() []loadoutSlot {
+			out := make([]loadoutSlot, MaxSlots)
+			for i := range out {
+				out[i] = slot("9A60FBF0", "", 15, 0)
+			}
+			return out
+		}(), true},
 		{"empty items", []loadoutSlot{{}}, false},
 		{"missing gem", []loadoutSlot{slot("", "", 15, 0)}, false},
 		{"bad main level", []loadoutSlot{slot("9A60FBF0", "B5FF9FD3", 201, 15)}, false},

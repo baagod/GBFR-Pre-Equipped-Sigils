@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64')]
     [string]$Platform = 'x64',
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$Version = '0.5.6'
+    [string]$Version = '0.5.7'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -119,10 +119,13 @@ if (-not (Test-Path -LiteralPath $toolExe -PathType Leaf)) {
 }
 Copy-Item -Path $toolExe -Destination $packageDir -Force
 
+# Required release files — keep in sync with the deploy.ps1 completeness list
+# (sigils.json lands here via the csproj CopyToOutputDirectory).
 foreach ($requiredFile in @(
     'GBFR.PreEquippedSigils.dll',
     'GBFR.PreEquippedSigils.Native.dll',
     'Loadout.exe',
+    'sigils.json',
     'character-exclusives.json'
 )) {
     $requiredPath = Join-Path $packageDir $requiredFile
