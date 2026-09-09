@@ -1,4 +1,8 @@
 export const MAX_SLOTS = 12 // fixed rows shown in the editor
+/** Fallback sigil/trait level when no cap is known (mirrors C# DefaultLevel). */
+export const DEFAULT_LEVEL = 15
+/** Menu hotkey fallback when tool-hotkey.txt is unavailable (F1). */
+export const DEFAULT_HIDE_KEY = 0x70
 
 export interface Slot {
   mainHash: string
@@ -46,13 +50,43 @@ export interface Exclusive {
 /** Exclusive overlay written to loadout.json: player code -> trait hash -> enabled. */
 export type ExclusiveState = Record<string, Record<string, boolean>>
 
+/** Keys that must never be written into the plain exclusive state object. */
+const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"])
+
+/** Sanitize a loaded "exclusive" object: drop prototype keys and non-boolean
+ * values so a hand-written file cannot pollute the editor state. */
+export function sanitizeExclusiveState(raw: unknown): ExclusiveState | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined
+  const out: ExclusiveState = {}
+  for (const [player, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (BLOCKED_KEYS.has(player)) continue
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue
+    const inner: Record<string, boolean> = {}
+    for (const [trait, enabled] of Object.entries(value as Record<string, unknown>)) {
+      if (BLOCKED_KEYS.has(trait)) continue
+      if (typeof enabled === "boolean") inner[trait] = enabled
+    }
+    out[player] = inner
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
 export const emptySlot = (): Slot => ({ mainHash: "", mainLevel: 0, secHash: "", secLevel: 0, enabled: true })
 
 /** Normalize a saved config (new array format) into Slot[] (mainHash = name).
  * Stored gems are mapped to display names via the sigil table; unknown gems
- * keep their raw value. */
-export function configToSlots(parsed: { slots?: unknown }, sigils: Sigil[]): Slot[] {
-  const fromCfg = slotsFromConfig(parsed?.slots)
+ * keep their raw value. Levels are clamped to the cap the table knows about so
+ * an out-of-range hand-edited value cannot make the mod reject the file. */
+export function configToSlots(
+  parsed: { slots?: unknown },
+  sigils: Sigil[],
+  traits: Trait[] = []
+): Slot[] {
+  const capOfTrait = new Map(traits.map((tr) => [tr.hash, tr.cap]))
+  const capOfGem = new Map<string, number | undefined>(
+    sigils.map((s) => [s.hash, capOfTrait.get(s.skill1)])
+  )
+  const fromCfg = slotsFromConfig(parsed?.slots, capOfGem, capOfTrait)
   const nameOfHash = new Map(sigils.map((s) => [s.hash, s.name]))
   for (const s of fromCfg) {
     if (nameOfHash.has(s.mainHash)) s.mainHash = nameOfHash.get(s.mainHash) as string
@@ -69,8 +103,16 @@ export function pad12(slots: Slot[]): Slot[] {
   return out
 }
 
+/** Clamp a stored level to the table cap when one is known. */
+const clampLevel = (level: number, cap: number | undefined) =>
+  cap === undefined ? level : Math.max(0, Math.min(level, cap))
+
 /** Normalize a saved config (new array format) into Slot[] (mainHash = name). */
-export function slotsFromConfig(raw: unknown): Slot[] {
+export function slotsFromConfig(
+  raw: unknown,
+  capOfGem?: Map<string, number | undefined>,
+  capOfTrait?: Map<string, number>
+): Slot[] {
   const arr = Array.isArray(raw) ? raw : []
   return arr.map((slot) => {
     const s = (slot ?? {}) as {
@@ -80,11 +122,15 @@ export function slotsFromConfig(raw: unknown): Slot[] {
     const items = Array.isArray(s.items) ? s.items : []
     const main = items[0] ?? {}
     const sec = items[1]
+    const mainHash = typeof main.gem === "string" ? main.gem : "" // items[0] has no "hash" variant (never written)
+    const secHash = sec && typeof sec.hash === "string" ? sec.hash : ""
+    const mainLevel = typeof main.level === "number" ? main.level : DEFAULT_LEVEL
+    const secLevel = sec && typeof sec.level === "number" ? sec.level : DEFAULT_LEVEL
     return {
-      mainHash: typeof main.gem === "string" ? main.gem : "", // items[0] has no "hash" variant (never written)
-      mainLevel: typeof main.level === "number" ? main.level : 15,
-      secHash: sec && typeof sec.hash === "string" ? sec.hash : "",
-      secLevel: sec && typeof sec.level === "number" ? sec.level : 15,
+      mainHash,
+      mainLevel: clampLevel(mainLevel, capOfGem?.get(mainHash)),
+      secHash,
+      secLevel: clampLevel(secLevel, capOfTrait?.get(secHash)),
       enabled: s.enabled !== false,
     }
   })

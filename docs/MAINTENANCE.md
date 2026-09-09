@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.7（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.7（ABI v17；当前状态与机制沿革见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -26,6 +26,8 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   LoadoutConfig.cs                   解析 loadout.json（通用槽 + exclusive 段）→ ABI
+  Hotkey.cs                          系统热键：RegisterHotKey 优先、250ms 轮询兜底、热启动工具
+  HotkeyConfig.cs                    热键配置页（Reloaded-II 启动器）
   ModConfig.json                     ModId/版本/描述（发布信息）
   sigils.json                     运行时因子表（合并单表；含词条 cap 与专属行 character 字段，见 §4.1）
   character-exclusives.json          每角色专属因子表（生成器产物；工具"专属因子"页数据源）
@@ -41,8 +43,12 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
     safe_game_access.cpp             ★SEH 安全内存读写、状态重建、授权提交
     trait_hooks.cpp                  ★注入核心：getter detour、natural bind、hot-apply 触发
     selection_store.cpp              角色选择存储、hot-apply 队列（generation 机制）
-    name_tables.cpp                  兼容表加载（199 条角色限制映射，缺失即 fail-closed）
+    name_tables.cpp                  兼容表加载（sigils.json 专属行 character 字段，87 条，缺失即 fail-closed）
     template_loadout.cpp             ★★专属配装表（表段由生成器产出，勿手改；组装逻辑见 §4）
+Loadout/                            Wails v3 配装编辑器（Go 服务 + React 前端，打包进 Mod）
+  main.go                            窗口/托盘/单实例/假隐藏与 0x8010 激活命令（§12 机制沿革）
+  loadoutservice.go                  数据读写（sigils/exclusives/loadout；原子写 + 结构校验）
+  frontend/src/                      编辑器 UI（App/SlotEditor/TraitPicker/ExclusivePanel）
 ```
 
 `★` = 高风险区，除非明确任务需要，不要动。
@@ -82,7 +88,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-gen-sigils-required.js` | **已停用**（2026-09 数据字段与 gem.xlsx 对齐后失效：旧版抛 "no sort line"，且"专属行必为模板 3 gem"的合体版剔除规则会误删普通专属行；误跑会改坏 sigils.json） |
+| `docs/tool-gen-sigils-required.js`（已删除） | **停用并移除**（2026-09 数据字段与 gem.xlsx 对齐后失效：旧版抛 "no sort line"；"专属行必为模板 3 gem"的合体版剔除规则实测会把新增普通专属因子误删 3 行，误跑会改坏 sigils.json）。需要重新规范化时请从 gem.xlsx 重建，勿再寻找该脚本 |
 | `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 hash 与 player 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出），运行时不依赖 |
 
@@ -122,11 +128,10 @@ TemplateGemSlot{
 - 运行时由 `BuildCharacterTemplate` 按 exclusive 状态组装为 `CharacterTemplate{ character_hash, slots[24] }`；
   合成 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`（不与真实库存冲突，`IsTemplateSlotId` 判定）。
 - **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数（≤12）。
-- 角色专属物品受 `compatibility.tsv` 限制：`TryCopyTemplateGem` 用 `GetRequiredCharacterHash(gem_id)` 校验，
-  只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
-- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `sigils_all_full.xlsx` 的
-  `gem_key`/`skill1_hash` 列（Ctrl+F 搜名字）。
-- 角色 hash：compatibility.tsv 的 character_key 列；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、
+- 角色专属物品受 `sigils.json` 专属行的 `character` 字段限制：`TryCopyTemplateGem` 用
+  `GetRequiredCharacterHash(gem_id)` 校验，只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
+- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\extracted\gem-full.xlsx`（Ctrl+F 搜名字）。
+- 角色 hash：`sigils.json` 专属行的 `character` 字段；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、
   娜露梅 `E7053919`、芙劳 `646C3168`、菲迪埃 `74DD4C79`。
 
 ## 4.1 数据文件生成（mod 运行时表：sigils.json）
@@ -140,12 +145,14 @@ mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12
   `player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
 - 非物品技能行（`hash == skill1`，12 行）：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、
   超新星、超凡奥秘/强击/技艺/破限——不作主、不作副，仅出现在词条字典（角色可持有该技能）。
-- 词条字典（副下拉）= 按 `skill1` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名）；主下拉 =
+- 词条字典（副下拉）= 按 `skill1` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名；前端另按
+  `player == ""` 过滤掉 87 条专属词条——工具词典 112 条、C# 校验层 199 条，专属词条只经"专属因子"页管理）；主下拉 =
   `player == ""`（**含钳蟹系/相扑斗力等特殊行**；非物品技能行不在物品集内，天然不作主；专属因子 `player != ""` 不作主）。
 
 **派生规则**：
 - 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；仅专属因子（`player != ""`）不作通用主
   （由"专属因子"页管理）；钳蟹系/相扑斗力等 `special` 行**可作为通用主因子**（作主时副组合按下方"特殊主因子"提示规则）。
+  例外：3 条 `_74` 专属行（涯之七星＋/涯之二王＋/无态＋）的 name/zh 保留官方"＋"后缀，不影响分组（专属行不进主下拉）。
 - **副因子合法性**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**——同类/跨类/自我复制（伤害上限+伤害上限、…）；
   **一切组合均允许**，下表"非法"仅为 UI 提示样式，不禁止选择/保存/实装）。提示分两档，按**主因子**裁定：
   - **普通主因子**下不可配的提示项 = **独占词条**：只出现在特殊行的词条（钳蟹系）：`082033CB` 钳蟹的共鸣、
@@ -153,7 +160,7 @@ mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12
     因子强化、浩劫、浩劫新星、超凡奥秘/强击/技艺/破限、超新星）；非物品技能保留在字典可见（角色可持有该技能）。
   - **特殊主因子** = 变体行 `special` 或其 `zh` 含"钳蟹/相扑斗力"（当前命中"可怕的漆黑钳蟹因子" Immortal Shell：
     该行 `special=False` 但属钳蟹系，故仍进主下拉）：作主时**任意副因子均显示不合法**（副列表整体灰显、已选副红框）。
-    `special=True` 的钳蟹行仍不作主（见上一条）。
+    `special=True` 的行同样进主下拉（主下拉判据只有 `player == ""`），作主时同样整体灰显。
 - UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**仅提示，不禁止**——选择、自动保存、C# 解析与原生注入
   均不拦截（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）；特殊主因子的已选副值**不会被清空**。
   方向键（↑/↓）不会从 trigger 打开下拉列表（Base UI 默认行为已在捕获层禁用），留给字段/数字输入导航。
@@ -186,7 +193,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 ### 发布（版本号同步）
 1. 同改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
-2. 全文档旧版本号残留扫描：MAINTENANCE 头部/§12、README×2；
+2. 全文档旧版本号残留扫描：MAINTENANCE 头部、README×2；发布描述素材从 git log 提炼；
 3. 重建（自动产出 zip）→ 部署 → 验证（§6）；Nexus 发布则同步描述。
 
 ## 6. 验证清单（每次改动后必须做）
@@ -210,8 +217,8 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   *SafeInvokeStatusRebuild 已复核（2026-09）：调用前校验 status.character_hash == 目标角色；
   写入仅 context_mode 销 0（单字段对齐原子写 + 同步 + SEH，无撕裂读风险）；勿再引入 8 字节原子写。*
 - 角色限制改判据：`sigils.json` 专属行 `character` 字段缺失或条目数 != 87 则启动失败（fail-closed）。
-  数据由 gem.xlsx 管线生成（87 = 28 角色 × 3 专属 gem（古兰/姬塔共享合并）＋ 3 条 `_74` 进阶：涯之七星＋/涯之二王＋/无态＋；原版
-  compatibility.tsv 199 条中的其余 115 条为模板外的游戏专属物品/觉醒合体版，配装路径不可达，不再校验）。
+  数据由 gem.xlsx 管线生成（87 = 28 角色 × 3 专属 gem（古兰/姬塔共享合并）＋ 3 条 `_74` 进阶：涯之七星＋/涯之二王＋/无态＋；
+  游戏原版专属物品共 199 条，其余 115 条为模板外的专属物品/觉醒合体版，配装路径不可达，不再校验）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=17`）与 `NativeCore.Interop.cs`、
   `NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
 - **可选配置**：无 `loadout.json` = 内置专属全开、通用全空；有 = 3 专属（exclusive 段开关，
@@ -237,90 +244,50 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 10. 常用操作速查（给接手 AI 的指令模板）
 
 - **改专属数据（词条/因子/等级）**：改 `tool-gen-loadout.ps1` 的 `$chars` 表 → 运行 → 替换 C++ 表段
-  + `character-exclusives.json` → 编译 → 部署 → 验证。
+  + `character-exclusives.json` → 编译 → 部署 → 验证。（脚本为**无 BOM UTF-8**：必须用 pwsh 7 运行，
+  Windows PowerShell 5.1 会按 GBK 解析导致中文乱码）
 - **改通用槽/前端规则**：工具与托管逻辑（无内置通用默认；副因子规则见 §4.1）。
-- **加角色**：生成器数据表加行（查该角色专属因子 hash：compatibility.tsv + 名字表）→ 同上。
+- **加角色**：生成器数据表加行（查该角色专属因子 hash：`sigils.json` 专属行 + 名字表）→ 同上。
 - **升版本**：§5 发布（版本号同步、全文档残留扫描、Nexus 描述同步）。
 - **提交**：`git -c user.name="baagod" -c user.email="780810441@qq.com" commit ...`
   （不要改全局 git config）。提交前 `git status` 确认无 bin/obj/dist 混入。
 - **推送**：`git -c credential.helper="!gh auth git-credential" push origin main`
   （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检查 gh token 的 Contents: Read and write 权限）。
 
-## 12. 背景与交接（2026-09-07 更新）
+## 12. 背景与交接（2026-09-09 更新）
 
 ### 当前状态
 - **版本**：v0.5.7（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
 
-### 0.5.7 发布记录（2026-09-09）
-- **数据**：`sigils.json` 字段名与 gem.xlsx 表头对齐（`gem→hash`、`skill→skill1`；非物品技能行
-  `hash == skill1`，12 条，不再用空串/`sort:-1` 标记）；`docs/tool-gen-sigils-required.js` 停用
-  （旧"合体版剔除"会误删普通专属行）；`tool-gen-loadout.ps1` 的 PL 码反查改由战气因子行
-  （`warGem`）推导，中文名同步官方译名。
-- **修复**：原生 `kExpectedCompatibilityMappingCount` 84→87（新增 3 条 `_74` 进阶专属：
-  涯之七星＋/涯之二王＋/无态＋）；C#/原生字段引用跟随 `hash`/`skill1`。
-- **工具**：池版/固定副合法规则（`lot ∪ sec`）与保存选 gem 合并为 `poolByMain` 单源；
-  副下拉"不可持有"提示改由 `hash == skill1` 判定；`ExclusivePanel` hooks 顺序修复、
-  `traitHashes`/`allTraitHashes` 重复 memo 合并。
+### 机制沿革（已废弃机制 → 替代；勿按旧描述"修复"）
 
-### 0.5.6 发布记录（2026-09-07）
-- **健壮性**：修复提取器"空白行会以 substr(npos) 抛异常终止进程"（改为跳过空白行，保持 fail-closed）；
-  `g_compatibility_path` 改名 `g_sigils_path`；提取器头部补 FORMAT CONTRACT 契约段（与
-  `docs/tool-gen-sigils-required.js` 同步维护）。行为零变化（0.5.5 真机 10/10 已验证）。
-
-### 0.5.5 发布记录（2026-09-07）
-- **数据单源化**：`compatibility.tsv` 退役——角色限制合并进 `sigils.json`（专属行新增 `character` 字段，
-  由 `docs/tool-gen-sigils-required.js` 维护）；`tool-gen-loadout.ps1` 的 PL 码反查改读 sigils.json；
-  原生加载器改为按字段契约提取（`name_tables.cpp`，fail-closed 84 条不变）。
-- **数据清理**：剔除 3 个觉醒合体版条目（无态/涯之七星/涯之二王——不带"觉醒"字样，按 gem 判定）；
-  sigils.json 197 条（专属 84）。
-- **原生改动**：仅加载器与路径（hook/布局零改动，ABI 17 不变）。
-
-### 0.5.4 发布记录（2026-09-07）
-- **工具 UX**：专属因子页首行紧贴选项卡（移除 tab 下共享 8px 空隙，通用页表头上间距保留 `mt-2`）；
-  等级输入框滚轮改进——整个输入框（含 "/ 上限" 后缀）均响应滚轮步进，但**仅数字框聚焦时**生效（未聚焦不误触、页面正常滚动）。
-- **原生零改动**（ABI 17 不变）。
-
-### 0.5.3 发布记录（2026-09-07）
-- **工具**：固定窗口（`DisableResize`；修复激活 nudge 每次缩窗 40px 与 Min 被污染的问题，终态恒 760×840）；
-  钳蟹系/特殊主因子副组合改为**仅提示不合法**（灰显+红框；选择/保存/注入均不拦截、不清空已选副值）；
-  主下拉规则改为 `gem != "" && player == ""`（钳蟹系/相扑斗力特殊行可作主；无物品行不作主）。
-- **托管层**：loadout 目录与 Go 工具统一为 LocalAppData（去掉 Roaming 回退）+ 单测；幂等 QueueStart；
-  loadout/exclusive 原子提交顺序；词条 cap 首行胜；热键重注册抽公共方法。
-- **工程**：新增 `deploy.ps1`（停工具→覆盖 Mods→自动重开，游戏运行守卫）；`package-lock.json` 入库；
-  `@wailsio/runtime` 固定 3.0.0-beta.17；shadcn 移 devDependencies；MAINTENANCE §2/§4.1 重写（核对合并单表与合法性规则）。
-- **原生零改动**（ABI 17 不变；无布局/钩子变化，游戏版本锚点不受影响）。
-
-### 0.5.2 发布记录（2026-09-07）
-- **简洁化**：删除无消费者的 status-owner 遥测 mid-hook（5 个只写原子量、SafeReadOwnerCharacterHashes、
-  布局字段与对应预检、ApplyResultOwnerThreadMismatch 日志分支）；清理未用导出/导入（TabsContent、
-  InputGroupText/Textarea、textarea.tsx）与 3 个无引用 npm 依赖（radix-ui/clsx/tailwind-merge）；
-  App.tsx 分组去重、loadout.json 单次解析、save 表未就绪提示；gofmt。
-- **依赖升级**：wails v3 全栈 beta.16→beta.17（Go 模块/JS runtime/wails3 CLI 同步）；TS 5.9→7.0
-  （tsconfig baseUrl 迁移 + 新增 vite-env.d.ts）；@types/node 26；cn 0.2.6；NuGet 无更新；
-  third_party（safetyhook/Zydis）未动。
-- **文档**：新增 §13 跨语言协议常量表；§3 hook 数 3→2。
-
-### 0.5.1 发布记录（2026-09-07）
-- **专属因子 3 独立槽重构**（native/C#/工具/数据表，ABI 不变）：原生表 = `{hash, t1Gem, t1, t2Gem, t2, warGem, war}`；
-  `kBuiltinExclusiveSlotCount` 2→3（启动 Installed 87）；禁用的槽留空（槽位不连续）。
-- **loadout.json `exclusive` 段** = `{ PL码/角色名/zh/角色hash: { 词条hash: bool } }`
-  （兼容旧 `{t1,t2,war}`；C# 加载 character-exclusives.json 解析）。
-- **工具**：重置 = 写空配置 `{lang, slots:[]}`（lang 不参与重置，默认 zh，唯一来源 loadout.json；
-  旧的 ResetLoadout 服务方法已删）；专属因子页只显示角色名（zh/en），PL 代号不显示；通用表头 44px；
-  等级输入门控（无因子时禁用）；旧格式（角色 hash 键 + t1/t2/war）首次加载自动迁移为 PL 键；
-  **古兰/姬塔共享 PL0000**（面板合并为一行，mod 侧按 PL 键扇出到两个角色——两者专属因子完全相同）。
-- **生成器** `tool-gen-loadout.ps1` 重写为干净单遍（重跑零 diff，已验证可复现）；
-  `character-exclusives.json` 移除无消费者的 `awakening` 字段。
-- **已验证**：游戏内测试通过（专属因子逐项开关、3 槽显示、日志 Installed 87）。
-
-### 历史发布记录（要点）
-- **0.4.0（2026-09-05）**：编辑器固定 12 行（无增删）、中英双语、托盘三态激活 + 隐藏淡入
-  （解决 WebView2 恢复白闪）、热键 F1、MaxSlots 12、发布包 9 文件。
-- **0.5.0（2026-09-06）**：sigils.json 变体模型（name 分组/sec/pool/special）；副因子合法性规则
-  （自由组/正常组/独占 3 词条）；重置为预设；mod 运行时表改用 extract 管线（traits.json→skills.json、
-  maxLevel→cap、物品键 hash→gem）。
+- WebView2 恢复白闪的旧修法——托盘隐藏淡入（0.4.0）与激活尺寸 nudge（0.5.3）——已由假隐藏取代：
+  X/工具内热键/Esc 不再真隐藏窗口（alpha=0 + `EnableWindow(FALSE)` + `WS_EX_TOOLWINDOW` 并清掉 Wails
+  强制的 `WS_EX_APPWINDOW`）；托盘/游戏热键/二次启动统一走 0x8010 `revealTool`；窗口尺寸仅在创建时
+  设置一次（`Loadout/main.go`）。**假隐藏时把焦点交还"召唤前的前台窗口"（热键路径下=游戏）**：
+  禁用窗口会丢焦点，而 mod 只在游戏为前台时才响应 F1，不交还焦点会导致"隐藏后按 F1 再也唤不出工具"。
+  两个实现要点：① `user32` 的导出名是 `SetForegroundWindow`（**没有 W 后缀**，写成 `SetForegroundWindowW`
+  会在调用时 panic，且托盘路径的 `recover` 会把它吞掉）；② 交还必须回到 UI 线程
+  （`fakeHide` 只 `PostMessage` `WM_APP+0x11`，真正的隐藏/交还在 `hideNow`）——在 Wails 服务调用栈上
+  直接调用会与 UI 线程互相等待。**"取消焦点"本身没用**：实测禁用或隐藏前台窗口后
+  `GetForegroundWindow()` 仍返回那个已隐藏的窗口，必须显式 `SetForegroundWindow`。
+  交还目标优先用召唤时记住的窗口；工具是直接打开（没经过 0x8010）时退回 Z-order 下一个
+  可见/可用/有标题的窗口（`nextForegroundWindow`）。假隐藏还要加 `WS_EX_TRANSPARENT`：
+  否则那个看不见的窗口仍参与命中测试、继续当"鼠标指针归属窗口"，系统就会画我们线程的箭头——
+  游戏本来已隐藏光标，切出再切回时箭头却留在屏幕上（游戏把鼠标停在 (0,0) 并隐藏，任何失焦都会
+  让系统在 (0,0) 画出默认箭头；alt+tab 同样能复现，与工具无关）。
+  隐藏后还会补一次左键点击（`mouse_event`），触发游戏自己的"光标出现后首次点击只隐藏光标、不吃游戏输入"
+  逻辑——否则箭头会一直留在 (0,0) 直到玩家点一下。时序：交还焦点后等 **10ms** → 按下 → 保持 **10ms** → 抬起。
+  **别再往下调**：游戏运行时会把系统计时器分辨率提到 1ms，1ms 的间隔会落进输入采样的一帧之内，实测
+  "时显时不显"；0ms 则完全不生效。**注入有硬条件**：只有"工具是被游戏内 F1 召唤出来的"
+  `returnFocusTo != 0`、且交还成功、且 `isGameWindow(target)`（`QueryFullProcessImageNameW` 确认目标窗口属于
+  `granblue_fantasy_relink.exe`）才注入；托盘/直接打开一律不注入，避免往任意前台程序点一下。
+  工具另带可选诊断日志：exe 目录存在 `tool-debug.on` 时写 `tool-debug.log`。
+- status-owner 遥测 mid-hook（5 个只写原子量）0.5.2 已删：无消费者。
+- 古兰/姬塔共享 PL0000：工具面板合并一行，mod 侧按 PL 键扇出到两个角色（两者专属因子完全相同）。
+- 逐版变更明细见 git log（提交说明与本节内容一致，不再双份维护）。
 
 ### 已验证 / 原则
 - 主控 + AI 角色都吃注入（明镜止水的守护/HP吸收/追击/迅捷）——卸主槽因子测试确认。
@@ -330,7 +297,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 | 常量 | 值 | 位置 |
 |---|---|---|
-| 通用槽上限 MaxSlots | 12 | C# LoadoutConfig.cs / Go loadoutservice.go / TS App.tsx |
+| 通用槽上限 MaxSlots | 12（三方均只计启用槽） | C# LoadoutConfig.cs / Go loadoutservice.go / TS App.tsx |
 | 默认等级 DefaultLevel | 15 | C# LoadoutConfig.cs / TS App.tsx |
 | 未穿戴哨兵 UnwornCharacterHash | 0x887AE0B0 | C# LoadoutConfig.cs / C++ native_internal.h（单词条 trait2 必须用它，不能用 0） |
 | 模板槽 ID 基址 | 0xFE000000 | C++ native_internal.h |
@@ -342,3 +309,5 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 | 用户配置路径 | %LocalAppData%\GBFRPreEquippedSigils\loadout.json | C# LoadoutConfig.cs / Go loadoutservice.go |
 | 原生 ABI 版本 | 17 | native_api.h / C# NativeCore.cs AbiVersion |
 | 原生结构尺寸 | TemplateSlot 0x18 / ExclusiveOverride 0x08 | native_api.h static_assert / C# native 侧 runtime 校验 |
+| 等级范围校验 | 前端 1..cap（空槽显示 0）；Go 结构校验 0..200；C# 最终 0..cap | TS SlotEditor.tsx / Go loadoutservice.go / C# LoadoutConfig.cs |
+| sigils.json character 行数 | 87（发布前由 build-release.ps1 与 native_internal.h 对拍） | native_internal.h / build-release.ps1 |

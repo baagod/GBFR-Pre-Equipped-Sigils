@@ -12,10 +12,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/tabs"
 import { LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
 import { copy, type Lang } from "./copy"
-import { configToSlots, pad12, type Exclusive, type ExclusiveState, type Sigil, type Slot, type Trait } from "./model"
+import { DEFAULT_HIDE_KEY, DEFAULT_LEVEL, configToSlots, pad12, sanitizeExclusiveState, type Exclusive, type ExclusiveState, type Sigil, type Slot, type Trait } from "./model"
 import { SlotRow, HEADER_ROW } from "./SlotEditor"
 import { ExclusivePanel } from "./ExclusivePanel"
 
@@ -31,7 +31,7 @@ export default function App() {
   const [exclusiveTable, setExclusiveTable] = useState<Exclusive[]>([])
   const [exclusiveState, setExclusiveState] = useState<ExclusiveState | undefined>(undefined)
   const [resetOpen, setResetOpen] = useState(false)
-  const [hideKey, setHideKey] = useState(0x70) // F1 default (matches mod default)
+  const [hideKey, setHideKey] = useState(DEFAULT_HIDE_KEY)
   const [lang, setLang] = useState<Lang>("zh") // default zh; persisted in loadout.json
   const resetCancelRef = useRef<HTMLButtonElement | null>(null)
   const t = copy[lang]
@@ -42,11 +42,19 @@ export default function App() {
   // active until the user actually edits something.
   const skipSave = useRef(true)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Set when loadout.json could not be read: autosave must never overwrite a
+  // configuration the editor never managed to load.
+  const configLoadError = useRef<unknown>(null)
 
   useEffect(() => {
     ;(async () => {
       // Merged single table: item rows (hash != skill1) + non-item skill rows.
       let sigilsLoaded: Sigil[] = []
+      let traitsLoaded: Trait[] = []
+      // Independent reads start together; LoadConfig needs the sigil table.
+      const exclusivesPromise = LoadExclusives()
+      exclusivesPromise.catch(() => {}) // handled below; avoid an unhandled rejection
+      const hotkeyPromise = GetHotkey().catch(() => DEFAULT_HIDE_KEY)
       try {
         const sigilJson = await LoadSigils()
         const rows = (JSON.parse(sigilJson).sigils as Partial<Sigil>[]) ?? []
@@ -60,11 +68,12 @@ export default function App() {
             hash: s.skill1,
             zh: s.zh ?? "",
             en: s.name || s.zh || "",
-            cap: s.cap ?? 15,
+            cap: s.cap ?? DEFAULT_LEVEL,
             nonItem: s.hash === s.skill1,
           })
         }
-        setTraits([...traitById.values()])
+        traitsLoaded = [...traitById.values()]
+        setTraits(traitsLoaded)
         // Item rows only (hash != skill1): non-item skill rows stay in the
         // trait list above but never appear as pickable sigils.
         sigilsLoaded = rows
@@ -86,12 +95,14 @@ export default function App() {
       }
       try {
         const configJson = await LoadConfig()
-        applyConfig(JSON.parse(configJson), sigilsLoaded)
+        applyConfig(JSON.parse(configJson), sigilsLoaded, traitsLoaded)
+        configLoadError.current = null
       } catch (e) {
+        configLoadError.current = e
         setStatus(t.configFail(e))
       }
       try {
-        const exclusiveJson = await LoadExclusives()
+        const exclusiveJson = await exclusivesPromise
         const table = (JSON.parse(exclusiveJson).exclusives ?? []) as Exclusive[]
         setExclusiveTable(table)
         // Migrate legacy exclusive entries (character-hash keys + t1/t2/war)
@@ -121,11 +132,7 @@ export default function App() {
       } catch (e) {
         setStatus(t.exclFail(e))
       }
-      try {
-        setHideKey(await GetHotkey())
-      } catch {
-        // keep F1 default
-      }
+      setHideKey(await hotkeyPromise)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -238,13 +245,17 @@ export default function App() {
   const maxOfMain = useCallback((name: string) => {
     const variants = groupedByName.get(name)
     const tr = variants && variants.length > 0 ? traitByName.get(variants[0].skill1) : undefined
-    return tr?.cap ?? 15
+    return tr?.cap ?? DEFAULT_LEVEL
   }, [groupedByName, traitByName])
-  const maxOfSec = useCallback((h: string) => traitByName.get(h)?.cap ?? 15, [traitByName])
+  const maxOfSec = useCallback(
+    (h: string) => traitByName.get(h)?.cap ?? DEFAULT_LEVEL,
+    [traitByName]
+  )
 
   // Picker item values: main = unique display names; secondary = trait hashes
   // (labels provided by hashLabels).
   const sigilNames = useMemo(() => sigilGroups.map((g) => g.name), [sigilGroups])
+  const sigilNameSet = useMemo(() => new Set(sigilNames), [sigilNames])
   const hashLabels = useMemo(
     () =>
       Object.fromEntries([
@@ -262,27 +273,25 @@ export default function App() {
   const reloadConfig = async () => {
     try {
       const configJson = await LoadConfig()
-      applyConfig(JSON.parse(configJson), sigils)
+      applyConfig(JSON.parse(configJson), sigils, traits)
+      configLoadError.current = null
     } catch (e) {
+      configLoadError.current = e
       setStatus(t.configFail(e))
     }
   }
 
   /** Load a saved config into the editor state (first render skips saving). */
-  const applyConfig = (parsed: unknown, sigilTable: Sigil[]) => {
+  const applyConfig = (parsed: unknown, sigilTable: Sigil[], traitTable: Trait[]) => {
     const cfg = (parsed ?? {}) as {
       lang?: unknown
       slots?: unknown
       exclusive?: unknown
     }
     skipSave.current = true
-    if (typeof cfg.lang === "string") setLang(cfg.lang as Lang)
-    setSlots(pad12(configToSlots(cfg, sigilTable)))
-    setExclusiveState(
-      cfg.exclusive && typeof cfg.exclusive === "object"
-        ? (cfg.exclusive as ExclusiveState)
-        : undefined
-    )
+    if (cfg.lang === "zh" || cfg.lang === "en") setLang(cfg.lang)
+    setSlots(pad12(configToSlots(cfg, sigilTable, traitTable)))
+    setExclusiveState(sanitizeExclusiveState(cfg.exclusive))
   }
 
   // Header check box: select all / clear all (official Table pattern).
@@ -297,9 +306,22 @@ export default function App() {
       setStatus(t.tablesNotReady)
       return
     }
-    const filled = slots.filter((s) => s.mainHash !== "")
-    const cfg = filled.map((s) => {
+    if (configLoadError.current !== null) {
+      // Never overwrite a configuration the editor could not read.
+      setStatus(t.configFail(configLoadError.current))
+      return
+    }
+    const cfg: {
+      items: { gem?: string; hash?: string; level: number; zh: string; en: string }[]
+      enabled: boolean
+    }[] = []
+    for (const s of slots) {
+      if (s.mainHash === "") continue
       const hash = hashFor(s.mainHash, s.secHash)
+      // A gem the current sigil table cannot resolve would be written as an
+      // empty id and make the mod reject the whole file: skip the row (it
+      // already renders as empty in the editor).
+      if (hash === "") continue
       const main = {
         gem: hash, // loadout.json protocol: item id stays "gem" (mod reads it)
         level: s.mainLevel,
@@ -315,14 +337,15 @@ export default function App() {
           en: traitByName.get(s.secHash)?.en ?? "",
         })
       }
-      return { items, enabled: s.enabled }
-    })
+      cfg.push({ items, enabled: s.enabled })
+    }
     try {
       const exclusive =
         exclusiveState && Object.keys(exclusiveState).length > 0
           ? exclusiveState
           : undefined
       await SaveLoadout(JSON.stringify({ lang, slots: cfg, exclusive }, null, 2))
+      setStatus("")
     } catch (e) {
       setStatus(t.saveFail(e))
     }
@@ -374,15 +397,14 @@ export default function App() {
     const hideKeyPressed = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
     const isInOverlay = (e: KeyboardEvent) =>
       !!(e.target as HTMLElement | null)?.closest?.(
-        '[data-slot="combobox-content"], [role="dialog"]'
+        '[data-slot="combobox-content"], [role="dialog"], [role="alertdialog"]'
       )
     const onKeyDown = (e: KeyboardEvent) => {
       if (!hideKeyPressed(e) && e.key !== "Escape") return
       if (e.key === "Escape") {
-        if (isInOverlay(e)) {
-          overlayEscOnKeyDown = true
-          return
-        }
+        // Assign both ways: a lost keyup must not swallow the next Esc.
+        overlayEscOnKeyDown = isInOverlay(e)
+        if (overlayEscOnKeyDown) return
       }
       clearTimeout(timer)
       e.preventDefault()
@@ -415,8 +437,9 @@ export default function App() {
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as "general" | "exclusive")}
-        className="shrink-0 h-[60px] justify-center border-b bg-background px-4"
+        className="flex min-h-0 flex-1 flex-col gap-0"
       >
+        <div className="flex h-[60px] shrink-0 flex-col justify-center border-b bg-background px-4">
         <div className="flex items-center justify-between gap-3">
           <TabsList>
             <TabsTrigger value="general">{t.tabGeneral}</TabsTrigger>
@@ -440,6 +463,9 @@ export default function App() {
                   <AlertDialogCancel ref={resetCancelRef}>{t.cancel}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
+                      // Cancel a pending debounced save: it would otherwise
+                      // write the pre-reset state right after this write.
+                      clearTimeout(saveTimer.current)
                       // Reset = empty configuration; lang survives (it is a
                       // tool-side setting, not part of the mod config).
                       void SaveLoadout(JSON.stringify({ lang, slots: [] }, null, 2))
@@ -458,21 +484,23 @@ export default function App() {
               size="sm"
               className="ml-1"
               onClick={toggleLang}
-              aria-label="Switch language"
+              aria-label={t.langSwitch}
             >
               {lang === "zh" ? "EN" : "中"}
             </Button>
           </div>
         </div>
-      </Tabs>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-gutter:stable]">
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-gutter:stable]">
         {status && (
-          <div className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+          <div
+            aria-live="polite"
+            className="mb-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground"
+          >
             {status}
           </div>
         )}
-        {tab === "general" ? (
-          <>
+        <TabsPanel value="general">
         <div className={HEADER_ROW}>
           <div>
             <Checkbox checked={allEnabled} onCheckedChange={toggleAll} aria-label={t.selectAll} />
@@ -488,6 +516,7 @@ export default function App() {
             index={index}
             slot={slot}
             sigilNames={sigilNames}
+            sigilNameSet={sigilNameSet}
             traitHashes={traitHashes}
             labels={hashLabels}
             legalOfMain={legalByMain}
@@ -497,8 +526,8 @@ export default function App() {
             updateSlot={updateSlot}
           />
         ))}
-          </>
-        ) : (
+        </TabsPanel>
+        <TabsPanel value="exclusive">
           <ExclusivePanel
             table={exclusiveTable}
             state={exclusiveState}
@@ -506,8 +535,9 @@ export default function App() {
             lang={lang}
             onChange={updateExclusive}
           />
-        )}
+        </TabsPanel>
       </div>
+      </Tabs>
     </div>
   )
 }

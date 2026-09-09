@@ -56,6 +56,7 @@
 ```
 GBFR.PreEquippedSigils/          C# 托管层（Reloaded-II 壳，打包进 Mod）
 GBFR.PreEquippedSigils.Native/   C++ 原生核心（Hook 与模板合成引擎）
+Loadout/                         Wails v3 配装编辑器（Go + React 前端，打包进 Mod）
 docs/                            参考文档与 hash 表（不打包）
 dist/                            构建产物（zip，git 忽略）
 build-release.ps1                一键构建脚本

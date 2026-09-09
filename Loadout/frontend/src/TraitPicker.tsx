@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -54,16 +55,18 @@ export function TraitPicker({
   invalid = false,
   onSelect,
 }: TraitPickerProps) {
-  const items: TraitItem[] = noneOption
-    ? [
-        { value: "", label: noneLabel },
-        ...traits.map((trait) => ({ value: trait, label: labels?.[trait] ?? trait })),
-      ]
-    : traits.map((trait) => ({ value: trait, label: labels?.[trait] ?? trait }))
+  const items: TraitItem[] = useMemo(() => {
+    const mapped = traits.map((trait) => ({ value: trait, label: labels?.[trait] ?? trait }))
+    return noneOption ? [{ value: "", label: noneLabel }, ...mapped] : mapped
+  }, [traits, labels, noneOption, noneLabel])
 
-  const selected: TraitItem =
-    items.find((item) => item.value === value) ??
-    (noneOption ? { value: "", label: noneLabel } : { value: "", label: placeholder })
+  // An unrecognised value (a stored trait the picker no longer offers) stays
+  // visible by its label/raw hash instead of masquerading as "none".
+  let selected = items.find((item) => item.value === value)
+  if (!selected && value !== "") selected = { value, label: labels?.[value] ?? value }
+  if (!selected) {
+    selected = noneOption ? { value: "", label: noneLabel } : { value: "", label: placeholder }
+  }
 
   return (
     <Combobox
@@ -76,7 +79,6 @@ export function TraitPicker({
       }}
     >
       <ComboboxTrigger
-        className="[&_[data-slot=combobox-trigger-icon]]:hidden"
         render={
           <Button
             variant="outline"

@@ -20,6 +20,8 @@ export const copy = {
     resetConfirm: "重置",
     cancel: "取消",
     tablesNotReady: "数据表未加载，无法保存",
+    langSwitch: "切换语言",
+    rowEnable: "启用槽位",
   },
   en: {
     tabGeneral: "General",
@@ -40,6 +42,8 @@ export const copy = {
     resetConfirm: "Reset",
     cancel: "Cancel",
     tablesNotReady: "Tables not loaded yet; cannot save",
+    langSwitch: "Switch language",
+    rowEnable: "Enable slot",
   },
 } as const
 

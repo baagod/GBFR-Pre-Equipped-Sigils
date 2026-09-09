@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-// MaxSlots mirrors the managed editor limit (must stay in sync).
+// MaxSlots caps the number of ENABLED slots, mirroring the managed validator
+// (LoadoutConfig.ParseAndValidate counts enabled slots only).
 const MaxSlots = 12
 
 // LoadoutService reads the mod-directory data files (sigils.json,
@@ -22,28 +23,26 @@ const MaxSlots = 12
 // {hash,level,zh,en}?], enabled } ]).
 type LoadoutService struct{}
 
-// MinimiseApp hides the window to the tray; the process stays alive so the
-// in-game hotkey can bring the window back instantly. Invoked by the shared
-// hotkey inside the tool (the X button is handled by the WndProc interceptor
-// in main.go and hides the window directly).
+// MinimiseApp fake-hides the window to the tray (alpha 0, the WebView stays
+// live); the process stays alive so the in-game hotkey can bring the window
+// back instantly. Invoked by the shared hotkey inside the tool (the X button
+// is handled by the WndProc interceptor in main.go and fake-hides directly).
 func (s *LoadoutService) MinimiseApp() {
-	if win != nil {
-		win.Hide()
-	}
+	hideToTray()
 }
 
 // GetHotkey returns the configured menu hotkey as a virtual key code.
 // The mod publishes it in tool-hotkey.txt (mod directory, next to the exe);
-// missing file falls back to F1 (0x70).
-func (s *LoadoutService) GetHotkey() (int, error) {
+// a missing or unreadable file falls back to F1 (0x70).
+func (s *LoadoutService) GetHotkey() int {
 	data, err := os.ReadFile(filepath.Join(exeDir(), "tool-hotkey.txt"))
 	if err != nil {
-		return 0x70, nil
+		return 0x70
 	}
 	if vk, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && vk > 0 {
-		return vk, nil
+		return vk
 	}
-	return 0x70, nil
+	return 0x70
 }
 
 type loadoutItem struct {
@@ -122,12 +121,15 @@ func (s *LoadoutService) LoadExclusives() (string, error) {
 	return readModData("character-exclusives.json")
 }
 
-// validateSlots enforces the shared schema limits.
+// validateSlots enforces the shared schema limits. Every row must be
+// structurally valid, but only enabled rows count against MaxSlots (disabled
+// rows are ignored by the mod).
 func validateSlots(slots []loadoutSlot) error {
-	if len(slots) > MaxSlots {
-		return fmt.Errorf("too many slots: %d (max %d)", len(slots), MaxSlots)
-	}
+	enabled := 0
 	for i, slot := range slots {
+		if slot.Enabled {
+			enabled++
+		}
 		if len(slot.Items) < 1 || len(slot.Items) > 2 {
 			return fmt.Errorf("slot %d: items must have 1 or 2 entries", i+1)
 		}
@@ -142,6 +144,9 @@ func validateSlots(slots []loadoutSlot) error {
 				return fmt.Errorf("slot %d: level out of range", i+1)
 			}
 		}
+	}
+	if enabled > MaxSlots {
+		return fmt.Errorf("too many enabled slots: %d (max %d)", enabled, MaxSlots)
 	}
 	return nil
 }

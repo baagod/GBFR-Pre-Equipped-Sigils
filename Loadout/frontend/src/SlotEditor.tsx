@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/input-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TraitPicker } from "./TraitPicker"
-import type { Slot } from "./model"
+import { DEFAULT_LEVEL, type Slot } from "./model"
 import type { T } from "./copy"
 
 /* Fixed side columns + factor columns that eat all remaining width. */
@@ -21,17 +21,23 @@ function LevelInput({
   value,
   max,
   min = 1,
+  label,
   onLevel,
   disabled,
 }: {
   value: number
   max: number
   min?: number
+  label: string
   disabled?: boolean
   onLevel: (n: number) => void
 }) {
   const groupRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  // Latest props for the native wheel listener, so changing the level never
+  // re-registers the listener.
+  const levelRef = useRef({ value, min, max, onLevel })
+  levelRef.current = { value, min, max, onLevel }
 
   // Wheel adjusts the level over the WHOLE input group (suffix "/ max"
   // included), but only while the number input is focused — otherwise the
@@ -46,17 +52,19 @@ function LevelInput({
       if (input === null || document.activeElement !== input) return
       e.preventDefault()
       const step = e.deltaY < 0 ? 1 : -1
-      onLevel(Math.max(min, Math.min(max, value + step)))
+      const current = levelRef.current
+      onLevel(Math.max(current.min, Math.min(current.max, current.value + step)))
     }
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)
-  }, [disabled, min, max, value, onLevel])
+  }, [disabled])
 
   return (
     <InputGroup ref={groupRef} className="w-20 shrink-0">
       <InputGroupInput
         ref={inputRef}
         type="number"
+        aria-label={label}
         min={min}
         max={max}
         value={value}
@@ -82,6 +90,7 @@ export const SlotRow = memo(function SlotRow({
   index,
   slot,
   sigilNames,
+  sigilNameSet,
   traitHashes,
   labels,
   legalOfMain,
@@ -93,6 +102,7 @@ export const SlotRow = memo(function SlotRow({
   index: number
   slot: Slot
   sigilNames: string[]
+  sigilNameSet: Set<string>
   traitHashes: string[]
   labels: Record<string, string>
   legalOfMain: (name: string) => Set<string>
@@ -101,7 +111,7 @@ export const SlotRow = memo(function SlotRow({
   maxOfSec: (h: string) => number
   updateSlot: (i: number, patch: Partial<Slot>) => void
 }) {
-  const mainValid = slot.mainHash !== "" && sigilNames.includes(slot.mainHash)
+  const mainValid = slot.mainHash !== "" && sigilNameSet.has(slot.mainHash)
   const legal = mainValid ? legalOfMain(slot.mainHash) : new Set<string>()
   const secIllegal = mainValid && slot.secHash !== "" && !legal.has(slot.secHash)
   return (
@@ -109,6 +119,7 @@ export const SlotRow = memo(function SlotRow({
       <div>
         <Checkbox
           checked={slot.enabled}
+          aria-label={`${t.rowEnable} ${index + 1}`}
           onCheckedChange={(v) => updateSlot(index, { enabled: v === true })}
         />
       </div>
@@ -120,13 +131,16 @@ export const SlotRow = memo(function SlotRow({
           value={slot.mainHash}
           traits={sigilNames}
           labels={labels}
-          placeholder={t.none}
-          onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(15, maxOfMain(v)) })}
+          placeholder={t.pickTrait}
+          searchPlaceholder={t.search}
+          emptyLabel={t.empty}
+          onSelect={(v) => updateSlot(index, { mainHash: v, mainLevel: Math.min(DEFAULT_LEVEL, maxOfMain(v)) })}
         />
         <LevelInput
           value={slot.mainHash ? slot.mainLevel : 0}
           max={maxOfMain(slot.mainHash)}
           min={slot.mainHash ? 1 : 0}
+          label={`${t.headerPrimary} ${index + 1}`}
           disabled={!slot.mainHash}
           onLevel={(n) => updateSlot(index, { mainLevel: n })}
         />
@@ -144,12 +158,13 @@ export const SlotRow = memo(function SlotRow({
           searchPlaceholder={t.search}
           emptyLabel={t.empty}
           disabled={!mainValid}
-          onSelect={(v) => updateSlot(index, { secHash: v, secLevel: v ? Math.min(15, maxOfSec(v)) : 0 })}
+          onSelect={(v) => updateSlot(index, { secHash: v, secLevel: v ? Math.min(DEFAULT_LEVEL, maxOfSec(v)) : 0 })}
         />
         <LevelInput
           value={slot.secHash ? slot.secLevel : 0}
           max={maxOfSec(slot.secHash)}
           min={slot.secHash ? 1 : 0}
+          label={`${t.headerSecondary} ${index + 1}`}
           disabled={!slot.secHash || !mainValid}
           onLevel={(n) => updateSlot(index, { secLevel: n })}
         />

@@ -26,6 +26,17 @@ export function ExclusivePanel({
       return true
     })
   }, [table])
+  // Display name per player code (Gran/Djeeta share PL0000 and merge into one
+  // row); built once instead of filtering the table for every row.
+  const nameByPlayer = useMemo(() => {
+    const byPlayer = new Map<string, string[]>()
+    for (const entry of table) {
+      const names = byPlayer.get(entry.player) ?? []
+      names.push((lang === "zh" ? entry.zh || entry.name : entry.name || entry.zh) ?? "")
+      byPlayer.set(entry.player, names)
+    }
+    return byPlayer
+  }, [table, lang])
   if (table.length === 0) return null
   const gemName = (gem: string) => {
     const s = sigilByHash.get(gem)
@@ -41,11 +52,7 @@ export function ExclusivePanel({
             { key: e.t2, on: st?.[e.t2] ?? true, gem: e.t2Gem },
             { key: e.war, on: st?.[e.war] ?? true, gem: e.warGem },
           ]
-          const characterName =
-            table
-              .filter((x) => x.player === e.player)
-              .map((x) => (lang === "zh" ? x.zh || x.name : x.name || x.zh))
-              .join(" / ") || e.hash
+          const characterName = nameByPlayer.get(e.player)?.join(" / ") || e.hash
           return (
           <div
             key={e.hash}

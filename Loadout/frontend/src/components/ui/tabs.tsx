@@ -66,4 +66,14 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, tabsListVariants }
+function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props) {
+  return (
+    <TabsPrimitive.Panel
+      data-slot="tabs-panel"
+      className={cn("outline-none", className)}
+      {...props}
+    />
+  )
+}
+
+export { Tabs, TabsList, TabsTrigger, TabsPanel, tabsListVariants }
