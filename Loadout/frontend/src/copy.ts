@@ -1,0 +1,46 @@
+export type Lang = "zh" | "en"
+
+export const copy = {
+  zh: {
+    tabGeneral: "通用配装",
+    tabExclusive: "专属因子",
+    headerPrimary: "主因子",
+    headerSecondary: "副因子",
+    selectAll: "全选/反选",
+    pickTrait: "选择因子",
+    none: "无",
+    search: "搜索",
+    empty: "无匹配因子",
+    sigilFail: (e: unknown) => `因子表加载失败：${e}`,
+    configFail: (e: unknown) => `配装加载失败：${e}`,
+    exclFail: (e: unknown) => `专属因子表加载失败：${e}`,
+    saveFail: (e: unknown) => `自动保存失败：${e}`,
+    reset: "重置",
+    resetDesc: "将删除当前配置，专属全开。",
+    resetConfirm: "重置",
+    cancel: "取消",
+    tablesNotReady: "数据表未加载，无法保存",
+  },
+  en: {
+    tabGeneral: "General",
+    tabExclusive: "Exclusives",
+    headerPrimary: "Primary Sigil",
+    headerSecondary: "Secondary Sigil",
+    selectAll: "Select all / none",
+    pickTrait: "Select sigil",
+    none: "None",
+    search: "Search",
+    empty: "No matching sigils",
+    sigilFail: (e: unknown) => `Failed to load sigil table: ${e}`,
+    configFail: (e: unknown) => `Failed to load loadout: ${e}`,
+    exclFail: (e: unknown) => `Failed to load exclusive factors: ${e}`,
+    saveFail: (e: unknown) => `Auto-save failed: ${e}`,
+    reset: "Reset",
+    resetDesc: "Removes the current configuration; exclusives back to full.",
+    resetConfirm: "Reset",
+    cancel: "Cancel",
+    tablesNotReady: "Tables not loaded yet; cannot save",
+  },
+} as const
+
+export type T = (typeof copy)["zh"] | (typeof copy)["en"]
