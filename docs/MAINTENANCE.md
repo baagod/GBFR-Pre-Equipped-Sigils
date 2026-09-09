@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.6（ABI v17；当前状态与历史见 §12）。
+> 当前版本：0.5.7（ABI v17；当前状态与历史见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -27,7 +27,7 @@ GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   NativeCore.Interop.cs              P/Invoke 声明（必须与 native_api.h 同步）
   LoadoutConfig.cs                   解析 loadout.json（通用槽 + exclusive 段）→ ABI
   ModConfig.json                     ModId/版本/描述（发布信息）
-  sigils.json                     运行时因子表（合并单表；含词条 cap/sort 与专属行 character 字段，见 §4.1）
+  sigils.json                     运行时因子表（合并单表；含词条 cap 与专属行 character 字段，见 §4.1）
   character-exclusives.json          每角色专属因子表（生成器产物；工具"专属因子"页数据源）
 GBFR.PreEquippedSigils.Native/      C++ 原生核心
   native_api.h                       冻结的 C ABI（v17，8 个导出 + GemData 结构）
@@ -54,7 +54,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
   Reloaded-II：Mod.cs → NativeCore.Initialize → exports.GBFR20_Initialize
     → runtime.Initialize:
         executable-validation (必须 granblue_fantasy_relink.exe)
-        character-restrictions (sigils.json 专属行 character 字段，84 条，失败即停)
+        character-restrictions (sigils.json 专属行 character 字段，87 条，失败即停)
         semantic-layout-resolution (layout_resolver, 失败即停)
         template-selection-install (InstallDefaultTemplateSelections: 以 0xFE000000+i 合成 id 写入角色选择)
         native-hook-install    (2 个 hook + 2 处循环上限 patch)
@@ -82,8 +82,8 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-gen-sigils-required.js` | sigils.json 规范化器：剔除觉醒合体行（按 gem 判定，绝不按名称）+ 为专属行注入 `character`（幂等） |
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 gem 与 player 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
+| `docs/tool-gen-sigils-required.js` | **已停用**（2026-09 数据字段与 gem.xlsx 对齐后失效：旧版抛 "no sort line"，且"专属行必为模板 3 gem"的合体版剔除规则会误删普通专属行；误跑会改坏 sigils.json） |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 hash 与 player 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出），运行时不依赖 |
 
 **改配装的标准流程**：改 `tool-gen-loadout.ps1` 数据表 → 运行脚本 → 把输出替换进 `template_loadout.cpp`
@@ -131,16 +131,17 @@ TemplateGemSlot{
 
 ## 4.1 数据文件生成（mod 运行时表：sigils.json）
 
-mod 目录下的 `sigils.json`（**合并单表**，200 行 = 188 物品行 + 12 非持有品词条行）**不是手工维护的**，
-由 extract 管线一次性导出（管线在仓库外；本仓库只保存产物）。字段：
-`{ key, gem, name, zh, skill, sec, category, player, special, cap, sort }`：
+mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12 非物品技能行）**不是手工维护的**，
+由 extract 管线一次性导出（管线在仓库外；本仓库只保存产物）。字段名与 gem.xlsx 表头一致：
+`{ key, hash, name, zh, skill1, sec, category, player, special, cap, lot, character }`：
 
-- 物品行（`gem != ""`，188 行）：`skill` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
-  `cap`/`sort` 主词条属性、`name`/`zh` 物品名（原样）；`player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
-- 非持有品词条行（`gem == ""`，12 行，`sort = -1`）：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、
-  超新星、超凡奥秘/强击/技艺/破限。
-- 词条字典（副下拉）= 按 `skill` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名）；主下拉 =
-  `gem != "" && player == ""`（**含钳蟹系/相扑斗力等特殊行**；`gem == ""` 的无物品行不作主；专属因子 `player != ""` 不作主）。
+- 物品行（`hash != skill1`，191 行）：`skill1` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
+  `cap` 主词条属性、`lot` 池版合法副列表（仅 9 个池版行有值）、`name`/`zh` 物品名（原样）；
+  `player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
+- 非物品技能行（`hash == skill1`，12 行）：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、
+  超新星、超凡奥秘/强击/技艺/破限——不作主、不作副，仅出现在词条字典（角色可持有该技能）。
+- 词条字典（副下拉）= 按 `skill1` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名）；主下拉 =
+  `player == ""`（**含钳蟹系/相扑斗力等特殊行**；非物品技能行不在物品集内，天然不作主；专属因子 `player != ""` 不作主）。
 
 **派生规则**：
 - 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；仅专属因子（`player != ""`）不作通用主
@@ -148,8 +149,8 @@ mod 目录下的 `sigils.json`（**合并单表**，200 行 = 188 物品行 + 12
 - **副因子合法性**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**——同类/跨类/自我复制（伤害上限+伤害上限、…）；
   **一切组合均允许**，下表"非法"仅为 UI 提示样式，不禁止选择/保存/实装）。提示分两档，按**主因子**裁定：
   - **普通主因子**下不可配的提示项 = **独占词条**：只出现在特殊行的词条（钳蟹系）：`082033CB` 钳蟹的共鸣、
-    `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子等 + **`sort:-1` 非持有品词条**（伤害上限·疾天/红天/苍天/轰天、
-    因子强化、浩劫、浩劫新星、超凡奥秘/强击/技艺/破限、超新星）；非持有品保留在字典可见（角色可持有该技能）。
+    `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子等 + **非物品技能行（`hash == skill1`）**（伤害上限·疾天/红天/苍天/轰天、
+    因子强化、浩劫、浩劫新星、超凡奥秘/强击/技艺/破限、超新星）；非物品技能保留在字典可见（角色可持有该技能）。
   - **特殊主因子** = 变体行 `special` 或其 `zh` 含"钳蟹/相扑斗力"（当前命中"可怕的漆黑钳蟹因子" Immortal Shell：
     该行 `special=False` 但属钳蟹系，故仍进主下拉）：作主时**任意副因子均显示不合法**（副列表整体灰显、已选副红框）。
     `special=True` 的钳蟹行仍不作主（见上一条）。
@@ -158,10 +159,12 @@ mod 目录下的 `sigils.json`（**合并单表**，200 行 = 188 物品行 + 12
   方向键（↑/↓）不会从 trigger 打开下拉列表（Base UI 默认行为已在捕获层禁用），留给字段/数字输入导航。
   Esc：焦点在下拉/对话框内时只关闭它们（判断在**捕获阶段** keydown 做——Base UI 在 React 处理键时即卸载弹层，
   冒泡阶段再查会拿到已脱离 DOM 的目标而误判）；其余情况按习惯隐藏窗口。
-- 装配 gem：sigils.json 每名字组只保留池版行 → 主因子一律使用该组首个（=池版）gem；副词条随配置写入
+- 装配 hash：pool 族（lot != []）各名字组只保留池版行 → 保存时按副因子选池版/固定版 hash（副命中池 lot → 池版；
+  命中某变体 sec → 该固定版；其余 → 池版，仅样式不阻断）；副词条随配置写入
   （mod 合成形态，与 2.0.5 合成规则一致；无池版组 = plain/专属组原样）。工具界面就地重载预设，不重启进程。
 
-**字段名约定**：物品 ID 全链叫 `gem`；词条 ID 全链叫 `hash`；`key`（GEEN_/SKILL_ 内部名）只在 extract 源表保留，不进运行时。
+**字段名约定**：`sigils.json` 字段名与 gem.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\数据表说明.md §2；额外 `sec`/`special`
+为工具扩展字段）；loadout.json 协议中物品 ID 仍叫 `gem`、词条 ID 叫 `hash`（mod 读取，不能改）。
 
 **与模板表的关系**：§4 的 `kCharacterExclusives[]` 是**内置专属默认**（直接内嵌 C++，不走 JSON）；
 `sigils.json` 只是**玩家配置**（`loadout.json`）解析用的 ID→名称/上限映射，两者独立。
@@ -206,8 +209,8 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - `safe_game_access.cpp`：所有游戏内存读取必须走 SEH 安全包装与地址范围检查。
   *SafeInvokeStatusRebuild 已复核（2026-09）：调用前校验 status.character_hash == 目标角色；
   写入仅 context_mode 销 0（单字段对齐原子写 + 同步 + SEH，无撕裂读风险）；勿再引入 8 字节原子写。*
-- 角色限制改判据：`sigils.json` 专属行 `character` 字段缺失或条目数 != 84 则启动失败（fail-closed）。
-  数据由 `docs/tool-gen-sigils-required.js` 维护（84 = 29 角色 × 3 专属 gem − 3 条古兰/姬塔共享；原版
+- 角色限制改判据：`sigils.json` 专属行 `character` 字段缺失或条目数 != 87 则启动失败（fail-closed）。
+  数据由 gem.xlsx 管线生成（87 = 28 角色 × 3 专属 gem（古兰/姬塔共享合并）＋ 3 条 `_74` 进阶：涯之七星＋/涯之二王＋/无态＋；原版
   compatibility.tsv 199 条中的其余 115 条为模板外的游戏专属物品/觉醒合体版，配装路径不可达，不再校验）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=17`）与 `NativeCore.Interop.cs`、
   `NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
@@ -246,9 +249,20 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-07 更新）
 
 ### 当前状态
-- **版本**：v0.5.6（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.7（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
+
+### 0.5.7 发布记录（2026-09-09）
+- **数据**：`sigils.json` 字段名与 gem.xlsx 表头对齐（`gem→hash`、`skill→skill1`；非物品技能行
+  `hash == skill1`，12 条，不再用空串/`sort:-1` 标记）；`docs/tool-gen-sigils-required.js` 停用
+  （旧"合体版剔除"会误删普通专属行）；`tool-gen-loadout.ps1` 的 PL 码反查改由战气因子行
+  （`warGem`）推导，中文名同步官方译名。
+- **修复**：原生 `kExpectedCompatibilityMappingCount` 84→87（新增 3 条 `_74` 进阶专属：
+  涯之七星＋/涯之二王＋/无态＋）；C#/原生字段引用跟随 `hash`/`skill1`。
+- **工具**：池版/固定副合法规则（`lot ∪ sec`）与保存选 gem 合并为 `poolByMain` 单源；
+  副下拉"不可持有"提示改由 `hash == skill1` 判定；`ExclusivePanel` hooks 顺序修复、
+  `traitHashes`/`allTraitHashes` 重复 memo 合并。
 
 ### 0.5.6 发布记录（2026-09-07）
 - **健壮性**：修复提取器"空白行会以 substr(npos) 抛异常终止进程"（改为跳过空白行，保持 fail-closed）；
