@@ -85,7 +85,7 @@ foreach ($c in $chars) {
     }
 }
 
-# ---- 输出 1：template_loadout.cpp 的 kCharacterExclusives[] 段 ----
+# ---- 输出 1：直接写回 template_loadout.cpp 的 kCharacterExclusives[] 段 ----
 $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('// 由 docs/tool-gen-loadout.ps1 生成；勿手改。')
 [void]$sb.AppendLine('constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {')
@@ -99,7 +99,18 @@ foreach ($r in $resolved) {
 [void]$sb.AppendLine('};')
 $out = $sb.ToString()
 Set-Content -Path "$env:TEMP\loadout_exclusives.txt" -Value $out -Encoding UTF8
-Write-Output "generated kCharacterExclusives: $($resolved.Count) entries -> $env:TEMP\loadout_exclusives.txt"
+
+# 只替换 “constexpr … { … };” 这一段（其上方已有的“勿手改”注释与空行保持原样，
+# 生成结果字节稳定：同内容重跑不产生 diff；源码是 LF，写入前把 CRLF 转成 LF）。
+$cppPath = Join-Path $root 'GBFR.PreEquippedSigils.Native\src\template_loadout.cpp'
+$cpp = [System.IO.File]::ReadAllText($cppPath)
+$pattern = '(?ms)^constexpr CharacterExclusiveLoadout kCharacterExclusives\[\] = \{.*?^\};'
+$match = [regex]::Match($cpp, $pattern)
+if (-not $match.Success) { throw "kCharacterExclusives[] block not found in $cppPath" }
+$block = (($out.TrimEnd() -split "`r?`n") | Select-Object -Skip 1) -join "`n"
+$updated = $cpp.Substring(0, $match.Index) + $block + $cpp.Substring($match.Index + $match.Length)
+[System.IO.File]::WriteAllText($cppPath, $updated, [System.Text.UTF8Encoding]::new($false))
+Write-Output "patched kCharacterExclusives[] ($($resolved.Count) entries) -> $cppPath"
 
 # ---- 输出 2：character-exclusives.json（工具/托管数据源，含 PL 码与中英文名） ----
 $jsonDir = Join-Path $root 'GBFR.PreEquippedSigils'
@@ -121,8 +132,12 @@ $excl = @{
 }
 $exclOut = Join-Path $jsonDir 'character-exclusives.json'
 # LF output (matches .gitattributes eol=lf): ConvertTo-Json emits CRLF on Windows.
-[System.IO.File]::WriteAllText(
-    $exclOut,
-    (($excl | ConvertTo-Json -Depth 4) -replace ([string][char]13 + [string][char]10), [string][char]10),
-    [System.Text.UTF8Encoding]::new($false))
-Write-Output "wrote character-exclusives.json -> $exclOut"
+$exclText = ($excl | ConvertTo-Json -Depth 4) -replace ([string][char]13 + [string][char]10), [string][char]10
+# 缩进随 PowerShell 版本不同（5.1 与 7 不一样）：内容没变就不重写，避免无意义 diff。
+$exclOld = if (Test-Path -LiteralPath $exclOut) { [System.IO.File]::ReadAllText($exclOut) } else { '' }
+if (($exclOld -replace '\s', '') -eq ($exclText -replace '\s', '')) {
+    Write-Output "character-exclusives.json unchanged (kept as is) -> $exclOut"
+} else {
+    [System.IO.File]::WriteAllText($exclOut, $exclText, [System.Text.UTF8Encoding]::new($false))
+    Write-Output "wrote character-exclusives.json -> $exclOut"
+}
