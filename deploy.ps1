@@ -38,7 +38,10 @@ if (Get-Process -Name 'granblue_fantasy_relink' -ErrorAction SilentlyContinue) {
 # 3. Force-stop a running tool so the deployed files are not locked.
 Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue |
     Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500
+# Wait for it to actually exit: the tool holds a single-instance mutex, so a
+# launch that races the shutdown just activates the dying window and exits.
+Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue |
+    Wait-Process -Timeout 15 -ErrorAction SilentlyContinue
 
 # 4. Replace the deployed folder.
 $targetDir = Split-Path -Parent $Target
