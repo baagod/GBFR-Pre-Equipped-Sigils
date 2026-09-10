@@ -1,0 +1,28 @@
+# Line endings: LF in the repository and the working tree, so a checkout on any
+# platform produces the same bytes. Windows batch files and Visual Studio
+# project files keep CRLF; vendored third-party code is never normalised.
+# Without this, core.autocrlf=true mixes CRLF working copies with LF blobs and
+# every git command prints "LF will be replaced by CRLF".
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+GBFR.PreEquippedSigils.Native/third_party/** -text
+
+# Binary assets (never normalised)
+*.png binary
+*.ico binary
+*.zip binary
+*.xlsx binary
+*.db binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.lib binary
+*.exp binary
+*.obj binary
+*.iobj binary
+*.ipdb binary
+*.woff2 binary
