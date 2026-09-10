@@ -21,6 +21,13 @@ build-release.ps1                    构建+打包脚本（MSBuild native、dotn
 docs/
   MAINTENANCE.md                     本手册
   tool-gen-loadout.ps1               生成 kCharacterExclusives[] 表与 character-exclusives.json（§4）
+gen/                                因子数据生成管线（说明书：gen/数据表说明.md，命令链在其 §5）
+  filter1.js filter-groups.js filter-drop.js   级联筛选（CSV → xlsx 部件）
+  build-*.js add-*.js replace-skills.js rename-headers.js make-xlsx.js
+  make-sigils-json.js               最终部件 → sigils.json（运行时因子表）
+  style-xlsx.js                     最终 xlsx 行底色 + 标题行样式
+  xlsx-lib.js parse-msg.js          公共库 / .msg 文本解析
+  extracted/ GBFRDataTools/ sqlite/ 游戏数据与工具（gitignored）
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
   NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
@@ -89,12 +96,12 @@ Loadout/                            Wails v3 配装编辑器（Go 服务 + React
 | 工具 | 作用 |
 |---|---|
 | `docs/tool-gen-sigils-required.js`（已删除） | **停用并移除**（2026-09 数据字段与 gem.xlsx 对齐后失效：旧版抛 "no sort line"；"专属行必为模板 3 gem"的合体版剔除规则实测会把新增普通专属因子误删 3 行，误跑会改坏 sigils.json）。需要重新规范化时请从 gem.xlsx 重建，勿再寻找该脚本 |
-| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 hash 与 player 码，生成 `kCharacterExclusives[]` 与 `character-exclusives.json` |
+| `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 hash 与 player 码；**直接写回** `template_loadout.cpp` 的 `kCharacterExclusives[]` 段，并生成 `character-exclusives.json`（内容不变则不重写，幂等）|
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出），运行时不依赖 |
 
-**改配装的标准流程**：改 `tool-gen-loadout.ps1` 数据表 → 运行脚本 → 把输出替换进 `template_loadout.cpp`
-（从 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `};` 的整段，自动定位起止）→
-`character-exclusives.json` 同步更新 → 编译 → 部署 → 验证（§6）。
+**改配装的标准流程**：改 `tool-gen-loadout.ps1` 的 `$chars` 数据表 → 运行脚本（自动替换 `template_loadout.cpp`
+里 `constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {` 到 `};` 的整段，并把 `character-exclusives.json`
+同步更新；两者幂等）→ 编译 → 部署 → 验证（§6）。
 
 行结构（`*_gem` = 物品 hash 由脚本推导，trait = 词条 hash）：
 
