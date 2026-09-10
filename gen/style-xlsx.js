@@ -1,5 +1,6 @@
 
-// 给最终 xlsx 部件加行底色（人工核对用）：
+// 给最终 xlsx 部件加样式（人工核对用）：
+//   标题行      → 加粗 + #0070C0 背景 + 白字
 //   lot 非空    → #9BC2E6
 //   player 非空 → #7030A0（白字）
 //   one=1       → #FFC000
@@ -25,6 +26,7 @@ const CELL_XFS = [
   '<xf fontId="1" fillId="3" applyFont="1" applyFill="1"/>',          // 2 player（白字）
   '<xf fillId="4" applyFill="1"/>',                                   // 3 one
   '<xf fillId="5" applyFill="1"/>',                                   // 4 非物品技能
+  '<xf fontId="2" fillId="6" applyFont="1" applyFill="1"/>',          // 5 标题行
 ];
 const FILLS = [
   '<fill><patternFill patternType="none"/></fill>',
@@ -33,14 +35,17 @@ const FILLS = [
   '<fill><patternFill patternType="solid"><fgColor rgb="FF7030A0"/><bgColor indexed="64"/></patternFill></fill>',
   '<fill><patternFill patternType="solid"><fgColor rgb="FFFFC000"/><bgColor indexed="64"/></patternFill></fill>',
   '<fill><patternFill patternType="solid"><fgColor rgb="FFF4B084"/><bgColor indexed="64"/></patternFill></fill>',
+  '<fill><patternFill patternType="solid"><fgColor rgb="FF0070C0"/><bgColor indexed="64"/></patternFill></fill>',
 ];
 const FONTS = [
   '<font><sz val="11"/><name val="Calibri"/></font>',
   '<font><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>',
+  '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>',
 ];
 
+const HEADER_STYLE = 5;
 const count = [0, 0, 0, 0];
-const outRows = [sheet.rows[0].xml];
+const outRows = [sheet.rows[0].xml.replace(/<c /g, '<c s="' + HEADER_STYLE + '" ')];
 for (let i = 1; i < sheet.rows.length; i++) {
   const r = sheet.rows[i];
   const v = (c) => r.cells[c] ?? "";
@@ -59,4 +64,4 @@ fs.writeFileSync(path.join(dir, "xl", "styles.xml"),
   '<fills count="' + FILLS.length + '">' + FILLS.join("") + "</fills>" +
   '<borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs>' +
   '<cellXfs count="' + CELL_XFS.length + '">' + CELL_XFS.join("") + "</cellXfs></styleSheet>", "utf8");
-console.error("行底色：lot " + count[0] + "、player " + count[1] + "、one " + count[2] + "、技能条目 " + count[3]);
+console.error("样式：标题行 + lot " + count[0] + "、player " + count[1] + "、one " + count[2] + "、技能条目 " + count[3]);
