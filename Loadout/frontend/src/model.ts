@@ -20,6 +20,7 @@ export interface Sigil {
   category: string
   player: string
   special: boolean
+  mix?: string // gem.CanGemMix: "0" ordinary (free combination), "1" locked
   cap?: number // trait level cap (row data, feeds the trait dictionary only)
   lot?: string[] // pool versions: legal secondary trait hashes (empty = no pool)
   sec?: string // fixed-second versions: the fixed secondary trait hash

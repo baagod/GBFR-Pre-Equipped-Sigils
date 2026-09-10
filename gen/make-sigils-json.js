@@ -30,7 +30,7 @@ const parts = partsDirOf(input);
 const sheet = xl.readSheet(parts.dir);
 if (parts.tmp) fs.rmSync(parts.tmp, { recursive: true, force: true });   // 临时解包目录用完即删
 const hdr = sheet.rows[0].cells;
-const COLS = { key: "key", hash: "hash", name: "name", zh: "zh", skill1: "skill1", sec: "skill2", player: "player", lot: "lot", category: "category", onlyone: "onlyone", cap: "cap", character: "character" };
+const COLS = { key: "key", hash: "hash", name: "name", zh: "zh", skill1: "skill1", sec: "skill2", player: "player", lot: "lot", mix: "mix", category: "category", onlyone: "onlyone", cap: "cap", character: "character" };
 const col = {};
 for (const [k, name] of Object.entries(COLS)) {
   col[k] = xl.findColumn(hdr, name);
@@ -50,6 +50,7 @@ const sigils = sheet.rows.slice(1).map((row) => {
     zh: shortName(v(col.zh)),
     skill1: v(col.skill1),
     sec: v(col.sec),
+    mix: v(col.mix),
     category: v(col.category),
     player: v(col.player),
     special: v(col.onlyone) === "1",

@@ -20,7 +20,6 @@ import { SlotRow, HEADER_ROW } from "./SlotEditor"
 import { ExclusivePanel } from "./ExclusivePanel"
 
 /** Quest-locked families are matched by zh (crab 钳蟹系 / 相扑斗力); data-driven. */
-const isSpecialZh = (zh: string) => zh.includes("钳蟹") || zh.includes("相扑斗力")
 
 export default function App() {
   const [traits, setTraits] = useState<Trait[]>([])
@@ -86,6 +85,7 @@ export default function App() {
             category: s.category ?? "",
             player: s.player ?? "",
             special: s.special === true,
+            mix: s.mix ?? "",
             lot: s.lot?.length ? s.lot : undefined,
             sec: s.sec || undefined,
           }))
@@ -152,9 +152,9 @@ export default function App() {
   }, [sigils])
 
   // General mains: only item rows (hash != skill1) with no character
-  // exclusivity (player == "") qualify. Special rows (crab family etc.) stay
-  // selectable as mains — their secondary combination is hinted as illegal
-  // via specialMainNames.
+  // exclusivity (player == "") qualify. Rows that cannot take part in a
+  // combination (special / non-item) stay selectable — their secondary list is
+  // hinted as fully illegal instead.
   const sigilGroups = useMemo(
     () =>
       [...groupedByName.entries()]
@@ -166,65 +166,53 @@ export default function App() {
     [groupedByName]
   )
 
-  // Special mains (crab family / 相扑斗力 / special rows) cannot legally take
-  // any secondary: the secondary list is shown fully as illegal (existing
-  // grey/red styles) — choosing and saving are not blocked, nothing is cleared.
-  const specialMainNames = useMemo(() => {
-    const names = new Set<string>()
-    for (const [name, variants] of groupedByName) {
-      if (variants.some((v) => v.special || isSpecialZh(v.zh)))
-        names.add(name)
-    }
-    return names
-  }, [groupedByName])
-
   const traitHashes = useMemo(() => traits.map((tr) => tr.hash), [traits])
 
-  // Exclusive-slot / quest-locked traits (crab family, 相扑斗力 etc.): these can
-  // never appear as a secondary for a regular main. Everything else is legal —
-  // game synthesis (2.0.5) freely combines same/cross-category and even
-  // duplicate traits. Non-item skill rows (hash == skill1) are also excluded.
-  const exclusiveTraits = useMemo(() => {
-    const exclusive = new Set<string>()
-    for (const s of sigils) {
-      if (s.special) exclusive.add(s.skill1)
-      if (isSpecialZh(s.zh)) exclusive.add(s.skill1)
-    }
-    for (const t of traits) if (t.nonItem) exclusive.add(t.hash)
-    return exclusive
-  }, [sigils, traits])
-
-  // Pool families: the pool version (lot != []) plus its legal secondary set
-  // (lot ∪ fixed-second). Derived once, read by both the legality hint below
-  // and hashFor at save time, so the two can never drift apart.
+  // Pool families: the pool version (lot != []) and its pool, read by hashFor
+  // at save time (which variant hash a family resolves to).
   const poolByMain = useMemo(() => {
-    const byName = new Map<string, { poolHash: string; lot: Set<string>; legal: Set<string> }>()
+    const byName = new Map<string, { poolHash: string; lot: Set<string> }>()
     for (const [name, variants] of groupedByName) {
       const pool = variants.find((v) => v.lot && v.lot.length > 0)
       if (!pool) continue
-      const legal = new Set<string>()
-      for (const v of variants) {
-        for (const h of v.lot ?? []) legal.add(h)
-        if (v.sec) legal.add(v.sec)
-      }
-      byName.set(name, { poolHash: pool.hash, lot: new Set(pool.lot), legal })
+      byName.set(name, { poolHash: pool.hash, lot: new Set(pool.lot) })
     }
     return byName
   }, [groupedByName])
 
-  // Hint only; generation is never blocked. Legal secondaries for a main:
-  //   - special mains (one == special): empty set -> everything dimmed
-  //   - pool families (lot != []): legal = lot ∪ fixed-second (sec) of the
-  //     family; anything outside is shown grey/red but still saved
-  //   - everything else: all non-exclusive traits (free combination)
+  // Traits that can act as a secondary: provided by at least one ordinary
+  // (mix=0, combinable) item row.
+  const ordinaryTraits = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of sigils) {
+      if (!s.special && s.hash !== s.skill1 && s.mix === "0") set.add(s.skill1)
+    }
+    return set
+  }, [sigils])
+
+  // Combination rules (hint only: nothing is blocked, no input is changed):
+  //   1. rows that cannot take part — special (onlyone) or non-item
+  //      (hash == skill1);
+  //   2. a mix=1 row only pairs with its own lot pool or its fixed second;
+  //   3. every other (ordinary, mix=0) row pairs freely.
+  // Both roles are checked, so a secondary must itself be an ordinary trait.
   const legalByMain = useMemo(() => {
-    const legal = new Set(traitHashes.filter((h) => !exclusiveTraits.has(h)))
     const none: Set<string> = new Set()
     return (name: string) => {
-      if (specialMainNames.has(name)) return none
-      return poolByMain.get(name)?.legal ?? legal
+      const variants = (groupedByName.get(name) ?? []).filter(
+        (s) => !s.special && s.hash !== s.skill1
+      )
+      if (variants.length === 0) return none
+      if (variants.some((v) => v.mix === "0")) return ordinaryTraits
+      const legal = new Set<string>()
+      for (const v of variants) {
+        if (v.mix !== "1") continue
+        if (v.sec && ordinaryTraits.has(v.sec)) legal.add(v.sec)
+        for (const h of v.lot ?? []) if (ordinaryTraits.has(h)) legal.add(h)
+      }
+      return legal
     }
-  }, [traitHashes, exclusiveTraits, specialMainNames, poolByMain])
+  }, [groupedByName, ordinaryTraits])
 
   // Family item hash at save time: no secondary -> pool version (lot != []
   // variant, else first); secondary in the pool's lot -> pool version;
