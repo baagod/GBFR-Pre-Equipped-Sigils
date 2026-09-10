@@ -3,7 +3,7 @@
 // 注意：name/zh 取「技能基础名」——sigils.xlsx 的因子名带 ＋/罗马数字后缀，这里去掉
 // （zh 去 ＋ 与中文罗马数字；name 再去英文罗马数字），与现 sigils.json 一致。
 // 字段映射：A=key B=hash C=name D=zh E=skill1 F=sec(原 skill2) G=player
-//           H=lot（空格分隔 → 数组）I=category L=one→special(=1) M=cap（数字）N=character（非空才输出）
+//           H=lot（空格分隔 → 数组）I=category L=onlyone→special(=1) M=cap（数字）N=character（非空才输出）
 // 输出：{ "sigils": [ { key, hash, name, zh, skill1, sec, category, player, special, cap, [character,] lot }, … ] }
 // 行序 = 输入行序（确定性；mod 侧按 key/hash 查表，与行序无关）。
 // Usage: node make-sigils-json.js <sigils.xlsx|部件目录> <out.json> [--check]
@@ -30,7 +30,7 @@ const parts = partsDirOf(input);
 const sheet = xl.readSheet(parts.dir);
 if (parts.tmp) fs.rmSync(parts.tmp, { recursive: true, force: true });   // 临时解包目录用完即删
 const hdr = sheet.rows[0].cells;
-const COLS = { key: "key", hash: "hash", name: "name", zh: "zh", skill1: "skill1", sec: "skill2", player: "player", lot: "lot", category: "category", one: "one", cap: "cap", character: "character" };
+const COLS = { key: "key", hash: "hash", name: "name", zh: "zh", skill1: "skill1", sec: "skill2", player: "player", lot: "lot", category: "category", onlyone: "onlyone", cap: "cap", character: "character" };
 const col = {};
 for (const [k, name] of Object.entries(COLS)) {
   col[k] = xl.findColumn(hdr, name);
@@ -52,7 +52,7 @@ const sigils = sheet.rows.slice(1).map((row) => {
     sec: v(col.sec),
     category: v(col.category),
     player: v(col.player),
-    special: v(col.one) === "1",
+    special: v(col.onlyone) === "1",
     cap: Number(v(col.cap)),
   };
   const character = v(col.character);

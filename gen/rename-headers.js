@@ -9,7 +9,7 @@ const REN = {
   "SkillId1": "skill1", "SkillId2": "skill2", "PlayerReq": "player",
   "IsLuciliusGem": "isluciliusgem", "SkillTypeLotIdForRandom2ndSkill": "lot",
   "Category": "category", "Rarity": "rarity", "CanGemMix": "mix",
-  "CanOnlyHoldOne": "one", "cap": "cap", "character": "character",
+  "CanOnlyHoldOne": "onlyone", "cap": "cap", "character": "character",
 };
 const f = path.join(dir, "xl/sharedStrings.xml");
 const xml = fs.readFileSync(f, "utf8");

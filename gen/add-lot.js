@@ -1,4 +1,4 @@
-// 规则：仅池版因子（mix=1 & player 空 & one=0 & skill2 空）保留 lot，并把池号展开为技能 hash 列表（空格分隔）；其余行 lot 清空。
+// 规则：仅池版因子（mix=1 & player 空 & onlyone=0 & skill2 空）保留 lot，并把池号展开为技能 hash 列表（空格分隔）；其余行 lot 清空。
 // Usage: node add-lot.js <解包目录> <lotmap.json>
 const fs = require("fs");
 const xl = require("./xlsx-lib");
