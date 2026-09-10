@@ -1,4 +1,4 @@
-// 在 gem.xlsx 尾部追加 12 条"非物品技能"条目（字段：Key=技能逻辑名, Hash=技能hash, Name=中文名,
+// 在 sigils.xlsx 尾部追加 12 条"非物品技能"条目（字段：Key=技能逻辑名, Hash=技能hash, Name=中文名,
 // SkillId1=hash, 其余空, cap=技能表max）。因子行不动。
 // Usage: node add-skills.js <解包目录>
 const xl = require("./xlsx-lib");

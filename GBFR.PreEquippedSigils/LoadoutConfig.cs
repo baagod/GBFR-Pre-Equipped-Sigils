@@ -9,7 +9,7 @@ namespace GBFR.PreEquippedSigils;
 /// reported and the last valid configuration stays active.
 ///
 /// Data model (mod parses only the fields it needs; field names follow
-/// gem.xlsx headers for sigils.json):
+/// sigils.xlsx headers for sigils.json):
 ///   sigils.json            : { sigils: [ { key, hash, name, zh, skill1, sec,
 ///                            category, player, special, cap, lot, character? } ] }
 ///                            item rows: hash != skill1; non-item skill rows:

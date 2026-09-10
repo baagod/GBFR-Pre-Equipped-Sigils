@@ -1,4 +1,4 @@
-// 给 gem.xlsx 追加两列：M=cap（技能等级上限 = skill_status.max(Level)，无表技能→15）、
+// 给 sigils.xlsx 追加两列：M=cap（技能等级上限 = skill_status.max(Level)，无表技能→15）、
 // N=character（PlayerReq 的角色 hash；非专属留空）。现有行 cell 原样，行号不变。
 // cap 对照（sigils 验证）：000=50 001=50 003=45 005=30 020=65 045=20 147=45 066=45 073=15 103=15 140=45 141=15 160=30 233/234=15 ✓
 // Usage: node add-cap.js <解包目录> <ids.txt> <cap.csv> <capmap.json>

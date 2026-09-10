@@ -95,7 +95,7 @@ Loadout/                            Wails v3 配装编辑器（Go 服务 + React
 
 | 工具 | 作用 |
 |---|---|
-| `docs/tool-gen-sigils-required.js`（已删除） | **停用并移除**（2026-09 数据字段与 gem.xlsx 对齐后失效：旧版抛 "no sort line"；"专属行必为模板 3 gem"的合体版剔除规则实测会把新增普通专属因子误删 3 行，误跑会改坏 sigils.json）。需要重新规范化时请从 gem.xlsx 重建，勿再寻找该脚本 |
+| `docs/tool-gen-sigils-required.js`（已删除） | **停用并移除**（2026-09 数据字段与 sigils.xlsx 对齐后失效：旧版抛 "no sort line"；"专属行必为模板 3 gem"的合体版剔除规则实测会把新增普通专属因子误删 3 行，误跑会改坏 sigils.json）。需要重新规范化时请从 sigils.xlsx 重建，勿再寻找该脚本 |
 | `docs/tool-gen-loadout.ps1` | 内嵌每角色专属数据（Hash/T1/T2/War），从 sigils.json 推导变体 hash 与 player 码；**直接写回** `template_loadout.cpp` 的 `kCharacterExclusives[]` 段，并生成 `character-exclusives.json`（内容不变则不重写，幂等）|
 | [Nenkai/relink-modding](https://nenkai.github.io/relink-modding/) + [GBFRDataTools](https://github.com/Nenkai/GBFRDataTools) | 开发期数据核实（官方 ID 表 / 解包导出），运行时不依赖 |
 
@@ -137,14 +137,15 @@ TemplateGemSlot{
 - **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数（≤12）。
 - 角色专属物品受 `sigils.json` 专属行的 `character` 字段限制：`TryCopyTemplateGem` 用
   `GetRequiredCharacterHash(gem_id)` 校验，只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
-- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\extracted\gem-full.xlsx`（Ctrl+F 搜名字）。
+- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\extracted\sigils-full.xlsx`（Ctrl+F 搜名字）。
 - 角色 hash：`sigils.json` 专属行的 `character` 字段；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、
   娜露梅 `E7053919`、芙劳 `646C3168`、菲迪埃 `74DD4C79`。
 
 ## 4.1 数据文件生成（mod 运行时表：sigils.json）
 
 mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12 非物品技能行）**不是手工维护的**，
-由 extract 管线一次性导出（管线在仓库外；本仓库只保存产物）。字段名与 gem.xlsx 表头一致：
+由 `gen\` 下的管线导出（脚本入库、数据源不入库；步骤见 `gen\数据表说明.md`，构建会校验一致性）。
+字段名与 sigils.xlsx 表头一致：
 `{ key, hash, name, zh, skill1, sec, category, player, special, cap, lot, character }`：
 
 - 物品行（`hash != skill1`，191 行）：`skill1` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
@@ -177,7 +178,7 @@ mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12
   命中某变体 sec → 该固定版；其余 → 池版，仅样式不阻断）；副词条随配置写入
   （mod 合成形态，与 2.0.5 合成规则一致；无池版组 = plain/专属组原样）。工具界面就地重载预设，不重启进程。
 
-**字段名约定**：`sigils.json` 字段名与 gem.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\数据表说明.md §2；额外 `sec`/`special`
+**字段名约定**：`sigils.json` 字段名与 sigils.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\数据表说明.md §2；额外 `sec`/`special`
 为工具扩展字段）；loadout.json 协议中物品 ID 仍叫 `gem`、词条 ID 叫 `hash`（mod 读取，不能改）。
 
 **与模板表的关系**：§4 的 `kCharacterExclusives[]` 是**内置专属默认**（直接内嵌 C++，不走 JSON）；
@@ -224,7 +225,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
   *SafeInvokeStatusRebuild 已复核（2026-09）：调用前校验 status.character_hash == 目标角色；
   写入仅 context_mode 销 0（单字段对齐原子写 + 同步 + SEH，无撕裂读风险）；勿再引入 8 字节原子写。*
 - 角色限制改判据：`sigils.json` 专属行 `character` 字段缺失或条目数 != 87 则启动失败（fail-closed）。
-  数据由 gem.xlsx 管线生成（87 = 28 角色 × 3 专属 gem（古兰/姬塔共享合并）＋ 3 条 `_74` 进阶：涯之七星＋/涯之二王＋/无态＋；
+  数据由 sigils.xlsx 管线生成（87 = 28 角色 × 3 专属 gem（古兰/姬塔共享合并）＋ 3 条 `_74` 进阶：涯之七星＋/涯之二王＋/无态＋；
   游戏原版专属物品共 199 条，其余 115 条为模板外的专属物品/觉醒合体版，配装路径不可达，不再校验）。
 - ABI：`native_api.h`（导出签名、packing、`GBFR20_ABI_VERSION=17`）与 `NativeCore.Interop.cs`、
   `NativeCore.cs` 的 `AbiVersion` 必须一致；改动需三方同步 + 版本号递增。
