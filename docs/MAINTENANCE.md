@@ -50,7 +50,7 @@ GBFR.PreEquippedSigils.Native/      C++ 原生核心
     safe_game_access.cpp             ★SEH 安全内存读写、状态重建、授权提交
     trait_hooks.cpp                  ★注入核心：getter detour、natural bind、hot-apply 触发
     selection_store.cpp              角色选择存储、hot-apply 队列（generation 机制）
-    name_tables.cpp                  兼容表加载（sigils.json 专属行 character 字段，87 条，缺失即 fail-closed）
+    name_tables.cpp                  兼容表加载（sigils.json 专属行 character 字段，缺失即 fail-closed）
     template_loadout.cpp             ★★专属配装表（表段由生成器产出，勿手改；组装逻辑见 §4）
 Loadout/                            Wails v3 配装编辑器（Go 服务 + React 前端，打包进 Mod）
   main.go                            窗口/托盘/单实例/假隐藏与 0x8010 激活命令（§12 机制沿革）
@@ -67,7 +67,7 @@ Loadout/                            Wails v3 配装编辑器（Go 服务 + React
   Reloaded-II：Mod.cs → NativeCore.Initialize → exports.GBFR20_Initialize
     → runtime.Initialize:
         executable-validation (必须 granblue_fantasy_relink.exe)
-        character-restrictions (sigils.json 专属行 character 字段，87 条，失败即停)
+        character-restrictions (sigils.json 专属行 character 字段，失败即停)
         semantic-layout-resolution (layout_resolver, 失败即停)
         template-selection-install (InstallDefaultTemplateSelections: 以 0xFE000000+i 合成 id 写入角色选择)
         native-hook-install    (2 个 hook + 2 处循环上限 patch)
@@ -143,34 +143,30 @@ TemplateGemSlot{
 
 ## 4.1 数据文件生成（mod 运行时表：sigils.json）
 
-mod 目录下的 `sigils.json`（**合并单表**，203 行 = 191 物品行 + 12 非物品技能行）**不是手工维护的**，
+mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
 由 `gen\` 下的管线导出（脚本入库、数据源不入库；步骤见 `gen\数据表说明.md`，构建会校验一致性）。
 字段名与 sigils.xlsx 表头一致：
 `{ key, hash, name, zh, skill1, sec, category, player, special, cap, lot, character }`：
 
-- 物品行（`hash != skill1`，191 行）：`skill1` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
-  `cap` 主词条属性、`lot` 池版合法副列表（仅 9 个池版行有值）、`name`/`zh` 物品名（原样）；
+- 物品行（`hash != skill1`）：`skill1` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
+  `cap` 主词条属性、`lot` 池版合法副列表、`name`/`zh` 物品名（原样）；
   `player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
-- 非物品技能行（`hash == skill1`，12 行）：因子强化、浩劫、浩劫新星、伤害上限·疾天/红天/苍天/轰天、
-  超新星、超凡奥秘/强击/技艺/破限——不作主、不作副，仅出现在词条字典（角色可持有该技能）。
+- 非物品技能行（`hash == skill1`）：不作主、不作副，仅出现在词条字典（角色可持有该技能）。
 - 词条字典（副下拉）= 按 `skill1` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名；前端另按
-  `player == ""` 过滤掉 87 条专属词条——工具词典 112 条、C# 校验层 199 条，专属词条只经"专属因子"页管理）；主下拉 =
+  `player == ""` 过滤掉专属词条，专属词条只经"专属因子"页管理）；主下拉 =
   `player == ""`（**含钳蟹系/相扑斗力等特殊行**；非物品技能行不在物品集内，天然不作主；专属因子 `player != ""` 不作主）。
 
 **派生规则**：
 - 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；仅专属因子（`player != ""`）不作通用主
-  （由"专属因子"页管理）；钳蟹系/相扑斗力等 `special` 行**可作为通用主因子**（作主时副组合按下方"特殊主因子"提示规则）。
-  例外：3 条 `_74` 专属行（涯之七星＋/涯之二王＋/无态＋）的 name/zh 保留官方"＋"后缀，不影响分组（专属行不进主下拉）。
-- **副因子合法性**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**——同类/跨类/自我复制（伤害上限+伤害上限、…）；
-  **一切组合均允许**，下表"非法"仅为 UI 提示样式，不禁止选择/保存/实装）。提示分两档，按**主因子**裁定：
-  - **普通主因子**下不可配的提示项 = **独占词条**：只出现在特殊行的词条（钳蟹系）：`082033CB` 钳蟹的共鸣、
-    `89C66ACB` 相扑斗力、`D3B8C21F` 终极钳蟹因子等 + **非物品技能行（`hash == skill1`）**（伤害上限·疾天/红天/苍天/轰天、
-    因子强化、浩劫、浩劫新星、超凡奥秘/强击/技艺/破限、超新星）；非物品技能保留在字典可见（角色可持有该技能）。
-  - **特殊主因子** = 变体行 `special` 或其 `zh` 含"钳蟹/相扑斗力"（当前命中"可怕的漆黑钳蟹因子" Immortal Shell：
-    该行 `special=False` 但属钳蟹系，故仍进主下拉）：作主时**任意副因子均显示不合法**（副列表整体灰显、已选副红框）。
-    `special=True` 的行同样进主下拉（主下拉判据只有 `player == ""`），作主时同样整体灰显。
+  （由"专属因子"页管理）；钳蟹系/相扑斗力等 `special` 行**可作为通用主因子**（该行 `onlyone=1`，不参与组合，见下方“组合规则”）。
+  例外：`_74` 专属行的 name/zh 保留官方"＋"后缀，不影响分组（专属行不进主下拉）。
+- **组合规则**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**；一切组合均允许，“非法”仅为 UI 提示样式，
+不禁止选择/保存/实装）。**主副双向判定**：
+  1. 无法参与组合：`onlyone`、`hash=skill1`。
+  2. `mix=1` 只能组合其 `lot` 因子或固定副，若不匹配则无法组合。
+  3. 其余普通因子均能互相组合。
 - UI：非法副词条灰显（`opacity-45`）、选中非法时 trigger 红框；**仅提示，不禁止**——选择、自动保存、C# 解析与原生注入
-  均不拦截（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）；特殊主因子的已选副值**不会被清空**。
+  均不拦截（Go 侧仍做结构/等级范围校验，C# 做最终 cap 兜底）；非法组合的已选副值**不会被清空**。
   方向键（↑/↓）不会从 trigger 打开下拉列表（Base UI 默认行为已在捕获层禁用），留给字段/数字输入导航。
   Esc：焦点在下拉/对话框内时只关闭它们（判断在**捕获阶段** keydown 做——Base UI 在 React 处理键时即卸载弹层，
   冒泡阶段再查会拿到已脱离 DOM 的目标而误判）；其余情况按习惯隐藏窗口。
