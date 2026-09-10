@@ -49,6 +49,25 @@ if ($manifestVersion -ne $Version) {
 }
 Write-Output "ModConfig.json version: $manifestVersion."
 
+# --- data freshness gates -----------------------------------------------------
+# 生成物必须与数据源一致；不一致 = 忘了跑生成器（构建不自动生成，避免每次重建数据源）。
+#   sigils.json          <- gen\extracted\sigils.xlsx（gen\make-sigils-json.js）
+#   character-exclusives.json + kCharacterExclusives[]  <- docs\tool-gen-loadout.ps1 的 $chars
+$sigilsXlsx = Join-Path $root 'gen\extracted\sigils.xlsx'
+$makeSigilsJson = Join-Path $root 'gen\make-sigils-json.js'
+if (Test-Path -LiteralPath $sigilsXlsx) {
+    & node $makeSigilsJson $sigilsXlsx $sigilsPath --check
+    if ($LASTEXITCODE -ne 0) {
+        throw 'sigils.json 与 gen\extracted\sigils.xlsx 不一致：先跑 node gen\make-sigils-json.js gen\extracted\sigils.xlsx GBFR.PreEquippedSigils\sigils.json'
+    }
+} else {
+    Write-Output 'gen\extracted\sigils.xlsx not found; skipped the sigils.json freshness check.'
+}
+& pwsh -NoProfile -File (Join-Path $root 'docs\tool-gen-loadout.ps1') -Check
+if ($LASTEXITCODE -ne 0) {
+    throw 'character-exclusives.json / kCharacterExclusives[] 与 $chars 不一致：先跑 pwsh docs\tool-gen-loadout.ps1'
+}
+
 $msbuild = $null
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (Test-Path -LiteralPath $vswhere) {

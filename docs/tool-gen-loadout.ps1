@@ -1,4 +1,8 @@
+[CmdletBinding()]
+param([switch]$Check)   # -Check：只比对生成物与 $chars 是否一致，不写任何文件
+
 $ErrorActionPreference = 'Stop'
+$checkFailed = $false
 
 # ============================================================================
 # 专属因子权威数据（改这里的 Hash/T1/T2/War 后重新生成）：
@@ -98,7 +102,7 @@ foreach ($r in $resolved) {
 }
 [void]$sb.AppendLine('};')
 $out = $sb.ToString()
-Set-Content -Path "$env:TEMP\loadout_exclusives.txt" -Value $out -Encoding UTF8
+$block = (($out.TrimEnd() -split "`r?`n") | Select-Object -Skip 1) -join "`n"
 
 # 只替换 “constexpr … { … };” 这一段（其上方已有的“勿手改”注释与空行保持原样，
 # 生成结果字节稳定：同内容重跑不产生 diff；源码是 LF，写入前把 CRLF 转成 LF）。
@@ -107,10 +111,15 @@ $cpp = [System.IO.File]::ReadAllText($cppPath)
 $pattern = '(?ms)^constexpr CharacterExclusiveLoadout kCharacterExclusives\[\] = \{.*?^\};'
 $match = [regex]::Match($cpp, $pattern)
 if (-not $match.Success) { throw "kCharacterExclusives[] block not found in $cppPath" }
-$block = (($out.TrimEnd() -split "`r?`n") | Select-Object -Skip 1) -join "`n"
-$updated = $cpp.Substring(0, $match.Index) + $block + $cpp.Substring($match.Index + $match.Length)
-[System.IO.File]::WriteAllText($cppPath, $updated, [System.Text.UTF8Encoding]::new($false))
-Write-Output "patched kCharacterExclusives[] ($($resolved.Count) entries) -> $cppPath"
+if ($Check) {
+    if ($match.Value.Trim() -ne $block.Trim()) { $checkFailed = $true; Write-Warning "template_loadout.cpp 的 kCharacterExclusives[] 与 $chars 不一致" }
+    else { Write-Output "check ok: kCharacterExclusives[] 一致（$($resolved.Count) 条）" }
+} else {
+    Set-Content -Path "$env:TEMP\loadout_exclusives.txt" -Value $out -Encoding UTF8
+    $updated = $cpp.Substring(0, $match.Index) + $block + $cpp.Substring($match.Index + $match.Length)
+    [System.IO.File]::WriteAllText($cppPath, $updated, [System.Text.UTF8Encoding]::new($false))
+    Write-Output "patched kCharacterExclusives[] ($($resolved.Count) entries) -> $cppPath"
+}
 
 # ---- 输出 2：character-exclusives.json（工具/托管数据源，含 PL 码与中英文名） ----
 $jsonDir = Join-Path $root 'GBFR.PreEquippedSigils'
@@ -135,9 +144,14 @@ $exclOut = Join-Path $jsonDir 'character-exclusives.json'
 $exclText = ($excl | ConvertTo-Json -Depth 4) -replace ([string][char]13 + [string][char]10), [string][char]10
 # 缩进随 PowerShell 版本不同（5.1 与 7 不一样）：内容没变就不重写，避免无意义 diff。
 $exclOld = if (Test-Path -LiteralPath $exclOut) { [System.IO.File]::ReadAllText($exclOut) } else { '' }
-if (($exclOld -replace '\s', '') -eq ($exclText -replace '\s', '')) {
+$jsonSame = (($exclOld -replace '\s', '') -eq ($exclText -replace '\s', ''))
+if ($Check) {
+    if (-not $jsonSame) { $checkFailed = $true; Write-Warning "character-exclusives.json 与 $chars 不一致" }
+    else { Write-Output "check ok: character-exclusives.json 一致（$($resolved.Count) 条）" }
+} elseif ($jsonSame) {
     Write-Output "character-exclusives.json unchanged (kept as is) -> $exclOut"
 } else {
     [System.IO.File]::WriteAllText($exclOut, $exclText, [System.Text.UTF8Encoding]::new($false))
     Write-Output "wrote character-exclusives.json -> $exclOut"
 }
+if ($Check -and $checkFailed) { exit 1 }
