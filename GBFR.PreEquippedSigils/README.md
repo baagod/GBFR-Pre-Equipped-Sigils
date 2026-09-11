@@ -31,7 +31,7 @@ Source: https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 Requirements: Windows x64, Visual Studio 2022 Build Tools (MSVC v143 + Windows SDK), .NET 8 SDK, Go, Node.js.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # requires pwsh 7 (BOM-less UTF-8)
 # outputs dist\GBFR-Pre-Equipped-Sigils-<version>.zip
 ```
 

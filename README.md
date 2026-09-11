@@ -65,11 +65,12 @@ build-release.ps1                一键构建脚本
 ## 快速上手（维护）
 
 ```powershell
+# 必须用 pwsh 7：脚本为无 BOM UTF-8，Windows PowerShell 5.1 会按 GBK 解析，中文提示变乱码
 # 构建（需 VS2022 Build Tools + .NET 8 SDK）
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1
 
-# 一键部署（自动停工具 -> 覆盖 Mods -> 自动重开工具）：
-powershell -ExecutionPolicy Bypass -File .\deploy.ps1
+# 一键部署（自动停工具 -> 覆盖 Mods -> 自动重开工具；游戏必须已退出）：
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\deploy.ps1
 
 # 手动部署：游戏退出后，把 dist\GBFR.PreEquippedSigils 复制到 Reloaded-II 的 Mods\
 # 本机路径示例：C:\Users\baago\Desktop\Reloaded-II\Mods\GBFR.PreEquippedSigils
