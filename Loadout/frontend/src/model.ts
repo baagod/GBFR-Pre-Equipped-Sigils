@@ -19,11 +19,11 @@ export interface Sigil {
   skill1: string // primary trait hash
   category: string
   player: string
-  special: boolean
+  onlyone?: string // gem.CanOnlyHoldOne: "1" = 唯一持有
   mix?: string // gem.CanGemMix: "0" ordinary (free combination), "1" locked
   cap?: number // trait level cap (row data, feeds the trait dictionary only)
   lot?: string[] // pool versions: legal secondary trait hashes (empty = no pool)
-  sec?: string // fixed-second versions: the fixed secondary trait hash
+  skill2?: string // fixed-second versions: the fixed secondary trait hash
 }
 
 export interface Trait {

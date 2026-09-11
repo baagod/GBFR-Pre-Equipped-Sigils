@@ -10,8 +10,8 @@ namespace GBFR.PreEquippedSigils;
 ///
 /// Data model (mod parses only the fields it needs; field names follow
 /// sigils.xlsx headers for sigils.json):
-///   sigils.json            : { sigils: [ { key, hash, name, zh, skill1, sec,
-///                            category, player, special, cap, lot, character? } ] }
+///   sigils.json            : { sigils: [ { key, hash, name, zh, skill1, skill2,
+///                            mix, category, player, onlyone, cap, lot, character? } ] }
 ///                            item rows: hash != skill1; non-item skill rows:
 ///                            hash == skill1 (trait entries only, no item).
 ///   character-exclusives.json : { exclusives: [ { hash, player, name, zh,

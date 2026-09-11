@@ -7,7 +7,7 @@ $checkFailed = $false
 # ============================================================================
 # 专属因子权威数据（改这里的 Hash/T1/T2/War 后重新生成）：
 #   T1/T2 = 两个独立专属词条；War = 战气词条。T1Gem/T2Gem/WarGem（独立因子与
-#   战气的物品 gem）由脚本从 sigils.json 推导（special=False 且 skill1 匹配）；
+#   战气的物品 gem）由脚本从 sigils.json 推导（onlyone≠1 且 skill1 匹配）；
 #   PL 码由战气因子行（WarGem -> player）反查。
 # ============================================================================
 $chars = @(
@@ -46,7 +46,7 @@ $chars = @(
 $root = Split-Path -Parent $PSScriptRoot
 
 # sigils.json (merged table)：只读一次；下面两次遍历分别用于
-#   专属行 hash -> player (PL 码) 与 skill1 -> 独立因子 hash（special=False）
+#   专属行 hash -> player (PL 码) 与 skill1 -> 独立因子 hash（onlyone≠1）
 $sigilsTable = Get-Content (Join-Path $root 'GBFR.PreEquippedSigils\sigils.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $playerOfGem = @{}
 foreach ($s in $sigilsTable.sigils) {
@@ -58,7 +58,7 @@ foreach ($s in $sigilsTable.sigils) {
 
 $indepGem = @{}
 foreach ($s in $sigilsTable.sigils) {
-    if (-not $s.special -and -not $indepGem.ContainsKey($s.skill1)) { $indepGem[$s.skill1] = $s.hash }
+    if ($s.onlyone -ne '1' -and -not $indepGem.ContainsKey($s.skill1)) { $indepGem[$s.skill1] = $s.hash }
 }
 
 # 每个 hash 都会直接拼进 C++ 源码：非法值必须在生成前报错，不能等到编译期。

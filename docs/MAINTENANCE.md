@@ -145,11 +145,11 @@ TemplateGemSlot{
 mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
 由 `gen\` 下的管线导出（脚本入库、数据源不入库；步骤见 `gen\sigils.xlsx 生成文档.md`，构建会校验一致性）。
 字段名与 sigils.xlsx 表头一致：
-`{ key, hash, name, zh, skill1, sec, category, player, special, cap, lot, character }`：
+`{ key, hash, name, zh, skill1, skill2, mix, category, player, onlyone, cap, lot, character }`：
 
-- 物品行（`hash != skill1`）：`skill1` 主词条 hash、`sec` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
+- 物品行（`hash != skill1`）：`skill1` 主词条 hash、`skill2` 固定第二词条 hash（无副 = ""，如永恒钳蟹因子 = D3B8C21F）、
   `cap` 主词条属性、`lot` 池版合法副列表、`name`/`zh` 物品名（原样）；
-  `player != ""` 为角色专属因子，`special` 为特殊行（钳蟹系等）。
+  `player != ""` 为角色专属因子，`onlyone = "1"` 为唯一持有行（钳蟹系等）。
 - 非物品技能行（`hash == skill1`）：不作主、不作副，仅出现在词条字典（角色可持有该技能）。
 - 词条字典（副下拉）= 按 `skill1` 去重派生（**取首行**，即"以词条命名的物品行"：zh/name = 词条名；前端另按
   `player == ""` 过滤掉专属词条，专属词条只经"专属因子"页管理）；主下拉 =
@@ -157,7 +157,7 @@ mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
 
 **派生规则**：
 - 主因子按 `name`（英文名）**分组**（同名变体一行）；下拉只显示唯一名字；仅专属因子（`player != ""`）不作通用主
-  （由"专属因子"页管理）；钳蟹系/相扑斗力等 `special` 行**可作为通用主因子**（该行 `onlyone=1`，不参与组合，见下方“组合规则”）。
+  （由"专属因子"页管理）；钳蟹系/相扑斗力等 `onlyone="1"` 行**可作为通用主因子**（不参与组合，见下方“组合规则”）。
   例外：`_74` 专属行的 name/zh 保留官方"＋"后缀，不影响分组（专属行不进主下拉）。
 - **组合规则**（2.0.5 实测：游戏**合成结果 = 两输入因子词条的任意组合**；一切组合均允许，“非法”仅为 UI 提示样式，
 不禁止选择/保存/实装）。**主副双向判定**：
@@ -170,11 +170,10 @@ mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
   Esc：焦点在下拉/对话框内时只关闭它们（判断在**捕获阶段** keydown 做——Base UI 在 React 处理键时即卸载弹层，
   冒泡阶段再查会拿到已脱离 DOM 的目标而误判）；其余情况按习惯隐藏窗口。
 - 装配 hash：pool 族（lot != []）各名字组只保留池版行 → 保存时按副因子选池版/固定版 hash（副命中池 lot → 池版；
-  命中某变体 sec → 该固定版；其余 → 池版，仅样式不阻断）；副词条随配置写入
+  命中某变体 skill2 → 该固定版；其余 → 池版，仅样式不阻断）；副词条随配置写入
   （mod 合成形态，与 2.0.5 合成规则一致；无池版组 = plain/专属组原样）。工具界面就地重载预设，不重启进程。
 
-**字段名约定**：`sigils.json` 字段名与 sigils.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\sigils.xlsx 生成文档.md；额外 `sec`/`special`
-为工具扩展字段）；loadout.json 协议中物品 ID 仍叫 `gem`、词条 ID 叫 `hash`（mod 读取，不能改）。
+**字段名约定**：`sigils.json` 字段名与 sigils.xlsx 表头一致（key/hash/name/zh/skill1/skill2/player/lot/mix/category/onlyone/cap/character；loadout.json 协议中物品 ID 仍叫 `gem`、词条 ID 叫 `hash`，mod 读取，不能改）。
 
 **与模板表的关系**：§4 的 `kCharacterExclusives[]` 是**内置专属默认**（直接内嵌 C++，不走 JSON）；
 `sigils.json` 只是**玩家配置**（`loadout.json`）解析用的 ID→名称/上限映射，两者独立。

@@ -84,10 +84,10 @@ export default function App() {
             skill1: s.skill1 ?? "",
             category: s.category ?? "",
             player: s.player ?? "",
-            special: s.special === true,
+            onlyone: s.onlyone ?? "",
             mix: s.mix ?? "",
             lot: s.lot?.length ? s.lot : undefined,
-            sec: s.sec || undefined,
+            skill2: s.skill2 || undefined,
           }))
         setSigils(sigilsLoaded)
       } catch (e) {
@@ -153,7 +153,7 @@ export default function App() {
 
   // General mains: only item rows (hash != skill1) with no character
   // exclusivity (player == "") qualify. Rows that cannot take part in a
-  // combination (special / non-item) stay selectable — their secondary list is
+  // combination (onlyone / non-item) stay selectable — their secondary list is
   // hinted as fully illegal instead.
   const sigilGroups = useMemo(
     () =>
@@ -185,7 +185,7 @@ export default function App() {
   const ordinaryTraits = useMemo(() => {
     const set = new Set<string>()
     for (const s of sigils) {
-      if (!s.special && s.hash !== s.skill1 && s.mix === "0") set.add(s.skill1)
+      if (s.onlyone !== "1" && s.hash !== s.skill1 && s.mix === "0") set.add(s.skill1)
     }
     return set
   }, [sigils])
@@ -200,14 +200,14 @@ export default function App() {
     const none: Set<string> = new Set()
     return (name: string) => {
       const variants = (groupedByName.get(name) ?? []).filter(
-        (s) => !s.special && s.hash !== s.skill1
+        (s) => s.onlyone !== "1" && s.hash !== s.skill1
       )
       if (variants.length === 0) return none
       if (variants.some((v) => v.mix === "0")) return ordinaryTraits
       const legal = new Set<string>()
       for (const v of variants) {
         if (v.mix !== "1") continue
-        if (v.sec && ordinaryTraits.has(v.sec)) legal.add(v.sec)
+        if (v.skill2 && ordinaryTraits.has(v.skill2)) legal.add(v.skill2)
         for (const h of v.lot ?? []) if (ordinaryTraits.has(h)) legal.add(h)
       }
       return legal
@@ -224,7 +224,7 @@ export default function App() {
     if (!variants || variants.length === 0) return ""
     const pool = poolByMain.get(name)
     if (pool && (secHash === "" || pool.lot.has(secHash))) return pool.poolHash
-    const fixed = secHash !== "" ? variants.find((v) => v.sec === secHash) : undefined
+    const fixed = secHash !== "" ? variants.find((v) => v.skill2 === secHash) : undefined
     return fixed?.hash ?? pool?.poolHash ?? variants[0].hash
   }
 
