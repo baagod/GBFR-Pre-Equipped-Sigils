@@ -22,11 +22,12 @@ void Initialize()
       return;
    }
 
-   g_module_directory = std::filesystem::path(module_path.data()).parent_path();
+   const std::filesystem::path module_directory =
+      std::filesystem::path(module_path.data()).parent_path();
    // Character restrictions live in the merged tool table (sigils.json):
    // exclusive rows carry a "character" field; scanned via the stable contract.
    // Keep the file name in sync with managed LoadoutConfig.cs (_sigilsPath).
-   g_sigils_path = g_module_directory / L"sigils.json";
+   const std::filesystem::path sigils_path = module_directory / L"sigils.json";
 
    const uint64_t executable_started = BeginStartupPhase("executable-validation");
    std::vector<wchar_t> executable_path(32768, L'\0');
@@ -51,7 +52,7 @@ void Initialize()
    CompleteStartupPhase("executable-validation", executable_started, true);
 
    const uint64_t restrictions_started = BeginStartupPhase("character-restrictions");
-   const bool restrictions_loaded = LoadCharacterRestrictions(g_sigils_path);
+   const bool restrictions_loaded = LoadCharacterRestrictions(sigils_path);
    CompleteStartupPhase(
       "character-restrictions", restrictions_started, restrictions_loaded);
    if (!restrictions_loaded)

@@ -234,8 +234,6 @@ bool MatchesBytes(uintptr_t address, const std::array<uint8_t, Size>& expected) 
 
 extern HMODULE g_module;
 extern uintptr_t g_image_base;
-extern std::filesystem::path g_module_directory;
-extern std::filesystem::path g_sigils_path;
 extern std::once_flag g_initialize_once;
 extern std::atomic_bool g_hooks_ready;
 extern std::atomic_bool g_layout_ready;

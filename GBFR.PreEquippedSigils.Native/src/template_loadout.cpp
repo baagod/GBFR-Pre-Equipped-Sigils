@@ -378,9 +378,7 @@ bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
    const int32_t effective_count =
       use_builtin || count <= 0
          ? 0
-         : (count > kVirtualSlotCapacity - kBuiltinExclusiveSlotCount
-               ? kVirtualSlotCapacity - kBuiltinExclusiveSlotCount
-               : count);
+         : std::min(count, kVirtualSlotCapacity - kBuiltinExclusiveSlotCount);
    const int32_t total_slot_count =
       use_builtin
          ? kBuiltinExclusiveSlotCount

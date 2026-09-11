@@ -63,7 +63,7 @@ internal static class LoadoutConfig
         _loadoutPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GBFRPreEquippedSigils", "loadout.json");
-        // Keep in sync with Native/src/runtime.cpp (g_sigils_path).
+        // Keep in sync with Native/src/runtime.cpp (sigils_path in Initialize()).
         _sigilsPath = Path.Combine(modDirectory, "sigils.json");
         LoadExclusiveTable(modDirectory, log);
         if (LoadTables(log))
@@ -432,36 +432,26 @@ internal static class LoadoutConfig
                 : DefaultLevel;
             int level1 = GetLevel(main, "level", index, mainCap);
 
+            uint trait2Hash = UnwornCharacterHash; // "not selected" sentinel, never 0
+            int trait2Level = 0;
             if (items.GetArrayLength() >= 2)
             {
                 JsonElement sec = items[1];
                 string secHash = Hx(sec.GetProperty("hash"));
-                uint secTraitHash = PU(secHash);
-                if (!Traits.TryGetValue(secTraitHash, out int secCap))
+                trait2Hash = PU(secHash);
+                if (!Traits.TryGetValue(trait2Hash, out int secCap))
                     throw new InvalidDataException($"slot {index}: unknown trait '{secHash}'");
-                int level2 = GetLevel(sec, "level", index, secCap);
-                result.Add(new NativeCore.TemplateSlotNative
-                {
-                    GemId = mainGemHash,
-                    Trait1 = mainSkill,
-                    Trait1Level = level1,
-                    Trait2 = secTraitHash,
-                    Trait2Level = level2,
-                    SigilLevel = level1,
-                });
+                trait2Level = GetLevel(sec, "level", index, secCap);
             }
-            else
+            result.Add(new NativeCore.TemplateSlotNative
             {
-                result.Add(new NativeCore.TemplateSlotNative
-                {
-                    GemId = mainGemHash,
-                    Trait1 = mainSkill,
-                    Trait1Level = level1,
-                    Trait2 = UnwornCharacterHash, // "not selected" sentinel, never 0
-                    Trait2Level = 0,
-                    SigilLevel = level1,
-                });
-            }
+                GemId = mainGemHash,
+                Trait1 = mainSkill,
+                Trait1Level = level1,
+                Trait2 = trait2Hash,
+                Trait2Level = trait2Level,
+                SigilLevel = level1,
+            });
         }
         return result;
     }
