@@ -14,7 +14,6 @@
 ```
 build-release.ps1                    构建+打包（MSBuild native、dotnet managed、Wails 工具、zip）
 deploy.ps1                           部署 dist 到 Reloaded-II Mods（游戏必须已退出）
-CHANGELOG.md                         用户向更新日志（只列用户可见变更）
 docs/
   MAINTENANCE.md                     本手册
   tool-gen-loadout.ps1               生成 kCharacterExclusives[] 表与 character-exclusives.json（§4）
@@ -175,7 +174,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Rel
 ### 发布（版本号同步）
 
 1. 同改 `ModConfig.json` 的 `ModVersion` 与 `build-release.ps1` 默认 `$Version`；
-2. 在 `CHANGELOG.md` 添加本节（用户向）；全文档旧版本号残留扫描：本手册头部、README×2；Nexus 描述取自 CHANGELOG；
+2. 全文档旧版本号残留扫描：本手册头部、README×2；发布描述素材从 git log 提炼；
 3. 重建（自动产出 zip）→ 部署 → 验证（§6）；Nexus 发布则同步描述。
 
 ## 6. 验证清单（每次改动后必须做）
@@ -236,7 +235,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Rel
   （`alpha=0` + `EnableWindow(FALSE)` + `WS_EX_TOOLWINDOW` 并清掉 Wails 强制的 `WS_EX_APPWINDOW`）；托盘 / 游戏热键 / 二次启动统一走 `0x8010 revealTool`；窗口尺寸只在创建时设一次。
 - status-owner 遥测 mid-hook（5 个只写原子量）0.5.2 已删（无消费者），勿恢复。
 - 古兰/姬塔共享 PL0000：面板合并一行，mod 按 PL 键扇出到两个角色（两者专属因子完全相同）。
-- 逐版变更明细见 `CHANGELOG.md`（用户向）与 git log（开发向），本节不双份维护。
+- 逐版变更明细见 git log，本节不再双份维护（发布描述素材同样从 git log 提炼，不落盘成仓库文件）。
 
 **假隐藏陷阱**（`Loadout/main.go`）：
 
