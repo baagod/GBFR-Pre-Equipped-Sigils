@@ -47,26 +47,26 @@ export function ExclusivePanel({
     <div>
       {rows.map((e) => {
           const st = state?.[e.player]
-          const row = [
-            { key: e.t1, on: st?.[e.t1] ?? true, gem: e.t1Gem },
-            { key: e.t2, on: st?.[e.t2] ?? true, gem: e.t2Gem },
-            { key: e.war, on: st?.[e.war] ?? true, gem: e.warGem },
+          const factors: [string, string][] = [
+            [e.t1, e.t1Gem],
+            [e.t2, e.t2Gem],
+            [e.war, e.warGem],
           ]
           const characterName = nameByPlayer.get(e.player)?.join(" / ") || e.hash
           return (
           <div
-            key={e.hash}
+            key={e.player}
             className="flex h-[42px] items-center border-b text-sm last:border-b-0"
           >
             <div className="grid w-full grid-cols-[7rem_1fr_1fr_1fr] items-center gap-x-2">
               <span className="truncate font-medium">{characterName}</span>
-              {row.map((r) => (
-                <label key={r.key} className="flex min-w-0 items-center gap-1.5">
+              {factors.map(([key, gem]) => (
+                <label key={key} className="flex min-w-0 items-center gap-1.5">
                   <Checkbox
-                    checked={r.on}
-                    onCheckedChange={(v) => onChange(e.player, e, r.key, v === true)}
+                    checked={st?.[key] ?? true}
+                    onCheckedChange={(v) => onChange(e.player, e, key, v === true)}
                   />
-                  <span className="truncate">{gemName(r.gem)}</span>
+                  <span className="truncate">{gemName(gem)}</span>
                 </label>
               ))}
             </div>

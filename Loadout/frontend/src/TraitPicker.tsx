@@ -22,16 +22,16 @@ interface TraitPickerProps {
   traits: string[]
   /** Display name map (value -> localized label). Falls back to value. */
   labels?: Record<string, string>
-  /** Text shown on the trigger when value is empty ("选择因子" / "Select sigil"). */
-  placeholder?: string
+  /** Text shown on the trigger when value is empty (t.pickTrait / t.none). */
+  placeholder: string
   /** Prepend a "无" (empty value) option - used for the second trait. */
   noneOption?: boolean
-  /** Label of the empty option ("无" / "None"). */
+  /** Label of the empty option ("无" / "None"); only used with noneOption. */
   noneLabel?: string
   /** Search input placeholder ("搜索" / "Search"). */
-  searchPlaceholder?: string
+  searchPlaceholder: string
   /** Empty list message ("无匹配因子" / "No matching sigils"). */
-  emptyLabel?: string
+  emptyLabel: string
   /** Disable the picker (e.g. secondary sigil before a primary is chosen). */
   disabled?: boolean
   /** Optional set of legal values; items outside it are dimmed (illegal). */
@@ -45,11 +45,11 @@ export function TraitPicker({
   value,
   traits,
   labels,
-  placeholder = "选择因子",
+  placeholder,
   noneOption = false,
-  noneLabel = "无",
-  searchPlaceholder = "搜索",
-  emptyLabel = "无匹配因子",
+  noneLabel = "",
+  searchPlaceholder,
+  emptyLabel,
   disabled = false,
   legal,
   invalid = false,
@@ -62,17 +62,17 @@ export function TraitPicker({
 
   // An unrecognised value (a stored trait the picker no longer offers) stays
   // visible by its label/raw hash instead of masquerading as "none".
-  let selected = items.find((item) => item.value === value)
-  if (!selected && value !== "") selected = { value, label: labels?.[value] ?? value }
-  if (!selected) {
-    selected = noneOption ? { value: "", label: noneLabel } : { value: "", label: placeholder }
-  }
+  const selected: TraitItem =
+    items.find((item) => item.value === value) ??
+    (value !== ""
+      ? { value, label: labels?.[value] ?? value }
+      : { value: "", label: noneOption ? noneLabel : placeholder })
 
   return (
     <Combobox
       items={items}
       value={selected}
-      autoHighlight={true}
+      autoHighlight
       disabled={disabled}
       onValueChange={(item) => {
         if (item) onSelect(item.value)

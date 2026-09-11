@@ -229,8 +229,7 @@ xl.packXlsx(parts, OUT_XLSX);
 fs.rmSync(parts, { recursive: true, force: true });
 
 // ---------- 写 sigils.json ----------
-const shortName = (s) => String(s ?? "").replace(/[＋+]$/, "").replace(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+$/, "").replace(/[IVX]+$/, "").trim();
-const sigils = out.map((r) => { const o = { key: r.key, hash: r.hash, name: shortName(r.name), zh: shortName(r.zh), skill1: r.skill1, skill2: r.skill2, mix: r.mix, category: r.category, player: r.player, onlyone: r.onlyone, cap: Number(r.cap) }; if (r.character) o.character = r.character; o.lot = r.lot ? r.lot.split(/\s+/) : []; return o; });
+const sigils = out.map((r) => { const o = { key: r.key, hash: r.hash, name: xl.shortName(r.name), zh: xl.shortName(r.zh), skill1: r.skill1, skill2: r.skill2, mix: r.mix, category: r.category, player: r.player, onlyone: r.onlyone, cap: Number(r.cap) }; if (r.character) o.character = r.character; o.lot = r.lot ? r.lot.split(/\s+/) : []; return o; });
 fs.mkdirSync(path.dirname(path.resolve(OUT_JSON)), { recursive: true });
 fs.writeFileSync(OUT_JSON, JSON.stringify({ sigils }, null, 2) + "\n", "utf8");
 console.log("sigils.xlsx -> " + OUT_XLSX + "（" + out.length + " 行）");

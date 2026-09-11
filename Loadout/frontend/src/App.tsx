@@ -15,18 +15,18 @@ import {
 import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/components/ui/tabs"
 import { LoadSigils, LoadConfig, SaveLoadout, MinimiseApp, GetHotkey, LoadExclusives } from "../bindings/loadouttool/loadoutservice"
 import { copy, type Lang } from "./copy"
-import { DEFAULT_HIDE_KEY, DEFAULT_LEVEL, configToSlots, pad12, sanitizeExclusiveState, type Exclusive, type ExclusiveState, type Sigil, type Slot, type Trait } from "./model"
+import { DEFAULT_HIDE_KEY, DEFAULT_LEVEL, configToSlots, pad12, sanitizeExclusiveState, type Exclusive, type ExclusiveState, type SavedItem, type Sigil, type Slot, type Trait } from "./model"
 import { SlotRow, HEADER_ROW } from "./SlotEditor"
 import { ExclusivePanel } from "./ExclusivePanel"
 
-/** Quest-locked families are matched by zh (crab 钳蟹系 / 相扑斗力); data-driven. */
+type TabKey = "general" | "exclusive"
 
 export default function App() {
   const [traits, setTraits] = useState<Trait[]>([])
   const [sigils, setSigils] = useState<Sigil[]>([])
   const [slots, setSlots] = useState<Slot[]>([])
   const [status, setStatus] = useState("")
-  const [tab, setTab] = useState<"general" | "exclusive">("general")
+  const [tab, setTab] = useState<TabKey>("general")
   const [exclusiveTable, setExclusiveTable] = useState<Exclusive[]>([])
   const [exclusiveState, setExclusiveState] = useState<ExclusiveState | undefined>(undefined)
   const [resetOpen, setResetOpen] = useState(false)
@@ -68,7 +68,6 @@ export default function App() {
             zh: s.zh ?? "",
             en: s.name || s.zh || "",
             cap: s.cap ?? DEFAULT_LEVEL,
-            nonItem: s.hash === s.skill1,
           })
         }
         traitsLoaded = [...traitById.values()]
@@ -82,7 +81,6 @@ export default function App() {
             name: s.name ?? s.zh ?? s.hash ?? "",
             zh: s.zh ?? "",
             skill1: s.skill1 ?? "",
-            category: s.category ?? "",
             player: s.player ?? "",
             onlyone: s.onlyone ?? "",
             mix: s.mix ?? "",
@@ -93,14 +91,7 @@ export default function App() {
       } catch (e) {
         setStatus(t.sigilFail(e))
       }
-      try {
-        const configJson = await LoadConfig()
-        applyConfig(JSON.parse(configJson), sigilsLoaded, traitsLoaded)
-        configLoadError.current = null
-      } catch (e) {
-        configLoadError.current = e
-        setStatus(t.configFail(e))
-      }
+      await reloadConfig(sigilsLoaded, traitsLoaded)
       try {
         const exclusiveJson = await exclusivesPromise
         const table = (JSON.parse(exclusiveJson).exclusives ?? []) as Exclusive[]
@@ -256,12 +247,17 @@ export default function App() {
     setSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, ...patch } : slot)))
   }, [])
 
-  // Reload the player config (falls back to the preset template). Used after
-  // a reset so the UI mirrors the fresh state without restarting the app.
-  const reloadConfig = async () => {
+  // Reload the player config (falls back to the preset template). Used at mount
+  // and after a reset so the UI mirrors the fresh state without restarting the
+  // app. The tables are parameters: at mount time the sigils/traits state is
+  // still empty, so reading it here would resolve zero display names.
+  const reloadConfig = async (
+    sigilTable: Sigil[] = sigils,
+    traitTable: Trait[] = traits
+  ) => {
     try {
       const configJson = await LoadConfig()
-      applyConfig(JSON.parse(configJson), sigils, traits)
+      applyConfig(JSON.parse(configJson), sigilTable, traitTable)
       configLoadError.current = null
     } catch (e) {
       configLoadError.current = e
@@ -299,10 +295,7 @@ export default function App() {
       setStatus(t.configFail(configLoadError.current))
       return
     }
-    const cfg: {
-      items: { gem?: string; hash?: string; level: number; zh: string; en: string }[]
-      enabled: boolean
-    }[] = []
+    const cfg: { items: SavedItem[]; enabled: boolean }[] = []
     for (const s of slots) {
       if (s.mainHash === "") continue
       const hash = hashFor(s.mainHash, s.secHash)
@@ -316,7 +309,7 @@ export default function App() {
         zh: sigilByHash.get(hash)?.zh ?? "",
         en: sigilByHash.get(hash)?.name ?? "",
       }
-      const items: { gem?: string; hash?: string; level: number; zh: string; en: string }[] = [main]
+      const items: SavedItem[] = [main]
       if (s.secHash !== "") {
         items.push({
           hash: s.secHash,
@@ -382,7 +375,7 @@ export default function App() {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     let overlayEscOnKeyDown = false
-    const hideKeyPressed = (e: KeyboardEvent) => (e.keyCode || e.which) === hideKey
+    const hideKeyPressed = (e: KeyboardEvent) => e.keyCode === hideKey
     const isInOverlay = (e: KeyboardEvent) =>
       !!(e.target as HTMLElement | null)?.closest?.(
         '[data-slot="combobox-content"], [role="dialog"], [role="alertdialog"]'
@@ -424,7 +417,7 @@ export default function App() {
     <div className="fixed inset-0 flex flex-col">
       <Tabs
         value={tab}
-        onValueChange={(v) => setTab(v as "general" | "exclusive")}
+        onValueChange={(v) => setTab(v as TabKey)}
         className="flex min-h-0 flex-1 flex-col gap-0"
       >
         <div className="flex h-[60px] shrink-0 flex-col justify-center border-b bg-background px-4">
@@ -462,7 +455,7 @@ export default function App() {
                         .finally(() => setResetOpen(false))
                     }}
                   >
-                    {t.resetConfirm}
+                    {t.reset}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
