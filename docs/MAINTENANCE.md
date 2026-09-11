@@ -246,7 +246,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Rel
 5. 交还目标优先用召唤时记住的窗口；工具直接打开（未经 0x8010）时退回 Z-order 下一个可见/可用/有标题窗口（`nextForegroundWindow`）。
 6. 必须加 `WS_EX_TRANSPARENT`：否则看不见的窗口仍参与命中测试、继续当"鼠标指针归属窗口"，系统会在 (0,0) 画出默认箭头。
 7. 隐藏后补一次左键点击（`mouse_event`），触发游戏自身"光标出现后首次点击只隐藏光标、不吃输入"的逻辑；否则箭头留在 (0,0)。
-8. 时序：交还焦点后等 **10ms** → 按下 → 保持 **10ms** → 抬起。**别再往下调**——游戏运行时把系统计时器分辨率提到 1ms，1ms 间隔会落进输入采样的一帧内（实测"时显时不显"），0ms 完全不生效。
+8. 时序：交还焦点后等 **20ms** → 按下 → 保持 **20ms** → 抬起。**别再往下调**——游戏运行时把系统计时器分辨率提到 1ms，1ms 间隔会落进输入采样的一帧内（实测"时显时不显"），0ms 完全不生效。
 9. 注入硬条件：仅当"工具由游戏内 F1 召唤"（`returnFocusTo != 0`）+ 交还成功 + `isGameWindow(target)`（`QueryFullProcessImageNameW` 确认属 `granblue_fantasy_relink.exe`）三者同时成立才注入；托盘 / 直接打开一律不注入。
 10. 诊断日志：exe 目录存在 `tool-debug.on` 时写 `tool-debug.log`。
 

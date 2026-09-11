@@ -280,14 +280,14 @@ func hideNow(hwnd uintptr) {
 			// summoned from the game, so a directly opened tool never injects.
 			if ret != 0 && summoned && isGameWindow(target) {
 				go func() {
-					// One input tick for the game to process the focus change,
+					// A moment for the game to process the focus change, and
 					// then hold the button for the same amount: a zero-length
 					// click is missed by input polling, and 1ms is too short -
 					// the game raises the timer resolution while it runs.
-					time.Sleep(10 * time.Millisecond)
+					time.Sleep(20 * time.Millisecond)
 					debugf("  replay cursor-hiding click (hold)")
 					procMouseEvent.Call(mouseeventfLeftDown, 0, 0, 0, 0)
-					time.Sleep(10 * time.Millisecond)
+					time.Sleep(20 * time.Millisecond)
 					procMouseEvent.Call(mouseeventfLeftUp, 0, 0, 0, 0)
 				}()
 			}
