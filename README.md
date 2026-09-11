@@ -4,9 +4,6 @@
 
 **下载**：[Nexus 页面](https://www.nexusmods.com/granbluefantasyrelink/mods/823) · [GitHub Release](https://github.com/baagod/GBFR-Pre-Equipped-Sigils/releases)
 
-> **代码签名**：本项目发布包使用 [SignPath Foundation](https://signpath.org/) 的代码签名基础设施进行签名（面向开源项目的免费代码签名服务）；文件签名信息可在 Windows 文件属性"数字签名"页签查看。
-> **Code signing**: release binaries for this project are code-signed via the [SignPath Foundation](https://signpath.org/) infrastructure (free code signing for open-source projects); see the "Digital Signatures" tab in Windows file properties.
-
 ## 配装模板
 
 | 槽位 | 因子 | 词条 |
