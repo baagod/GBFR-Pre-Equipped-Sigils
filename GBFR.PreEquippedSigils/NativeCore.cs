@@ -65,28 +65,29 @@ internal static unsafe partial class NativeCore
                     $"Native ABI mismatch: managed {AbiVersion}, native {abiVersion}."
                 );
             }
-            log(
-                "Startup phase=native-library-load state=complete " +
-                $"elapsed_ms={(long)Stopwatch.GetElapsedTime(nativeLibraryStarted).TotalMilliseconds}."
-            );
+            log(StartupPhaseLine("native-library-load", nativeLibraryStarted, true));
             nativeLibraryCompleted = true;
             return GBFR20_Initialize() != 0;
         }
         catch
         {
             if (!nativeLibraryCompleted)
-            {
-                log(
-                    "Startup phase=native-library-load state=failed " +
-                    $"elapsed_ms={(long)Stopwatch.GetElapsedTime(nativeLibraryStarted).TotalMilliseconds}."
-                );
-            }
+                log(StartupPhaseLine("native-library-load", nativeLibraryStarted, false));
             DetachNativeLogSink();
             throw;
         }
     }
 
     internal static void Tick() => GBFR20_Tick();
+
+    /// <summary>
+    /// Formats one "Startup phase=… state=… elapsed_ms=…" line. It lives here
+    /// because this class owns the first phase and Mod consumes it for the rest,
+    /// so the phase-log contract has exactly one implementation.
+    /// </summary>
+    internal static string StartupPhaseLine(string phase, long startedAt, bool succeeded) =>
+        $"Startup phase={phase} state={(succeeded ? "complete" : "failed")} " +
+        $"elapsed_ms={(long)Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds}.";
 
     /// <summary>
     /// Applies a custom loadout (null restores the built-in template).

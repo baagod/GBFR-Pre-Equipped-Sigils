@@ -1,6 +1,28 @@
 #include "../native_internal.h"
 
+#include <format>
+
 using namespace gbfr::native;
+
+namespace
+{
+// Shared prologue for the two exports that take a caller-owned table: refuse while
+// shutting down, reject a count that cannot be represented as int32_t, then lazily
+// initialize and require installed hooks. Returns false when the export must
+// report failure with 0.
+bool PrepareTableCall(std::string_view export_name, uint32_t count)
+{
+   if (g_shutting_down.load(std::memory_order_acquire))
+      return false;
+   if (count > INT32_MAX)
+   {
+      Log(std::format("{}: count exceeds INT32_MAX; rejected.", export_name));
+      return false;
+   }
+   EnsureInitialized();
+   return g_hooks_ready.load(std::memory_order_acquire);
+}
+}
 
 uint32_t GBFR20_CALL GBFR20_GetAbiVersion()
 {
@@ -62,15 +84,7 @@ uint32_t GBFR20_CALL GBFR20_CopyRuntimeMessage(char* buffer, uint32_t buffer_siz
 int32_t GBFR20_CALL GBFR20_SetCustomLoadout(
    const GBFR20_TemplateSlot* slots, uint32_t count)
 {
-   if (g_shutting_down.load(std::memory_order_acquire))
-      return 0;
-   if (count > INT32_MAX)
-   {
-      Log("SetCustomLoadout: count exceeds INT32_MAX; rejected.");
-      return 0;
-   }
-   EnsureInitialized();
-   if (!g_hooks_ready.load(std::memory_order_acquire))
+   if (!PrepareTableCall("SetCustomLoadout", count))
       return 0;
    // GBFR20_TemplateSlot is layout-identical to the native TemplateGemSlot
    // (packed 1, same field order, 0x18 bytes); only read, never modified.
@@ -83,15 +97,7 @@ int32_t GBFR20_CALL GBFR20_SetCustomLoadout(
 int32_t GBFR20_CALL GBFR20_SetExclusiveOverrides(
    const GBFR20_ExclusiveOverride* overrides, uint32_t count)
 {
-   if (g_shutting_down.load(std::memory_order_acquire))
-      return 0;
-   if (count > INT32_MAX)
-   {
-      Log("SetExclusiveOverrides: count exceeds INT32_MAX; rejected.");
-      return 0;
-   }
-   EnsureInitialized();
-   if (!g_hooks_ready.load(std::memory_order_acquire))
+   if (!PrepareTableCall("SetExclusiveOverrides", count))
       return 0;
    return ApplyExclusiveOverrides(overrides, static_cast<int32_t>(count)) ? 1 : 0;
 }

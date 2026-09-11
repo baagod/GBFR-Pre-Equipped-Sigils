@@ -31,18 +31,22 @@ func (s *LoadoutService) MinimiseApp() {
 	hideToTray()
 }
 
+// defaultHotkeyVK is F1, the hotkey the tool falls back to when the mod has not
+// published one (shared protocol constant: model.ts DEFAULT_HIDE_KEY).
+const defaultHotkeyVK = 0x70
+
 // GetHotkey returns the configured menu hotkey as a virtual key code.
 // The mod publishes it in tool-hotkey.txt (mod directory, next to the exe);
 // a missing or unreadable file falls back to F1 (0x70).
 func (s *LoadoutService) GetHotkey() int {
-	data, err := os.ReadFile(filepath.Join(exeDir(), "tool-hotkey.txt"))
+	data, err := readModData("tool-hotkey.txt")
 	if err != nil {
-		return 0x70
+		return defaultHotkeyVK
 	}
-	if vk, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && vk > 0 {
+	if vk, err := strconv.Atoi(strings.TrimSpace(data)); err == nil && vk > 0 {
 		return vk
 	}
-	return 0x70
+	return defaultHotkeyVK
 }
 
 type loadoutItem struct {

@@ -26,10 +26,18 @@ var win *application.WebviewWindow
 
 const mutexName = "Local\\GBFRPreEquippedSigilsTool"
 
+// toolWindowTitle is the tool window title. Shared protocol constant: the C#
+// side finds the same window by this title (Hotkey.cs ToolWindowTitle).
+const toolWindowTitle = "GBFR Pre-Equipped Sigils"
+
 // wmFakeHide posts the hide to the UI thread. fakeHide must not run on the
 // Wails service goroutine: SetForegroundWindow synchronises with the window's
 // own thread, which is still blocked inside the service call, so it deadlocks.
 const wmFakeHide = 0x8011
+
+// wmActivate is WM_APP+0x10, the single activation command posted by the tray,
+// the in-game hotkey and a second instance (the C# side posts the same value).
+const wmActivate = 0x8010
 
 // gwHwndNext is GW_HWNDNEXT: the next window below in Z-order.
 const gwHwndNext = 2
@@ -49,7 +57,7 @@ const (
 // so it must be handed over explicitly.
 func nextForegroundWindow(hwnd uintptr) uintptr {
 	next := hwnd
-	for i := 0; i < 16; i++ {
+	for range 16 {
 		value, _, _ := procGetWindow.Call(next, gwHwndNext)
 		if value == 0 || value == hwnd {
 			return 0
@@ -146,11 +154,10 @@ func ensureSingleInstance() (release func()) {
 	}
 	if cerr == syscall.ERROR_ALREADY_EXISTS {
 		log.Printf("single-instance: existing instance detected, activating its window")
-		title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
-		hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
+		hwnd := findToolWindow()
 		if hwnd != 0 {
 			procShowWindow.Call(hwnd, 5) // SW_SHOW
-			procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+			procPostMessageW.Call(hwnd, wmActivate, 0, 0)
 			procSetForegroundWindow.Call(hwnd)
 		}
 		os.Exit(0)
@@ -185,7 +192,7 @@ func main() {
 	})
 
 	win = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "GBFR Pre-Equipped Sigils",
+		Title: toolWindowTitle,
 		// Wails v3 sizes are the full window frame (incl. title bar) in DIP.
 		// Fixed size: DisableResize removes the resize border, so the user
 		// cannot resize; the maximise button is disabled too.
@@ -204,7 +211,7 @@ func main() {
 	// System tray: single click toggles the window; menu offers quit.
 	tray := app.SystemTray.New()
 	tray.SetIcon(trayIconBytes)
-	tray.SetTooltip("GBFR Pre-Equipped Sigils")
+	tray.SetTooltip(toolWindowTitle)
 	tray.AttachWindow(win)
 
 	tray.OnClick(func() { go trayOnClick() })
@@ -220,7 +227,7 @@ func main() {
 
 // findToolWindow returns the tool's main window handle (0 = not found).
 func findToolWindow() uintptr {
-	title, _ := syscall.UTF16PtrFromString("GBFR Pre-Equipped Sigils")
+	title, _ := syscall.UTF16PtrFromString(toolWindowTitle)
 	hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(title)))
 	return hwnd
 }
@@ -359,10 +366,10 @@ func handleWndMsg(hwnd uintptr, msg uint32, _, _ uintptr) (uintptr, bool) {
 	case wmFakeHide:
 		hideNow(hwnd)
 		return 0, true
-	case 0x8010: // activate: reveal (if fake-hidden), restore, show, focus
+	case wmActivate: // activate: reveal (if fake-hidden), restore, show, focus
 		// Remember the current foreground window before the tool takes focus,
 		// so fakeHide can give it back (see returnFocusTo).
-		if prev, _, _ := procGetForegroundWindow.Call(); prev != 0 && prev != hwnd {
+		if prev := foregroundWindow(); prev != 0 && prev != hwnd {
 			returnFocusTo.Store(prev)
 			debugf("0x8010 prev=%d hidden=%v", prev, toolHidden.Load())
 		} else {
@@ -393,7 +400,7 @@ func trayOnClick() {
 		return
 	}
 	if foregroundWindow() != hwnd || toolHidden.Load() {
-		procPostMessageW.Call(hwnd, 0x8010, 0, 0)
+		procPostMessageW.Call(hwnd, wmActivate, 0, 0)
 	}
 	procSetForegroundWindow.Call(hwnd)
 }

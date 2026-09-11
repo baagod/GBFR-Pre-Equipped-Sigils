@@ -183,11 +183,7 @@ public sealed class Mod : IMod
 
     private void CompleteStartupPhase(string phase, long startedAt, bool succeeded = true)
     {
-        long elapsedMilliseconds = (long)Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
-        Log(
-            $"Startup phase={phase} state={(succeeded ? "complete" : "failed")} " +
-            $"elapsed_ms={elapsedMilliseconds}."
-        );
+        Log(NativeCore.StartupPhaseLine(phase, startedAt, succeeded));
     }
 
     private void Dispose()

@@ -14,6 +14,15 @@ func slot(gem, sec string, lvl, secLvl int) loadoutSlot {
 	return loadoutSlot{Items: items, Enabled: true}
 }
 
+// manySlots builds n enabled single-item slots, all alike.
+func manySlots(n int) []loadoutSlot {
+	out := make([]loadoutSlot, n)
+	for i := range out {
+		out[i] = slot("9A60FBF0", "", 15, 0)
+	}
+	return out
+}
+
 func TestUserCfgDirMatchesModPath(t *testing.T) {
 	base := filepath.Join("C:", "Users", "someone", "AppData", "Local")
 	t.Setenv("LOCALAPPDATA", base)
@@ -24,10 +33,9 @@ func TestUserCfgDirMatchesModPath(t *testing.T) {
 }
 
 func TestValidateSlots(t *testing.T) {
-	many := make([]loadoutSlot, MaxSlots+1)
-	for i := range many {
-		many[i] = slot("9A60FBF0", "", 15, 0)
-	}
+	many := manySlots(MaxSlots + 1)
+	oneDisabled := manySlots(MaxSlots + 1)
+	oneDisabled[0].Enabled = false
 	cases := []struct {
 		name string
 		cfg  []loadoutSlot
@@ -47,21 +55,8 @@ func TestValidateSlots(t *testing.T) {
 		}}, false},
 		{"negative level", []loadoutSlot{slot("9A60FBF0", "B5FF9FD3", -1, 15)}, false},
 		{"too many slots", many, false},
-		{"exactly 12 slots", func() []loadoutSlot {
-			out := make([]loadoutSlot, MaxSlots)
-			for i := range out {
-				out[i] = slot("9A60FBF0", "", 15, 0)
-			}
-			return out
-		}(), true},
-		{"13 rows one disabled", func() []loadoutSlot {
-			out := make([]loadoutSlot, MaxSlots+1)
-			for i := range out {
-				out[i] = slot("9A60FBF0", "", 15, 0)
-			}
-			out[0].Enabled = false
-			return out
-		}(), true},
+		{"exactly 12 slots", manySlots(MaxSlots), true},
+		{"13 rows one disabled", oneDisabled, true},
 		{"empty items", []loadoutSlot{{}}, false},
 		{"missing gem", []loadoutSlot{slot("", "", 15, 0)}, false},
 		{"bad main level", []loadoutSlot{slot("9A60FBF0", "B5FF9FD3", 201, 15)}, false},

@@ -101,43 +101,45 @@ void ConsumeApplyResult()
    const uint32_t injected = g_last_apply_injected_count.load(std::memory_order_acquire);
    const std::string prefix =
       std::format("Generation {} for 0x{:08X}: ", generation, character_hash);
+   // Each case fills only the message body; the generation prefix is applied once
+   // below so no branch has to repeat it.
+   std::string body;
    switch (result)
    {
    case ApplyResultAppliedDuringNativeRebuild:
-      SetRuntimeMessage(std::format(
-         "{}equipment/test rebuild copied {}/{} selected virtual sigils. Combat reads the same "
+      body = std::format(
+         "equipment/test rebuild copied {}/{} selected virtual sigils. Combat reads the same "
          "saved selection directly from the native Trait loop.",
-         prefix,
          injected,
-         expected));
+         expected);
       break;
    case ApplyResultSavedNoStatus:
-      SetRuntimeMessage(prefix + "no valid equipment-selected character was available.");
+      body = "no valid equipment-selected character was available.";
       break;
    case ApplyResultVirtualCopyFailed:
-      SetRuntimeMessage(std::format(
-         "{}native trait build ran, but only {}/{} sigils were valid, unequipped, and copied.",
-         prefix,
+      body = std::format(
+         "native trait build ran, but only {}/{} sigils were valid, unequipped, and copied.",
          injected,
-         expected));
+         expected);
       break;
    case ApplyResultStatusLookupFailed:
-      SetRuntimeMessage(prefix + "the native character status map had no matching status.");
+      body = "the native character status map had no matching status.";
       break;
    case ApplyResultNativeRebuildFailed:
-      SetRuntimeMessage(prefix + "the synchronous native status rebuild failed.");
+      body = "the synchronous native status rebuild failed.";
       break;
    case ApplyResultNativeTraitLoopMissing:
-      SetRuntimeMessage(std::format(
-         "{}the native status rebuild returned without completing virtual trait slots 13 through {}.",
-         prefix,
-         GetExpandedInternalSlotCount() - 1));
+      body = std::format(
+         "the native status rebuild returned without completing virtual trait slots 13 through {}.",
+         GetExpandedInternalSlotCount() - 1);
       break;
    case ApplyResultNotifierFailed:
-      SetRuntimeMessage(prefix + "traits rebuilt, but the post-rebuild native UI notifier failed.");
+      body = "traits rebuilt, but the post-rebuild native UI notifier failed.";
       break;
    default:
       break;
    }
+   if (!body.empty())
+      SetRuntimeMessage(prefix + body);
 }
 }
