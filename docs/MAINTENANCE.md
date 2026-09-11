@@ -131,7 +131,8 @@ TemplateGemSlot{
 **规则**：
 - 每角色固定槽位：slot0=T1、slot1=T2、slot2=战气；禁用的槽留空（**槽位不连续**——
   `InstallDefaultTemplateSelections` 跳过空槽继续、`TryGetRuntimeSlot` 对空槽返回 false）。
-- 运行时由 `BuildCharacterTemplate` 按 exclusive 状态组装为 `CharacterTemplate{ character_hash, slots[24] }`；
+- 运行时由 `ApplyExclusiveStateLocked` 按 exclusive 状态就地写入 `CharacterTemplate{ character_hash, slots[24] }`
+  的 slot0/1/2（禁用的槽写空槽 `TemplateGemSlot{}`）；
   合成 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`（不与真实库存冲突，`IsTemplateSlotId` 判定）。
 - **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数（≤12）。
 - 角色专属物品受 `sigils.json` 专属行的 `character` 字段限制：`TryCopyTemplateGem` 用
