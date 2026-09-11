@@ -17,6 +17,8 @@ internal static class Hotkey
     private const int HotkeyId = 0x47B1;
     private const uint ModNoRepeat = 0x4000;
     private const int WmQuit = 0x0012;
+    // Keep in sync with the tool (MAINTENANCE §13, 工具窗口标题).
+    private const string ToolWindowTitle = "GBFR Pre-Equipped Sigils";
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
@@ -274,13 +276,13 @@ internal static class Hotkey
     {
         // Single instance: bring the existing editor window to the front
         // (works for both minimised and hidden windows).
-        IntPtr existing = FindWindow(null, "GBFR Pre-Equipped Sigils");
+        IntPtr existing = FindWindow(null, ToolWindowTitle);
         if (existing == IntPtr.Zero && IsToolProcessRunning())
         {
             for (int attempt = 0; attempt < 60 && existing == IntPtr.Zero; attempt++)
             {
                 Thread.Sleep(50);
-                existing = FindWindow(null, "GBFR Pre-Equipped Sigils");
+                existing = FindWindow(null, ToolWindowTitle);
             }
         }
         if (existing != IntPtr.Zero)

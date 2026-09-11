@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace GBFR.PreEquippedSigils;
 
@@ -121,11 +120,10 @@ internal static unsafe partial class NativeCore
             required = 64 * 1024;
         byte[] bytes = new byte[required];
         fixed (byte* buffer = bytes)
+        {
             GBFR20_CopyRuntimeMessage((sbyte*)buffer, required);
-        int length = Array.IndexOf(bytes, (byte)0);
-        if (length < 0)
-            length = bytes.Length;
-        return Encoding.UTF8.GetString(bytes, 0, length);
+            return Marshal.PtrToStringUTF8((IntPtr)buffer) ?? string.Empty;
+        }
     }
 
     // Native log callback as a plain delegate (kept alive in a static field):

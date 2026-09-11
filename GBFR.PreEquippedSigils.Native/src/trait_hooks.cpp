@@ -89,10 +89,7 @@ void TrackNaturalContributionResult(
       final_identity.context_mode == identity.context_mode;
    if (final_valid)
    {
-      uint64_t generation =
-         g_next_apply_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
-      if (generation == 0)
-         generation = g_next_apply_generation.fetch_add(1, std::memory_order_acq_rel) + 1;
+      const uint64_t generation = NextApplyGeneration();
       CommitAuthorizedStatus(
          status,
          identity,

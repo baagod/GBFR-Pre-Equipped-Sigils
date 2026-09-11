@@ -212,23 +212,6 @@ TemplateGemSlot MakeSingleTraitSlot(uint32_t gem_id, uint32_t trait) noexcept
    return slot;
 }
 
-// One independent factor per virtual slot (0 = T1, 1 = T2, 2 = war spirit);
-// disabled factors leave their slot empty. Other slots stay empty (they are
-// filled by the player loadout in ApplyCustomLoadout).
-CharacterTemplate BuildCharacterTemplate(
-   const CharacterExclusiveLoadout& exclusive, uint8_t state) noexcept
-{
-   CharacterTemplate character{};
-   character.character_hash = exclusive.character_hash;
-   if ((state & ExclusiveT1) != 0)
-      character.slots[0] = MakeSingleTraitSlot(exclusive.t1_gem, exclusive.t1_trait);
-   if ((state & ExclusiveT2) != 0)
-      character.slots[1] = MakeSingleTraitSlot(exclusive.t2_gem, exclusive.t2_trait);
-   if ((state & ExclusiveWar) != 0)
-      character.slots[2] = MakeSingleTraitSlot(exclusive.war_gem, exclusive.war_trait);
-   return character;
-}
-
 // Requires g_template_mutex held by the caller.
 uint8_t ReadExclusiveStateLocked(uint32_t character_hash) noexcept
 {
@@ -238,18 +221,27 @@ uint8_t ReadExclusiveStateLocked(uint32_t character_hash) noexcept
    return iterator->second & ExclusiveAll;
 }
 
-// Requires g_template_mutex held by the caller.
+// One independent factor per virtual slot (0 = T1, 1 = T2, 2 = war spirit);
+// disabled factors leave their slot empty. Other slots stay empty (they are
+// filled by the player loadout in ApplyCustomLoadout).
+// Requires g_template_mutex held by the caller, with the character already
+// registered in g_character_template_index.
 void ApplyExclusiveStateLocked(CharacterTemplate& character) noexcept
 {
    const auto index = g_character_template_index.find(character.character_hash);
    if (index == g_character_template_index.end())
       return;
-   const CharacterTemplate built = BuildCharacterTemplate(
-      kCharacterExclusives[index->second],
-      ReadExclusiveStateLocked(character.character_hash));
-   character.slots[0] = built.slots[0];
-   character.slots[1] = built.slots[1];
-   character.slots[2] = built.slots[2];
+   const CharacterExclusiveLoadout& exclusive = kCharacterExclusives[index->second];
+   const uint8_t state = ReadExclusiveStateLocked(character.character_hash);
+   character.slots[0] = (state & ExclusiveT1) != 0
+      ? MakeSingleTraitSlot(exclusive.t1_gem, exclusive.t1_trait)
+      : TemplateGemSlot{};
+   character.slots[1] = (state & ExclusiveT2) != 0
+      ? MakeSingleTraitSlot(exclusive.t2_gem, exclusive.t2_trait)
+      : TemplateGemSlot{};
+   character.slots[2] = (state & ExclusiveWar) != 0
+      ? MakeSingleTraitSlot(exclusive.war_gem, exclusive.war_trait)
+      : TemplateGemSlot{};
 }
 
 }
@@ -259,17 +251,18 @@ std::array<CharacterTemplate, kRuntimeTemplateCapacity> g_runtime_templates{};
 
 void InitializeRuntimeTemplates()
 {
+   static_assert(std::size(kCharacterExclusives) <= kRuntimeTemplateCapacity);
    std::unique_lock lock(g_template_mutex);
    g_character_template_index.clear();
-   size_t index = 0;
-   for (const CharacterExclusiveLoadout& entry : kCharacterExclusives)
+   for (size_t index = 0; index < std::size(kCharacterExclusives); ++index)
    {
-      if (index >= g_runtime_templates.size())
-         break;
-      g_runtime_templates[index] =
-         BuildCharacterTemplate(entry, ReadExclusiveStateLocked(entry.character_hash));
-      g_character_template_index.emplace(entry.character_hash, index);
-      ++index;
+      CharacterTemplate& character = g_runtime_templates[index];
+      character = CharacterTemplate{};
+      character.character_hash = kCharacterExclusives[index].character_hash;
+      // The index map is populated first: ApplyExclusiveStateLocked resolves
+      // this character's exclusive row through it.
+      g_character_template_index.emplace(character.character_hash, index);
+      ApplyExclusiveStateLocked(character);
    }
 }
 
@@ -305,23 +298,20 @@ void InstallDefaultTemplateSelections()
       // under only the selection mutex would be a data race.
       std::unique_lock template_lock(g_template_mutex);
       std::unique_lock lock(g_selection_mutex);
+      // g_virtual_slot_count is published by ApplyCustomLoadout clamped to
+      // kVirtualSlotCapacity; clamp again so the slot index stays in range.
+      const int slot_limit = std::min(
+         g_virtual_slot_count.load(std::memory_order_acquire), kVirtualSlotCapacity);
       for (const CharacterTemplate& character : g_runtime_templates)
       {
          if (character.character_hash == 0)
             continue;
          auto& slots = g_character_selections[character.character_hash];
-         for (int index = 0; index < kVirtualSlotCapacity; ++index)
-            slots[static_cast<size_t>(index)] = 0;
-         const int virtual_slot_count =
-            g_virtual_slot_count.load(std::memory_order_acquire);
-         for (int index = 0; index < kVirtualSlotCapacity; ++index)
+         slots.fill(0);
+         for (int index = 0; index < slot_limit; ++index)
          {
-            const TemplateGemSlot& template_slot =
-               character.slots[static_cast<size_t>(index)];
-            if (template_slot.gem_id == 0)
+            if (character.slots[static_cast<size_t>(index)].gem_id == 0)
                continue; // Disabled exclusives leave gaps.
-            if (index >= virtual_slot_count)
-               break;
             slots[static_cast<size_t>(index)] = MakeTemplateSlotId(index);
             ++installed;
          }

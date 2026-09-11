@@ -323,6 +323,9 @@ bool LoadCharacterRestrictions(const std::filesystem::path& path);
 uint32_t GetRequiredCharacterHash(uint32_t gem_hash);
 
 std::array<uint32_t, kVirtualSlotCapacity> GetSelection(uint32_t character_hash);
+// Bumps the shared apply generation; never returns 0 (0 means "no generation"
+// in the detour's pending-apply checks).
+uint32_t NextApplyGeneration();
 uint32_t RequestHotApply(uint32_t character_hash);
 void ProcessPendingHotApply();
 

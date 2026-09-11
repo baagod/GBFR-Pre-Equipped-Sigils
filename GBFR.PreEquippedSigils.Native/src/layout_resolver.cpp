@@ -23,15 +23,6 @@ constexpr PatternView MakePattern(
    return {bytes, mask, ByteCount};
 }
 
-template <size_t ByteCount, size_t MaskCount>
-constexpr PatternView MakePattern(
-   const std::array<uint8_t, ByteCount>& bytes,
-   const char (&mask)[MaskCount]) noexcept
-{
-   static_assert(ByteCount + 1 == MaskCount);
-   return {bytes.data(), mask, ByteCount};
-}
-
 constexpr uint8_t kApplyLoopBytes[] = {
    0xFF, 0xC7, 0x83, 0xFF, 0x0D, 0x0F, 0x84, 0, 0, 0, 0,
    0xC5, 0xF8, 0x11, 0x75, 0xF0};

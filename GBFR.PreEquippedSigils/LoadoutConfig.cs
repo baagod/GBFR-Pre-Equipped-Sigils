@@ -32,17 +32,6 @@ internal static class LoadoutConfig
     private const int MaxSlots = 12; // conservative cap (more slots risk instability)
     private const int DefaultLevel = 15;
 
-    private sealed class SigilInfo
-    {
-        public required uint Hash { get; init; }
-        public required uint Skill { get; init; }
-    }
-
-    private sealed class TraitInfo
-    {
-        public int MaxLevel { get; init; } = DefaultLevel;
-    }
-
     private sealed class ExclusiveRow
     {
         public required uint Hash { get; init; }
@@ -54,8 +43,8 @@ internal static class LoadoutConfig
         public required uint War { get; init; }
     }
 
-    private static readonly Dictionary<string, SigilInfo> Sigils = new(StringComparer.Ordinal);
-    private static readonly Dictionary<uint, TraitInfo> Traits = new();
+    private static readonly Dictionary<uint, uint> Sigils = new();
+    private static readonly Dictionary<uint, int> Traits = new();
     private static readonly Dictionary<string, List<ExclusiveRow>> ExclusiveByPlayer = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, ExclusiveRow> ExclusiveByName = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<uint, ExclusiveRow> ExclusiveByHash = new();
@@ -119,16 +108,12 @@ internal static class LoadoutConfig
                         : DefaultLevel;
                     // First row wins for a repeated skill hash (mirrors the
                     // tool's first-row trait dictionary).
-                    if (Traits.TryAdd(traitHash, new TraitInfo { MaxLevel = maxLevel }))
+                    if (Traits.TryAdd(traitHash, maxLevel))
                         traitCount++;
-                    string itemHash = Hx(entry.GetProperty("hash"));
-                    if (PU(itemHash) == traitHash) // non-item skill rows: trait only
+                    uint itemHash = PU(Hx(entry.GetProperty("hash")));
+                    if (itemHash == traitHash) // non-item skill rows: trait only
                         continue;
-                    if (Sigils.TryAdd(itemHash, new SigilInfo
-                        {
-                            Hash = PU(itemHash),
-                            Skill = traitHash,
-                        }))
+                    if (Sigils.TryAdd(itemHash, traitHash))
                         sigilCount++;
                 }
                 catch
@@ -284,15 +269,15 @@ internal static class LoadoutConfig
 
     /// Returns every row matching the key; player codes may be shared
     /// (Gran/Djeeta are both "PL0000"). Empty = key not in the table.
-    private static List<ExclusiveRow> ResolveCharacters(string key)
+    private static IReadOnlyList<ExclusiveRow> ResolveCharacters(string key)
     {
         if (ExclusiveByPlayer.TryGetValue(key, out var playerRows))
-            return new List<ExclusiveRow>(playerRows);
+            return playerRows;
         if (ExclusiveByHash.TryGetValue(PU(key), out ExclusiveRow? row))
-            return new List<ExclusiveRow> { row };
+            return new[] { row };
         if (ExclusiveByName.TryGetValue(key, out row))
-            return new List<ExclusiveRow> { row };
-        return new List<ExclusiveRow>();
+            return new[] { row };
+        return Array.Empty<ExclusiveRow>();
     }
 
     private static void AddExclusiveOverride(
@@ -316,14 +301,12 @@ internal static class LoadoutConfig
             else if (row != null && traitHash == row.War)
                 war = value;
             else
-            {
                 switch (field.Name)
                 {
                     case "t1": t1 = value; break;
                     case "t2": t2 = value; break;
                     case "war": war = value; break;
                 }
-            }
         }
         result.Add(new NativeCore.ExclusiveOverrideNative
         {
@@ -372,7 +355,7 @@ internal static class LoadoutConfig
             // raw character hash for the legacy bit-name shape; new-shape
             // entries (trait-hash keys) without a table row cannot be resolved
             // to T1/T2/War bit names and are skipped (no-op, nothing enabled).
-            List<ExclusiveRow> rows = ResolveCharacters(property.Name);
+            IReadOnlyList<ExclusiveRow> rows = ResolveCharacters(property.Name);
             if (rows.Count == 0)
             {
                 uint bareHash = PU(property.Name);
@@ -441,10 +424,11 @@ internal static class LoadoutConfig
 
             JsonElement main = items[0];
             string mainGem = Hx(main.GetProperty("gem"));
-            if (!Sigils.TryGetValue(mainGem, out SigilInfo? sigil))
+            uint mainGemHash = PU(mainGem);
+            if (!Sigils.TryGetValue(mainGemHash, out uint mainSkill))
                 throw new InvalidDataException($"slot {index}: unknown sigil '{mainGem}'");
-            int mainCap = Traits.TryGetValue(sigil.Skill, out TraitInfo? mt)
-                ? mt.MaxLevel
+            int mainCap = Traits.TryGetValue(mainSkill, out int traitCap)
+                ? traitCap
                 : DefaultLevel;
             int level1 = GetLevel(main, "level", index, mainCap);
 
@@ -453,13 +437,13 @@ internal static class LoadoutConfig
                 JsonElement sec = items[1];
                 string secHash = Hx(sec.GetProperty("hash"));
                 uint secTraitHash = PU(secHash);
-                if (!Traits.TryGetValue(secTraitHash, out TraitInfo? trait))
+                if (!Traits.TryGetValue(secTraitHash, out int secCap))
                     throw new InvalidDataException($"slot {index}: unknown trait '{secHash}'");
-                int level2 = GetLevel(sec, "level", index, trait.MaxLevel);
+                int level2 = GetLevel(sec, "level", index, secCap);
                 result.Add(new NativeCore.TemplateSlotNative
                 {
-                    GemId = sigil.Hash,
-                    Trait1 = sigil.Skill,
+                    GemId = mainGemHash,
+                    Trait1 = mainSkill,
                     Trait1Level = level1,
                     Trait2 = secTraitHash,
                     Trait2Level = level2,
@@ -470,8 +454,8 @@ internal static class LoadoutConfig
             {
                 result.Add(new NativeCore.TemplateSlotNative
                 {
-                    GemId = sigil.Hash,
-                    Trait1 = sigil.Skill,
+                    GemId = mainGemHash,
+                    Trait1 = mainSkill,
                     Trait1Level = level1,
                     Trait2 = UnwornCharacterHash, // "not selected" sentinel, never 0
                     Trait2Level = 0,
