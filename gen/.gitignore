@@ -1,3 +1,2 @@
-GBFRDataTools/
-sqlite/
-extracted/
+# 仅忽略 gen 下的目录（文件夹）；文件（脚本、文档、sigils.xlsx）保留
+*/

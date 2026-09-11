@@ -21,13 +21,12 @@ build-release.ps1                    构建+打包脚本（MSBuild native、dotn
 docs/
   MAINTENANCE.md                     本手册
   tool-gen-loadout.ps1               生成 kCharacterExclusives[] 表与 character-exclusives.json（§4）
-gen/                                因子数据生成管线（说明书：gen/数据表说明.md，命令链在其 §5）
-  filter1.js filter-groups.js filter-drop.js   级联筛选（CSV → xlsx 部件）
-  build-*.js add-*.js replace-skills.js rename-headers.js make-xlsx.js
-  make-sigils-json.js               最终部件 → sigils.json（运行时因子表）
-  style-xlsx.js                     最终 xlsx 行底色 + 标题行样式
-  xlsx-lib.js parse-msg.js          公共库 / .msg 文本解析
-  extracted/ GBFRDataTools/ sqlite/ 游戏数据与工具（gitignored）
+gen/                                因子数据生成管线（说明书：gen/sigils.xlsx 生成文档.md）
+  build-sigils.js (+ .ps1)          一条命令：库 + 文本 → sigils.xlsx（当前目录）+ sigils.json（无中间产物）
+  make-sigils-json.js               发布门用：按 sigils.xlsx 校验/重出 sigils.json
+  scan-refs.js find-value.js        全表引用扫描 / 查单值在哪些表出现
+  xlsx-lib.js                       公共库（xlsx 读写、打包）
+  extracted/ GBFRDataTools/ sqlite/ 游戏数据与工具（gitignored；gen 下目录全部忽略）
 GBFR.PreEquippedSigils/             C# 托管层（Reloaded-II 插件壳）
   Mod.cs                             生命周期、日志（时间戳）、250ms 维持 Tick
   NativeCore.cs                      原生门面：ABI 校验/日志回调/Tick/Shutdown/消息读取
@@ -144,7 +143,7 @@ TemplateGemSlot{
 ## 4.1 数据文件生成（mod 运行时表：sigils.json）
 
 mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
-由 `gen\` 下的管线导出（脚本入库、数据源不入库；步骤见 `gen\数据表说明.md`，构建会校验一致性）。
+由 `gen\` 下的管线导出（脚本入库、数据源不入库；步骤见 `gen\sigils.xlsx 生成文档.md`，构建会校验一致性）。
 字段名与 sigils.xlsx 表头一致：
 `{ key, hash, name, zh, skill1, sec, category, player, special, cap, lot, character }`：
 
@@ -174,7 +173,7 @@ mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
   命中某变体 sec → 该固定版；其余 → 池版，仅样式不阻断）；副词条随配置写入
   （mod 合成形态，与 2.0.5 合成规则一致；无池版组 = plain/专属组原样）。工具界面就地重载预设，不重启进程。
 
-**字段名约定**：`sigils.json` 字段名与 sigils.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\数据表说明.md §2；额外 `sec`/`special`
+**字段名约定**：`sigils.json` 字段名与 sigils.xlsx 表头一致（key/hash/skill1/lot/…，见 gen\sigils.xlsx 生成文档.md；额外 `sec`/`special`
 为工具扩展字段）；loadout.json 协议中物品 ID 仍叫 `gem`、词条 ID 叫 `hash`（mod 读取，不能改）。
 
 **与模板表的关系**：§4 的 `kCharacterExclusives[]` 是**内置专属默认**（直接内嵌 C++，不走 JSON）；

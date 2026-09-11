@@ -42,7 +42,7 @@ bool ReadHexField(const std::string& line, std::string_view field, uint32_t& val
 // Contract-based loader from the tool's merged table (sigils.json, produced by
 // the extract pipeline; field names follow sigils.xlsx headers).
 //
-// == FORMAT CONTRACT (change here in lockstep with gen\数据表说明.md §2) ==
+// == FORMAT CONTRACT (change here in lockstep with gen\sigils.xlsx 生成文档.md) ==
 //  - field names: "hash" and "character", values are 8 hex digits (no 0x),
 //    quoted, on the same line as the field name
 //  - exclusive rows (player != "") carry "character"; regular rows do not
