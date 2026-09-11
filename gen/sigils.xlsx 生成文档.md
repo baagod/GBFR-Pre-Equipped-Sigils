@@ -26,7 +26,7 @@ $D = gen\extracted
 | `skill_type_lot` | 池第一层：lot → 子池 + 概率 |
 | `skill_lot` | 池第二层：子池 → 技能 |
 
-- **引用判定不写死表**：`node gen\scan-refs.js <gbfr.db> <ids.txt> <out.json> [--exclude t1,t2]` 一次遍历整库所有表（默认排除 `gem` 自身），输出每个因子被哪些表·列引用；`build-keepmap.js` 吃它的输出。
+- **引用判定不写死表**：`node gen\scan-refs.js <gbfr.db> <ids.txt> <out.json> [--exclude t1,t2]` 一次遍历整库所有表（默认排除 `gem` 自身），输出每个因子被哪些表·列引用。
 - 查单个值：`node gen\find-value.js <值...> [--db <sqlite>]`（字符串 + u32 hash，全表所有列）。
 - 文本：`text/en/text.msg`（英文名）、`text/cs/text.msg`（中文名）。词典：`GBFRDataTools/Data/ids.txt`（`hash|ID|name`）。
 
@@ -125,7 +125,7 @@ $D = gen\extracted
 | M | `cap` | `skill_status.Level` | 该因子主技能的等级表 `max(Level)`；单级或查无 → 15 |
 | N | `character` | `hash-string(gem.PlayerReq)` | 专属行有值，非专属空 |
 
-表格填充线框；表头 `#4472c4` 底色白字，**加粗**。表格填充线框；表头 `#4472c4` 底色白字，**加粗**。按 `name` 排序行，并执行如下 **分组**（重名行在组内置顶）：
+表格填充线框；表头 `#4472c4` 底色白字，**加粗**。按 `name` 排序行，并执行如下 **分组**（重名行在组内置顶）：
 
 1. `mix=0`（白底黑字）；
 2. `onlyone=0 && player==""`（#9bc2e6 底）; 
@@ -153,7 +153,7 @@ pwsh gen\build-sigils.ps1
 6. 删除 `key=2AC47940 (斯巴达) | CE8C3C96 (属性克制转换)` 两行。
 7. 删除 `lot != "" && key=[hash]` 行。
 
-### 6. 合法组合
+### 5. 合法组合
 
 **主副双向判定**
 
