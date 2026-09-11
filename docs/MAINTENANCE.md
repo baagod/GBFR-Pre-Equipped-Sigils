@@ -139,7 +139,7 @@ TemplateGemSlot{
   数组边界兜底，正常配置不会触及。
 - 角色专属物品受 `sigils.json` 专属行的 `character` 字段限制：`TryCopyTemplateGem` 用
   `GetRequiredCharacterHash(gem_id)` 校验，只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
-- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\extracted\sigils-full.xlsx`（Ctrl+F 搜名字）。
+- 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\sigils.xlsx`（Ctrl+F 搜名字）。
 - 角色 hash：`sigils.json` 专属行的 `character` 字段；常用：古兰 `2A26B1B2`、姬塔 `A4ACBA76`、
   娜露梅 `E7053919`、芙劳 `646C3168`、菲迪埃 `74DD4C79`。
 
