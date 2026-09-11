@@ -1,8 +1,6 @@
 #include "../native_internal.h"
 
-#include <cstdio>
-#include <iomanip>
-#include <sstream>
+#include <format>
 
 namespace gbfr::native
 {
@@ -45,16 +43,13 @@ void Log(const std::string& message)
 {
    SYSTEMTIME time{};
    GetLocalTime(&time);
-   char timestamp[40]{};
-   sprintf_s(
-      timestamp,
-      "%02u:%02u:%02u.%03u",
+   const std::string line = std::format(
+      "[{:02}:{:02}:{:02}.{:03}] [GBFR Pre-Equipped Sigils Native] {}\n",
       time.wHour,
       time.wMinute,
       time.wSecond,
-      time.wMilliseconds);
-   const std::string line =
-      std::string("[") + timestamp + "] [GBFR Pre-Equipped Sigils Native] " + message + "\n";
+      time.wMilliseconds,
+      message);
    OutputDebugStringA(line.c_str());
    if (const GBFR20_LogCallback callback = g_log_callback.load(std::memory_order_acquire);
        callback != nullptr)
@@ -94,8 +89,6 @@ void SetRuntimeMessage(std::string message)
 
 std::string ToUpperHex(uint32_t value)
 {
-   std::ostringstream stream;
-   stream << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << value;
-   return stream.str();
+   return std::format("{:08X}", value);
 }
 }

@@ -422,27 +422,23 @@ void DisableGameplayHooksAndRestore() noexcept
    {
       const uint8_t expanded_slot_count =
          static_cast<uint8_t>(GetExpandedInternalSlotCount());
-      uint8_t current = 0;
-      if (ReadByte(
-             g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
-             current) &&
-          current == expanded_slot_count)
-      {
-         if (!WriteByte(
-                g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
-                g_game_layout.trait_apply_original_limit))
-            Log("Hook rollback: failed to restore the trait-apply loop limit.");
-      }
-      if (ReadByte(
-             g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
-             current) &&
-          current == expanded_slot_count)
-      {
-         if (!WriteByte(
-                g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
-                g_game_layout.trait_category_original_limit))
-            Log("Hook rollback: failed to restore the trait-category loop limit.");
-      }
+      // Only revert a limit byte that still holds our expanded value: one that
+      // was already restored (or never patched) must not be touched.
+      const auto restore_limit =
+         [expanded_slot_count](uintptr_t rva, uint8_t original, const char* failure) {
+            uint8_t current = 0;
+            if (ReadByte(rva, current) && current == expanded_slot_count &&
+                !WriteByte(rva, original))
+               Log(failure);
+         };
+      restore_limit(
+         g_image_base + g_game_layout.trait_apply_loop_limit_immediate_rva,
+         g_game_layout.trait_apply_original_limit,
+         "Hook rollback: failed to restore the trait-apply loop limit.");
+      restore_limit(
+         g_image_base + g_game_layout.trait_category_loop_limit_immediate_rva,
+         g_game_layout.trait_category_original_limit,
+         "Hook rollback: failed to restore the trait-category loop limit.");
    }
 
    if (g_trait_fetch_hook)

@@ -9,13 +9,16 @@ std::unordered_map<uint32_t, uint32_t> g_required_character_by_gem;
 
 namespace
 {
+constexpr std::string_view kHashField = "\"hash\":";
+constexpr std::string_view kCharacterField = "\"character\":";
+
 // Extracts an 8-digit hex value from a flat JSON line, e.g.
 //   "hash": "9F08F697",            -> value = 0x9F08F697
 //   "character": "079DF0CC"       -> value = 0x079DF0CC
 // Returns false when the field is absent or not exactly 8 hex digits.
-bool ReadHexField(const std::string& line, std::string_view field, uint32_t& value) noexcept
+// Takes the already-quoted field prefix so the per-line scan never allocates.
+bool ReadHexField(const std::string& line, std::string_view prefix, uint32_t& value) noexcept
 {
-   const std::string prefix = std::string("\"") + std::string(field) + "\":";
    const size_t pos = line.find(prefix);
    if (pos == std::string::npos)
       return false;
@@ -103,12 +106,12 @@ bool LoadCharacterRestrictions(const std::filesystem::path& path)
       }
 
       uint32_t value = 0;
-      if (ReadHexField(line, "hash", value))
+      if (ReadHexField(line, kHashField, value))
       {
          current_gem = value;
          gem_seen = true;
       }
-      else if (ReadHexField(line, "character", value))
+      else if (ReadHexField(line, kCharacterField, value))
       {
          current_character = value;
          character_seen = true;

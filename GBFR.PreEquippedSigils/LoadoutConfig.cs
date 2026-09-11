@@ -274,10 +274,10 @@ internal static class LoadoutConfig
         if (ExclusiveByPlayer.TryGetValue(key, out var playerRows))
             return playerRows;
         if (ExclusiveByHash.TryGetValue(PU(key), out ExclusiveRow? row))
-            return new[] { row };
+            return [row];
         if (ExclusiveByName.TryGetValue(key, out row))
-            return new[] { row };
-        return Array.Empty<ExclusiveRow>();
+            return [row];
+        return [];
     }
 
     private static void AddExclusiveOverride(

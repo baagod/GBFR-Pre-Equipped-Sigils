@@ -1,7 +1,7 @@
 #include "../native_internal.h"
 
+#include <format>
 #include <limits>
-#include <sstream>
 
 namespace gbfr::native
 {
@@ -716,14 +716,14 @@ bool ResolveGameLayout()
 
    g_game_layout = layout;
    g_layout_ready.store(true, std::memory_order_release);
-   std::ostringstream message;
-   message << "Resolved and validated game layout from semantic anchors: PE timestamp=0x"
-           << std::uppercase << std::hex << layout.pe_timestamp
-           << ", getter RVA=0x" << layout.get_gem_data_by_index_rva
-           << ", SystemData RVA=0x" << layout.system_data_global_rva
-           << ", StatusManager RVA=0x" << layout.status_manager_global_rva
-           << ", UiManager RVA=0x" << layout.ui_manager_global_rva << ".";
-   Log(message.str());
+   Log(std::format(
+      "Resolved and validated game layout from semantic anchors: PE timestamp=0x{:X}, "
+      "getter RVA=0x{:X}, SystemData RVA=0x{:X}, StatusManager RVA=0x{:X}, UiManager RVA=0x{:X}.",
+      layout.pe_timestamp,
+      layout.get_gem_data_by_index_rva,
+      layout.system_data_global_rva,
+      layout.status_manager_global_rva,
+      layout.ui_manager_global_rva));
    return true;
 }
 

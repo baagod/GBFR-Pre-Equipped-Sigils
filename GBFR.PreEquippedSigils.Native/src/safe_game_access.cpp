@@ -242,13 +242,10 @@ void CommitAuthorizedStatus(
       return;
 
    std::unique_lock lock(g_authorization_mutex);
-   for (auto iterator = g_authorized_statuses.begin(); iterator != g_authorized_statuses.end();)
-   {
-      if (iterator->second.character_hash == identity.character_hash || iterator->first == status)
-         iterator = g_authorized_statuses.erase(iterator);
-      else
-         ++iterator;
-   }
+   std::erase_if(g_authorized_statuses, [&](const auto& entry) {
+      return entry.second.character_hash == identity.character_hash ||
+         entry.first == status;
+   });
    AuthorizedStatus authorization{};
    authorization.status = status;
    authorization.character_hash = identity.character_hash;

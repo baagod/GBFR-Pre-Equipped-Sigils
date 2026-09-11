@@ -1,6 +1,6 @@
 #include "../native_internal.h"
 
-#include <sstream>
+#include <format>
 
 namespace gbfr::native
 {
@@ -99,38 +99,42 @@ void ConsumeApplyResult()
       g_last_apply_character_hash.load(std::memory_order_acquire);
    const uint32_t expected = g_last_apply_expected_count.load(std::memory_order_acquire);
    const uint32_t injected = g_last_apply_injected_count.load(std::memory_order_acquire);
-   std::ostringstream prefix;
-   prefix << "Generation " << generation << " for 0x" << ToUpperHex(character_hash) << ": ";
+   const std::string prefix =
+      std::format("Generation {} for 0x{:08X}: ", generation, character_hash);
    switch (result)
    {
    case ApplyResultAppliedDuringNativeRebuild:
-      SetRuntimeMessage(
-         prefix.str() + "equipment/test rebuild copied " + std::to_string(injected) + "/" +
-            std::to_string(expected) +
-            " selected virtual sigils. Combat reads the same saved selection directly from the native Trait loop.");
+      SetRuntimeMessage(std::format(
+         "{}equipment/test rebuild copied {}/{} selected virtual sigils. Combat reads the same "
+         "saved selection directly from the native Trait loop.",
+         prefix,
+         injected,
+         expected));
       break;
    case ApplyResultSavedNoStatus:
-      SetRuntimeMessage(prefix.str() + "no valid equipment-selected character was available.");
+      SetRuntimeMessage(prefix + "no valid equipment-selected character was available.");
       break;
    case ApplyResultVirtualCopyFailed:
-      SetRuntimeMessage(
-         prefix.str() + "native trait build ran, but only " + std::to_string(injected) + "/" +
-            std::to_string(expected) + " sigils were valid, unequipped, and copied.");
+      SetRuntimeMessage(std::format(
+         "{}native trait build ran, but only {}/{} sigils were valid, unequipped, and copied.",
+         prefix,
+         injected,
+         expected));
       break;
    case ApplyResultStatusLookupFailed:
-      SetRuntimeMessage(prefix.str() + "the native character status map had no matching status.");
+      SetRuntimeMessage(prefix + "the native character status map had no matching status.");
       break;
    case ApplyResultNativeRebuildFailed:
-      SetRuntimeMessage(prefix.str() + "the synchronous native status rebuild failed.");
+      SetRuntimeMessage(prefix + "the synchronous native status rebuild failed.");
       break;
    case ApplyResultNativeTraitLoopMissing:
-      SetRuntimeMessage(
-         prefix.str() + "the native status rebuild returned without completing virtual trait slots 13 through " +
-            std::to_string(GetExpandedInternalSlotCount() - 1) + ".");
+      SetRuntimeMessage(std::format(
+         "{}the native status rebuild returned without completing virtual trait slots 13 through {}.",
+         prefix,
+         GetExpandedInternalSlotCount() - 1));
       break;
    case ApplyResultNotifierFailed:
-      SetRuntimeMessage(
-         prefix.str() + "traits rebuilt, but the post-rebuild native UI notifier failed.");
+      SetRuntimeMessage(prefix + "traits rebuilt, but the post-rebuild native UI notifier failed.");
       break;
    default:
       break;

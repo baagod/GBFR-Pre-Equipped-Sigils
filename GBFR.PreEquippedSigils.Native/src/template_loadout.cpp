@@ -202,14 +202,13 @@ std::unordered_map<uint32_t, uint8_t> g_exclusive_state;
 
 TemplateGemSlot MakeSingleTraitSlot(uint32_t gem_id, uint32_t trait) noexcept
 {
-   TemplateGemSlot slot{};
-   slot.gem_id = gem_id;
-   slot.trait1 = trait;
-   slot.trait1_level = 15;
-   slot.trait2 = kUnwornCharacterHash;
-   slot.trait2_level = 0;
-   slot.sigil_level = 15;
-   return slot;
+   return TemplateGemSlot{
+      .gem_id = gem_id,
+      .trait1 = trait,
+      .trait1_level = 15,
+      .trait2 = kUnwornCharacterHash,
+      .trait2_level = 0,
+      .sigil_level = 15};
 }
 
 // Requires g_template_mutex held by the caller.
@@ -233,15 +232,15 @@ void ApplyExclusiveStateLocked(CharacterTemplate& character) noexcept
       return;
    const CharacterExclusiveLoadout& exclusive = kCharacterExclusives[index->second];
    const uint8_t state = ReadExclusiveStateLocked(character.character_hash);
-   character.slots[0] = (state & ExclusiveT1) != 0
-      ? MakeSingleTraitSlot(exclusive.t1_gem, exclusive.t1_trait)
-      : TemplateGemSlot{};
-   character.slots[1] = (state & ExclusiveT2) != 0
-      ? MakeSingleTraitSlot(exclusive.t2_gem, exclusive.t2_trait)
-      : TemplateGemSlot{};
-   character.slots[2] = (state & ExclusiveWar) != 0
-      ? MakeSingleTraitSlot(exclusive.war_gem, exclusive.war_trait)
-      : TemplateGemSlot{};
+   character.slots[0] = TemplateGemSlot{};
+   character.slots[1] = TemplateGemSlot{};
+   character.slots[2] = TemplateGemSlot{};
+   if ((state & ExclusiveT1) != 0)
+      character.slots[0] = MakeSingleTraitSlot(exclusive.t1_gem, exclusive.t1_trait);
+   if ((state & ExclusiveT2) != 0)
+      character.slots[1] = MakeSingleTraitSlot(exclusive.t2_gem, exclusive.t2_trait);
+   if ((state & ExclusiveWar) != 0)
+      character.slots[2] = MakeSingleTraitSlot(exclusive.war_gem, exclusive.war_trait);
 }
 
 }
