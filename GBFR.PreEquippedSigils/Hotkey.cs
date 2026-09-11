@@ -94,6 +94,9 @@ internal static class Hotkey
 
     /// <summary>
     /// Configures the hotkey and starts the message-only window thread.
+    /// Called once per mod lifetime (Mod.QueueStart is once-only); re-arming a
+    /// live hotkey is UpdateHotkey's job and Shutdown tears the thread down, so
+    /// there is deliberately no re-entry path here.
     /// (Pre-warming the tool process was removed: Process.Start during mod
     /// startup triggered a .NET fatal in this environment.)
     /// </summary>
@@ -104,12 +107,6 @@ internal static class Hotkey
         _log = log;
         _wasDown = false;
         PublishHotkey(virtualKey);
-
-        if (_hotkeyThread != null && _messageWindow != IntPtr.Zero)
-        {
-            _hotKeyRegistered = ReregisterHotkey(_messageWindow);
-            return;
-        }
 
         _threadExit = false;
         var thread = new Thread(() => HotkeyLoop(virtualKey))
