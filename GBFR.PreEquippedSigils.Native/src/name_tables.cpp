@@ -1,6 +1,7 @@
 #include "../native_internal.h"
 
 #include <charconv>
+#include <format>
 #include <fstream>
 
 namespace gbfr::native
@@ -61,8 +62,8 @@ bool LoadCharacterRestrictions(const std::filesystem::path& path)
    std::ifstream stream(path, std::ios::binary);
    if (!stream)
    {
-      Log("sigils.json (character restrictions) is missing: " +
-         path.filename().string());
+      Log(std::format(
+         "sigils.json (character restrictions) is missing: {}", path.filename().string()));
       return false;
    }
 
@@ -118,7 +119,8 @@ bool LoadCharacterRestrictions(const std::filesystem::path& path)
       }
    }
 
-   Log("Loaded " + std::to_string(loaded) + " character-restricted sigil mappings from sigils.json.");
+   Log(std::format(
+      "Loaded {} character-restricted sigil mappings from sigils.json.", loaded));
    return loaded == kExpectedCharacterRestrictionCount &&
       g_required_character_by_gem.size() == kExpectedCharacterRestrictionCount;
 }

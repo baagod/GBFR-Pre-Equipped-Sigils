@@ -532,9 +532,10 @@ bool ValidateResolvedGameLayout(
 bool FailResolution(std::string_view stage)
 {
    ResetGameLayout();
-   SetRuntimeMessage(
-      "Game layout resolution failed at " + std::string(stage) +
-         "; gameplay hooks were not installed and persisted sigil selections were left unchanged.");
+   SetRuntimeMessage(std::format(
+      "Game layout resolution failed at {}; gameplay hooks were not installed and persisted "
+      "sigil selections were left unchanged.",
+      stage));
    return false;
 }
 }

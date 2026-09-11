@@ -1,5 +1,7 @@
 #include "../native_internal.h"
 
+#include <format>
+
 namespace gbfr::native
 {
 namespace
@@ -317,9 +319,9 @@ void InstallDefaultTemplateSelections()
       }
    }
    const int total_virtual = GetVirtualSlotCount();
-   std::string layout = "exclusive slots 1-3 (T1/T2/war)";
-   if (total_virtual > kBuiltinExclusiveSlotCount)
-      layout += ", general slots 4-" + std::to_string(total_virtual);
+   const std::string layout = total_virtual > kBuiltinExclusiveSlotCount
+      ? std::format("exclusive slots 1-3 (T1/T2/war), general slots 4-{}", total_virtual)
+      : "exclusive slots 1-3 (T1/T2/war)";
    // ApplyCustomLoadout and ApplyExclusiveOverrides each republish the selections
    // (the second one picks up the overrides applied just before it), so a config
    // that also carries an exclusive section would otherwise log this summary
@@ -327,10 +329,10 @@ void InstallDefaultTemplateSelections()
    static std::atomic<size_t> last_installed{static_cast<size_t>(-1)};
    if (last_installed.exchange(installed, std::memory_order_acq_rel) == installed)
       return;
-   Log(
-      "Installed " + std::to_string(installed) +
-      " built-in template loadout selection(s). " + layout +
-      "; inventory-independent.");
+   Log(std::format(
+      "Installed {} built-in template loadout selection(s). {}; inventory-independent.",
+      installed,
+      layout));
 }
 
 bool TryCopyTemplateGem(

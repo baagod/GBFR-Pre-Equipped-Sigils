@@ -14,13 +14,11 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace gbfr::native
@@ -202,7 +200,6 @@ enum ApplyResult : int
    ApplyResultAppliedDuringNativeRebuild = 2,
    ApplyResultSavedNoStatus = -1,
    ApplyResultVirtualCopyFailed = -2,
-   ApplyResultOwnerThreadMismatch = -3,
    ApplyResultStatusLookupFailed = -4,
    ApplyResultNativeRebuildFailed = -5,
    ApplyResultNativeTraitLoopMissing = -6,
@@ -296,7 +293,6 @@ void Log(const std::string& message);
 uint64_t BeginStartupPhase(std::string_view phase);
 void CompleteStartupPhase(std::string_view phase, uint64_t started_at_ms, bool succeeded);
 void SetRuntimeMessage(std::string message);
-std::string ToUpperHex(uint32_t value);
 
 bool SafeReadPointer(uintptr_t address, uintptr_t& value) noexcept;
 bool SafeReadUiSelectedCharacterHash(uint32_t& character_hash) noexcept;

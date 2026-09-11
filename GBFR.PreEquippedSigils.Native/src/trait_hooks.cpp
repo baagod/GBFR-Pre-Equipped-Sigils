@@ -1,7 +1,7 @@
 #include "../native_internal.h"
 
+#include <format>
 #include <intrin.h>
-#include <sstream>
 
 namespace gbfr::native
 {
@@ -99,19 +99,21 @@ void TrackNaturalContributionResult(
       // loadout confirms 9/9 every battle, identical every time. Failures
       // below still report N/M on every occurrence.
       if (!g_live_confirmation_reported.exchange(true, std::memory_order_acq_rel))
-         SetRuntimeMessage(
-            "Trait contribution confirmed for 0x" +
-               ToUpperHex(identity.character_hash) + ": " +
-               std::to_string(injected) + "/" + std::to_string(expected) +
-               " virtual sigils reached the context-1 status.");
+         SetRuntimeMessage(std::format(
+            "Trait contribution confirmed for 0x{:08X}: {}/{} virtual sigils reached the "
+            "context-1 status.",
+            identity.character_hash,
+            injected,
+            expected));
    }
    else if (expected != 0)
    {
-      SetRuntimeMessage(
-         "Trait contribution incomplete for 0x" +
-            ToUpperHex(identity.character_hash) + ": " +
-            std::to_string(injected) + "/" + std::to_string(expected) +
-            " virtual sigils reached the context-1 status.");
+      SetRuntimeMessage(std::format(
+         "Trait contribution incomplete for 0x{:08X}: {}/{} virtual sigils reached the "
+         "context-1 status.",
+         identity.character_hash,
+         injected,
+         expected));
    }
    g_tls_natural_contribution = {};
 }
@@ -563,9 +565,8 @@ bool InstallHooks()
    }
 
    g_hooks_ready.store(true, std::memory_order_release);
-   SetRuntimeMessage(
-      "Native hooks installed: " +
-         std::to_string(GetVirtualSlotCount()) + " virtual slots.");
+   SetRuntimeMessage(std::format(
+      "Native hooks installed: {} virtual slots.", GetVirtualSlotCount()));
    return true;
 }
 }

@@ -72,10 +72,11 @@ void CompleteStartupPhase(
    bool succeeded)
 {
    const uint64_t elapsed_ms = GetTickCount64() - started_at_ms;
-   Log(
-      "Startup phase=" + std::string(phase) + " state=" +
-      (succeeded ? "complete" : "failed") + " elapsed_ms=" +
-      std::to_string(elapsed_ms) + ".");
+   Log(std::format(
+      "Startup phase={} state={} elapsed_ms={}.",
+      phase,
+      succeeded ? "complete" : "failed",
+      elapsed_ms));
 }
 
 void SetRuntimeMessage(std::string message)
@@ -85,10 +86,5 @@ void SetRuntimeMessage(std::string message)
    Log(message);
    std::scoped_lock lock(g_message_mutex);
    g_runtime_message = std::move(message);
-}
-
-std::string ToUpperHex(uint32_t value)
-{
-   return std::format("{:08X}", value);
 }
 }
