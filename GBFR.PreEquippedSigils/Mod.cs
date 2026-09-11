@@ -25,7 +25,7 @@ public sealed class Mod : IMod
     private System.Threading.Timer? _tickTimer;
     private bool _nativeCoreActive;
     private bool _disposed;
-    private bool _startRequested;
+    private int _startRequested;
 
     public Action Disposing => Dispose;
 
@@ -53,9 +53,8 @@ public sealed class Mod : IMod
     {
         // Idempotent: Start/StartEx are alternative loader entry points;
         // re-entry would duplicate the upkeep timer.
-        if (_startRequested)
+        if (System.Threading.Interlocked.Exchange(ref _startRequested, 1) != 0)
             return;
-        _startRequested = true;
         long started = Stopwatch.GetTimestamp();
         try
         {

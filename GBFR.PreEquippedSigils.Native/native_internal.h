@@ -300,7 +300,6 @@ std::string ToUpperHex(uint32_t value);
 
 bool SafeReadPointer(uintptr_t address, uintptr_t& value) noexcept;
 bool SafeReadUiSelectedCharacterHash(uint32_t& character_hash) noexcept;
-bool SafeReadInt32(uintptr_t address, int32_t& value) noexcept;
 void SafeReadUiModes(int32_t& ui_mode, int32_t& source_mode) noexcept;
 void UpdateEditSessionState() noexcept;
 bool SafeReadStatusIdentity(uintptr_t status, StatusIdentity& identity) noexcept;

@@ -4,7 +4,7 @@
 > 阅读前提：先读 `README.md`（用户向说明）。本手册是*技术维护*文档。
 > 项目位置：本仓库根目录。源码：https://github.com/baagod/GBFR-Pre-Equipped-Sigils
 > 游戏版本：Granblue Fantasy: Relink Endless Ragnarok **2.0.5**。
-> 当前版本：0.5.7（ABI v17；当前状态与机制沿革见 §12）。
+> 当前版本：0.5.8（ABI v17；当前状态与机制沿革见 §12）。
 ---
 
 ## 1. 一句话说明
@@ -187,6 +187,9 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 # 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip；脚本结束会自动启动工具（Loadout.exe）
 ```
 
+- 原生与托管分开构建：**不要用 `msbuild` 直接构建整个 `.sln`** —— VS Build Tools 的 `MSBuild\Sdks\`
+  下没有 .NET SDK，托管项目会报 `MSB4236 找不到指定的 SDK "Microsoft.NET.Sdk"`（与源码无关，干净副本同样复现）；
+  按 `build-release.ps1` 的两段式走：MSBuild 构建 `.vcxproj`、`dotnet build` 构建 `.csproj`。
 - 一键部署（构建后）：`.\deploy.ps1` —— 自动停止运行的 Loadout.exe、覆盖 Mods 目标目录（默认
   `C:\Users\baago\Desktop\Reloaded-II\Mods\GBFR.PreEquippedSigils`，可用 `-Target` 覆盖）、完成后自动重新打开工具；游戏在运行会直接报错。
 - 部署：**游戏必须退出**，把 `dist\GBFR.PreEquippedSigils` 整个文件夹复制到 Reloaded-II 的 `Mods\`
@@ -202,7 +205,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 1. 编译：**0 警告 0 错误**（third_party 的 C4834 已在 vcxproj 单独压制）。
 2. 日志 `GBFR.PreEquippedSigils.Reloaded.log`（mod 目录）：
-   - `Installed N built-in template loadout selection(s). Exclusive slots 1-3 (T1/T2/war), general slots 4-M; inventory-independent.`（当前 29 角色无配置 = **87**；有配置时 N = 29 × (3+通用槽数)，通用槽全角色共享，槽位布局：专属 1-3、通用 4 起）
+   - `Installed N built-in template loadout selection(s). exclusive slots 1-3 (T1/T2/war), general slots 4-M; inventory-independent.`（当前 29 角色无配置 = **87**；有配置时 N = 29 × (3+通用槽数)，通用槽全角色共享，槽位布局：专属 1-3、通用 4 起）
    - `Native hooks installed: N virtual slots.`
    - 启动/换人/进战斗（context-1 状态重建）：`Trait contribution confirmed for 0xE7053919: N/N ...`（首次；二次出现应为 `incomplete: N/M`）
    - 装备界面/训练场：`Generation M for 0xE7053919: equipment/test rebuild copied N/N ...`
@@ -259,7 +262,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 ## 12. 背景与交接（2026-09-09 更新）
 
 ### 当前状态
-- **版本**：v0.5.7（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
+- **版本**：v0.5.8（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
   （固定 12 行编辑器，无内置通用默认）。
 - **唯一性**：GBFR 唯一"零库存预配装 + 运行时合成 + 不碰存档"的 mod；差异化 = "预配装/全角色/零折腾"。
 
