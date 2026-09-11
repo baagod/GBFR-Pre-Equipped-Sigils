@@ -305,11 +305,11 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 
 | 常量 | 值 | 位置 |
 |---|---|---|
-| 通用槽上限 MaxSlots | 12（三方均只计启用槽） | C# LoadoutConfig.cs / Go loadoutservice.go / TS App.tsx |
-| 默认等级 DefaultLevel | 15 | C# LoadoutConfig.cs / TS App.tsx |
+| 通用槽上限 MaxSlots | 12（三方均只计启用槽） | C# LoadoutConfig.cs / Go loadoutservice.go / TS model.ts |
+| 默认等级 DefaultLevel | 15 | C# LoadoutConfig.cs / TS model.ts |
 | 未穿戴哨兵 UnwornCharacterHash | 0x887AE0B0 | C# LoadoutConfig.cs / C++ native_internal.h（单词条 trait2 必须用它，不能用 0） |
 | 模板槽 ID 基址 | 0xFE000000 | C++ native_internal.h |
-| 热键默认 / 工具隐藏键 | F1 (0x70) | C# HotkeyConfig.cs / Go loadoutservice.go / TS App.tsx |
+| 热键默认 / 工具隐藏键 | F1 (0x70) | C# HotkeyConfig.cs / Go loadoutservice.go / TS model.ts |
 | 工具窗口标题 | GBFR Pre-Equipped Sigils | C# Hotkey.cs / Go main.go |
 | 内部显示消息 WM_APP+0x10 | 0x8010 | C# Hotkey.cs / Go main.go |
 | 单实例互斥体名 | Local\GBFRPreEquippedSigilsTool | Go main.go |
