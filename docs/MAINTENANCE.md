@@ -1,7 +1,7 @@
 # GBFR Pre-Equipped Sigils — 维护手册
 
 > 技术维护文档；用户向说明见 `README.md`。仓库根目录；源码 https://github.com/baagod/GBFR-Pre-Equipped-Sigils
-> 游戏版本 Granblue Fantasy: Relink Endless Ragnarok **2.0.5**；当前版本 **0.5.9**（ABI v17）；机制沿革见 §11。
+> 游戏版本 Granblue Fantasy: Relink Endless Ragnarok **2.0.5**；当前版本 **0.5.10**（ABI v17）；机制沿革见 §11。
 
 ## 1. 一句话说明
 
@@ -225,7 +225,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Rel
 
 ### 当前状态
 
-- **版本** v0.5.9（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽（固定 12 行编辑器，无内置通用默认）。
+- **版本** v0.5.10（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽（固定 12 行编辑器，无内置通用默认）。
 - 主控 + AI 角色都吃注入（明镜止水的守护/HP 吸收/追击/迅捷）——卸主槽因子测试确认。
 - 槽位/版本/数据改动后需同步：本手册头部、README×2、ModConfig、build-release.ps1。
 
