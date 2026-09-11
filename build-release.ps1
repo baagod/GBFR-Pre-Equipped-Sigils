@@ -55,13 +55,12 @@ Write-Output "ModConfig.json version: $manifestVersion."
 #   character-exclusives.json + kCharacterExclusives[]  <- docs\tool-gen-loadout.ps1 的 $chars
 $sigilsXlsx = Join-Path $root 'gen\sigils.xlsx'
 $makeSigilsJson = Join-Path $root 'gen\make-sigils-json.js'
-if (Test-Path -LiteralPath $sigilsXlsx) {
-    & node $makeSigilsJson $sigilsXlsx $sigilsPath --check
-    if ($LASTEXITCODE -ne 0) {
-        throw 'sigils.json 与 gen\sigils.xlsx 不一致：先跑 node gen\make-sigils-json.js gen\sigils.xlsx GBFR.PreEquippedSigils\sigils.json'
-    }
-} else {
-    Write-Output 'gen\sigils.xlsx not found; skipped the sigils.json freshness check.'
+if (-not (Test-Path -LiteralPath $sigilsXlsx)) {
+    throw "sigils.json freshness source is missing: $sigilsXlsx（该文件由 git 跟踪，缺失即检出异常；不得跳过一致性检查）"
+}
+& node $makeSigilsJson $sigilsXlsx $sigilsPath --check
+if ($LASTEXITCODE -ne 0) {
+    throw 'sigils.json 与 gen\sigils.xlsx 不一致：先跑 node gen\make-sigils-json.js gen\sigils.xlsx GBFR.PreEquippedSigils\sigils.json'
 }
 & pwsh -NoProfile -File (Join-Path $root 'docs\tool-gen-loadout.ps1') -Check
 if ($LASTEXITCODE -ne 0) {
@@ -165,10 +164,18 @@ if (-not $resolvedPackage.StartsWith($resolvedDist, [StringComparison]::OrdinalI
 # Force-stop a running editor tool: it locks dist\GBFR.PreEquippedSigils\Loadout.exe
 # and would make the recursive dist cleanup below fail. The tool is reopened at
 # the end of this script.
-if ((Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue) -ne $null) {
-    Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 500
+$loadoutProcesses = Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue
+if ($loadoutProcesses) {
+    $loadoutProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
+    # Wait for a real exit instead of a fixed delay: the tool holds a
+    # single-instance mutex, so a relaunch racing this shutdown would only
+    # activate the dying window and exit by itself (deploy.ps1 polls for the
+    # same reason, and the reopen at the end of this script would silently fail).
+    $loadoutDeadline = (Get-Date).AddSeconds(15)
+    while ((Get-Process -Name 'Loadout' -ErrorAction SilentlyContinue) -and
+           (Get-Date) -lt $loadoutDeadline) {
+        Start-Sleep -Milliseconds 200
+    }
     Write-Output 'Stopped the running Loadout.exe so dist can be replaced.'
 }
 
@@ -217,7 +224,10 @@ if (Test-Path -LiteralPath $runtimesPath) {
         Remove-Item -Recurse -Force
 }
 
-$legacyArtifact = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
+# One recursive pass feeds both release gates below (it used to walk the tree twice).
+$packagedFiles = Get-ChildItem -LiteralPath $packageDir -Recurse -File
+
+$legacyArtifact = $packagedFiles |
     Where-Object {
         $_.Name -like 'GBFR.ExtraSigilSlots*' -or
         $_.Name -like '*ExtraSigilSlots20*'
@@ -227,7 +237,7 @@ if ($legacyArtifact) {
     throw "Legacy ExtraSigilSlots artifact was packaged: $($legacyArtifact.FullName)"
 }
 
-$packagedConfig = Get-ChildItem -LiteralPath $packageDir -Recurse -File |
+$packagedConfig = $packagedFiles |
     Where-Object {
         $_.Name -ieq 'GBFR.PreEquippedSigilsConfig.ini' -or
         $_.Name -ieq 'GBFR.PreEquippedSigilsConfig.pending'

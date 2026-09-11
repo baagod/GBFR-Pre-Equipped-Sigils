@@ -74,11 +74,14 @@ foreach ($c in $chars) {
     $t1Gem = $indepGem[$c.T1]
     $t2Gem = $indepGem[$c.T2]
     $warGem = $indepGem[$c.War]
-    foreach ($value in @($t1Gem, $t2Gem, $warGem)) {
-        if ($value -notmatch $hex) { throw ('resolved gem hash is not 8 hex digits for ' + $c.Hash + ': ' + $value) }
-    }
+    # 先判可解析性再判形状：未解析到的 gem 是 $null，而 $null -notmatch $hex 恒为 True，
+    # 若先做下面的形状检查，报出的会是“not 8 hex digits … : (空值)”，真正有用的
+    # t1/t2/war 诊断分支永远不会执行。
     if (-not $t1Gem -or -not $t2Gem -or -not $warGem) {
         throw "cannot resolve exclusive gems for $($c.Hash): t1=$t1Gem t2=$t2Gem war=$warGem"
+    }
+    foreach ($value in @($t1Gem, $t2Gem, $warGem)) {
+        if ($value -notmatch $hex) { throw ('resolved gem hash is not 8 hex digits for ' + $c.Hash + ': ' + $value) }
     }
     $player = if ($playerOfGem.ContainsKey($warGem)) { $playerOfGem[$warGem] } else { '' }
     if (-not $player) { throw "cannot resolve player code for $($c.Hash)" }
@@ -90,8 +93,9 @@ foreach ($c in $chars) {
 }
 
 # ---- 输出 1：直接写回 template_loadout.cpp 的 kCharacterExclusives[] 段 ----
+# 生成块不含“勿手改”注释：那段注释已存在于 .cpp 中该段上方，下面只替换
+# “constexpr … { … };” 本体，因此结果字节稳定（同内容重跑不产生 diff）。
 $sb = [System.Text.StringBuilder]::new()
-[void]$sb.AppendLine('// 由 docs/tool-gen-loadout.ps1 生成；勿手改。')
 [void]$sb.AppendLine('constexpr CharacterExclusiveLoadout kCharacterExclusives[] = {')
 foreach ($r in $resolved) {
     [void]$sb.AppendLine("   { 0x$($r.Hash), // character")
@@ -101,8 +105,7 @@ foreach ($r in $resolved) {
     [void]$sb.AppendLine('   },')
 }
 [void]$sb.AppendLine('};')
-$out = $sb.ToString()
-$block = (($out.TrimEnd() -split "`r?`n") | Select-Object -Skip 1) -join "`n"
+$block = ($sb.ToString().TrimEnd() -split "`r?`n") -join "`n"
 
 # 只替换 “constexpr … { … };” 这一段（其上方已有的“勿手改”注释与空行保持原样，
 # 生成结果字节稳定：同内容重跑不产生 diff；源码是 LF，写入前把 CRLF 转成 LF）。
@@ -115,7 +118,6 @@ if ($Check) {
     if ($match.Value.Trim() -ne $block.Trim()) { $checkFailed = $true; Write-Warning "template_loadout.cpp 的 kCharacterExclusives[] 与 $chars 不一致" }
     else { Write-Output "check ok: kCharacterExclusives[] 一致（$($resolved.Count) 条）" }
 } else {
-    Set-Content -Path "$env:TEMP\loadout_exclusives.txt" -Value $out -Encoding UTF8
     $updated = $cpp.Substring(0, $match.Index) + $block + $cpp.Substring($match.Index + $match.Length)
     [System.IO.File]::WriteAllText($cppPath, $updated, [System.Text.UTF8Encoding]::new($false))
     Write-Output "patched kCharacterExclusives[] ($($resolved.Count) entries) -> $cppPath"

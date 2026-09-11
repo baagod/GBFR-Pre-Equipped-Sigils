@@ -1,7 +1,7 @@
 
 // 由最终 xlsx（.xlsx 文件或解包后的部件目录）生成 sigils.json（mod 运行时数据）。
-// 注意：name/zh 取「技能基础名」——sigils.xlsx 的因子名带 ＋/罗马数字后缀，这里去掉
-// （zh 去 ＋ 与中文罗马数字；name 再去英文罗马数字），与现 sigils.json 一致。
+// 注意：name/zh 取「技能基础名」——去 ＋ 与罗马数字后缀，规则单源在 xlsx-lib.js 的
+// shortName（build-sigils.js 用的是同一个），与现 sigils.json 一致。
 // 字段映射（与 xlsx 列名一致）：A=key B=hash C=name D=zh E=skill1 F=skill2 G=player
 //           H=lot（空格分隔 → 数组）I=category L=onlyone M=cap（数字）N=character（非空才输出）
 // 输出：{ "sigils": [ { key, hash, name, zh, skill1, skill2, mix, category, player, onlyone, cap, [character,] lot }, … ] }
@@ -19,7 +19,10 @@ function partsDirOf(input) {
   if (!fs.statSync(input).isFile()) return { dir: input };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sigils-xlsx-"));
   const r = spawnSync("tar", ["-xf", path.resolve(input), "-C", tmp], { encoding: "utf8" });
-  if (r.status !== 0) throw new Error("解包 xlsx 失败：" + (r.stderr || r.error));
+  if (r.status !== 0) {
+    fs.rmSync(tmp, { recursive: true, force: true });
+    throw new Error("解包 xlsx 失败：" + (r.stderr || r.error));
+  }
   return { dir: tmp, tmp };
 }
 
@@ -27,8 +30,13 @@ const input = process.argv[2];
 const outPath = process.argv[3];
 const check = process.argv.includes("--check");
 const parts = partsDirOf(input);
-const sheet = xl.readSheet(parts.dir);
-if (parts.tmp) fs.rmSync(parts.tmp, { recursive: true, force: true });   // 临时解包目录用完即删
+// try/finally：readSheet 抛错时同样要删掉临时解包目录（原先异常路径会泄漏）。
+let sheet;
+try {
+  sheet = xl.readSheet(parts.dir);
+} finally {
+  if (parts.tmp) fs.rmSync(parts.tmp, { recursive: true, force: true });   // 临时解包目录用完即删
+}
 const hdr = sheet.rows[0].cells;
 const COLS = { key: "key", hash: "hash", name: "name", zh: "zh", skill1: "skill1", skill2: "skill2", player: "player", lot: "lot", mix: "mix", category: "category", onlyone: "onlyone", cap: "cap", character: "character" };
 const col = {};
@@ -37,17 +45,13 @@ for (const [k, name] of Object.entries(COLS)) {
   if (!col[k]) throw new Error("make-sigils-json: 缺少列 " + name);
 }
 
-const ROMAN_CN = /[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+$/;
-const ROMAN_EN = /[IVX]+$/;
-const shortName = (s) => (s || "").replace(/[＋+]$/, "").replace(ROMAN_CN, "").replace(ROMAN_EN, "").trim();
-
 const sigils = sheet.rows.slice(1).map((row) => {
   const v = (c) => row.cells[c] ?? "";
   const o = {
     key: v(col.key),
     hash: v(col.hash),
-    name: shortName(v(col.name)),
-    zh: shortName(v(col.zh)),
+    name: xl.shortName(v(col.name)),
+    zh: xl.shortName(v(col.zh)),
     skill1: v(col.skill1),
     skill2: v(col.skill2),
     mix: v(col.mix),

@@ -1,6 +1,10 @@
 # Wails build output
 bin/
 Loadout.exe
+# `go build ./...` writes the module-named binary next to the sources
+# (the root .gitignore pattern `loadouttool/*.exe` is a directory pattern and
+# does not match this file).
+loadouttool.exe
 
 # Frontend
 frontend/node_modules/

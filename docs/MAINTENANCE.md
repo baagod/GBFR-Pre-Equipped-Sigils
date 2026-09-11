@@ -186,8 +186,10 @@ mod 目录下的 `sigils.json`（**合并单表**）**不是手工维护的**，
 环境要求：Windows x64、VS2022 Build Tools（MSVC v143 + Windows SDK）、.NET 8 SDK。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/<version>
-# 产物: dist\GBFR-Pre-Equipped-Sigils-<version>.zip；脚本结束会自动启动工具（Loadout.exe）
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/x64/<version>
+# 产物: dist\GBFR.Pre-Equipped-Sigils-<version>.zip；脚本结束会自动启动工具（Loadout.exe）
+# 必须用 pwsh 7：本脚本是无 BOM UTF-8，Windows PowerShell 5.1 会按 GBK 解析，
+# 门禁报错时的中文提示会变成乱码（与 §4.1 生成脚本同因）。
 ```
 
 - 原生与托管分开构建：**不要用 `msbuild` 直接构建整个 `.sln`** —— VS Build Tools 的 `MSBuild\Sdks\`

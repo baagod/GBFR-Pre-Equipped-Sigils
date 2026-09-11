@@ -4,6 +4,7 @@
 "use strict";
 const fs = require("fs");
 const { DatabaseSync } = require("node:sqlite");
+const xl = require("./xlsx-lib");
 
 const [dbPath, idsPath, outPath] = process.argv.slice(2, 5);
 const exIdx = process.argv.indexOf("--exclude");
@@ -13,11 +14,9 @@ if (!dbPath || !idsPath || !outPath) {
   process.exit(2);
 }
 
-const ids = new Map();
-for (const line of fs.readFileSync(idsPath, "utf8").split(/\r?\n/)) {
-  const p = line.split("|");
-  if (p.length >= 3 && p[2]) ids.set(p[2].trim(), p[0].trim());
-}
+// 复用 xlsx-lib 的 readIds：与 build-sigils 的 keepmap 同语义（重名取第一条 =
+// 规范游戏 id；旧的手写解析是 last-wins，会与构建结果分歧）。
+const ids = xl.readIds(idsPath);
 
 const db = new DatabaseSync(dbPath);
 const keys = db.prepare("select Key from gem").all().map((r) => r.Key);
@@ -25,7 +24,7 @@ const strMap = new Map();
 const numMap = new Map();
 for (const k of keys) {
   strMap.set(k.toUpperCase(), k);
-  const h = /^[0-9A-F]{8}$/.test(k) ? k : ids.get(k);
+  const h = /^[0-9A-F]{8}$/i.test(k) ? k : ids.get(k);
   if (h) numMap.set(parseInt(h, 16) >>> 0, k);
 }
 
