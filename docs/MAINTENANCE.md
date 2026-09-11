@@ -134,7 +134,9 @@ TemplateGemSlot{
 - 运行时由 `ApplyExclusiveStateLocked` 按 exclusive 状态就地写入 `CharacterTemplate{ character_hash, slots[24] }`
   的 slot0/1/2（禁用的槽写空槽 `TemplateGemSlot{}`）；
   合成 id = `kTemplateSlotIdBase(0xFE000000) + 槽序号`（不与真实库存冲突，`IsTemplateSlotId` 判定）。
-- **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数（≤12）。
+- **内置默认（无配置）**：专属 3 槽全开，通用槽全空；总虚拟槽 = 3 + 通用槽数。通用槽数由
+  `LoadoutConfig.MaxSlots` 限为 ≤12（故总虚拟槽 ≤15）；原生 `kVirtualSlotCapacity = 24` 是更宽松的
+  数组边界兜底，正常配置不会触及。
 - 角色专属物品受 `sigils.json` 专属行的 `character` 字段限制：`TryCopyTemplateGem` 用
   `GetRequiredCharacterHash(gem_id)` 校验，只能装给对应角色（古兰/姬塔互通，姬塔条目使用古兰专属）。
 - 词条 hash 查询：`sigils.json`（词条 hash/名/上限）或 `gen\extracted\sigils-full.xlsx`（Ctrl+F 搜名字）。
@@ -260,7 +262,7 @@ powershell -ExecutionPolicy Bypass -File .\build-release.ps1   # 默认 Release/
 - **推送**：`git -c credential.helper="!gh auth git-credential" push origin main`
   （仓库已配置本地代理 127.0.0.1:7890；若提示 403，检查 gh token 的 Contents: Read and write 权限）。
 
-## 12. 背景与交接（2026-09-09 更新）
+## 12. 背景与交接（2026-09-11 更新）
 
 ### 当前状态
 - **版本**：v0.5.8（ABI v17）。入口配装：每角色专属 3 独立槽（T1/T2/战气，默认全开）+ 玩家通用槽
