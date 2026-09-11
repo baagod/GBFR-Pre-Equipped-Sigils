@@ -369,20 +369,14 @@ bool TryCopyTemplateGem(
 
 bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
 {
-   // nullptr = no player config -> exclusive-only built-in template (per
-   // character the exclusive slots assembled from the overrides, general
-   // slots empty). Non-null (even with count 0) = player config present.
-   const bool use_builtin = slots == nullptr;
    // Player configuration only fills general slots kBuiltinExclusiveSlotCount+;
    // slots 0/1/2 are assembled per character from the exclusives + overrides.
+   // nullptr = no player config -> built-in template: zero player rows, so
+   // effective_count is 0 and the general-slot loop below wipes rather than fills.
+   const int32_t requested = slots == nullptr ? 0 : std::max(count, 0);
    const int32_t effective_count =
-      use_builtin || count <= 0
-         ? 0
-         : std::min(count, kVirtualSlotCapacity - kBuiltinExclusiveSlotCount);
-   const int32_t total_slot_count =
-      use_builtin
-         ? kBuiltinExclusiveSlotCount
-         : kBuiltinExclusiveSlotCount + effective_count;
+      std::min(requested, kVirtualSlotCapacity - kBuiltinExclusiveSlotCount);
+   const int32_t total_slot_count = kBuiltinExclusiveSlotCount + effective_count;
    const int32_t previous_count = g_virtual_slot_count.load(std::memory_order_acquire);
    if (total_slot_count != previous_count)
    {
@@ -408,7 +402,11 @@ bool ApplyCustomLoadout(const TemplateGemSlot* slots, int32_t count) noexcept
          if (character.character_hash == 0)
             continue;
          ApplyExclusiveStateLocked(character);
-         if (use_builtin)
+         // Kept as an explicit branch even though the fill loop below would
+         // write TemplateGemSlot{} for every slot when effective_count is 0:
+         // it makes the null `slots` provably unable to reach slots[...], and
+         // that deref writes into game process memory.
+         if (effective_count <= 0)
          {
             // Built-in mode owns only the exclusive slots: wipe the general
             // slots so the table never keeps stale gems from a removed player

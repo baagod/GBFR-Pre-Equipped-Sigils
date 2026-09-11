@@ -95,28 +95,7 @@ export function configToSlots(
   const capOfGem = new Map<string, number | undefined>(
     sigils.map((s) => [s.hash, capOfTrait.get(s.skill1)])
   )
-  // Normalize a saved config (new array format) into Slot[] (mainHash = name).
-  const raw = parsed?.slots
-  const fromCfg = (Array.isArray(raw) ? raw : []).map((slot) => {
-    const s = (slot ?? {}) as {
-      enabled?: boolean
-      items?: SavedItem[]
-    }
-    const items = Array.isArray(s.items) ? s.items : []
-    const main = items[0] ?? {}
-    const sec = items[1]
-    const mainHash = typeof main.gem === "string" ? main.gem : "" // items[0] has no "hash" variant (never written)
-    const secHash = sec && typeof sec.hash === "string" ? sec.hash : ""
-    const mainLevel = typeof main.level === "number" ? main.level : DEFAULT_LEVEL
-    const secLevel = sec && typeof sec.level === "number" ? sec.level : DEFAULT_LEVEL
-    return {
-      mainHash,
-      mainLevel: clampLevel(mainLevel, capOfGem.get(mainHash)),
-      secHash,
-      secLevel: clampLevel(secLevel, capOfTrait.get(secHash)),
-      enabled: s.enabled !== false,
-    }
-  })
+  const fromCfg = slotsFromConfig(parsed?.slots, capOfGem, capOfTrait)
   const nameOfHash = new Map(sigils.map((s) => [s.hash, s.name]))
   for (const s of fromCfg) {
     if (nameOfHash.has(s.mainHash)) s.mainHash = nameOfHash.get(s.mainHash) as string
@@ -136,3 +115,35 @@ export function pad12(slots: Slot[]): Slot[] {
 /** Clamp a stored level to the table cap when one is known. */
 const clampLevel = (level: number, cap: number | undefined) =>
   cap === undefined ? level : Math.max(0, Math.min(level, cap))
+
+/** The trust boundary for saved configs: untrusted JSON shape -> Slot[].
+ * Every field is guarded, so a hand-edited or truncated loadout.json degrades
+ * to empty slots instead of throwing. The two cap maps are required - the only
+ * caller always has both. */
+function slotsFromConfig(
+  raw: unknown,
+  capOfGem: Map<string, number | undefined>,
+  capOfTrait: Map<string, number>
+): Slot[] {
+  const arr = Array.isArray(raw) ? raw : []
+  return arr.map((slot) => {
+    const s = (slot ?? {}) as {
+      enabled?: boolean
+      items?: SavedItem[]
+    }
+    const items = Array.isArray(s.items) ? s.items : []
+    const main = items[0] ?? {}
+    const sec = items[1]
+    const mainHash = typeof main.gem === "string" ? main.gem : "" // items[0] has no "hash" variant (never written)
+    const secHash = sec && typeof sec.hash === "string" ? sec.hash : ""
+    const mainLevel = typeof main.level === "number" ? main.level : DEFAULT_LEVEL
+    const secLevel = sec && typeof sec.level === "number" ? sec.level : DEFAULT_LEVEL
+    return {
+      mainHash,
+      mainLevel: clampLevel(mainLevel, capOfGem.get(mainHash)),
+      secHash,
+      secLevel: clampLevel(secLevel, capOfTrait.get(secHash)),
+      enabled: s.enabled !== false,
+    }
+  })
+}
